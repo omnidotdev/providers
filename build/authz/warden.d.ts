@@ -1,7 +1,7 @@
 import type { AuthzProvider, AuthzTuple, PermissionCheck, PermissionCheckResult, TupleSyncResult } from "./interface";
 type WardenAuthzProviderConfig = {
     /** Warden PDP API URL */
-    apiUrl: string;
+    apiUrl?: string;
     /** Service key for service-to-service auth */
     serviceKey?: string;
     /** Vortex workflow engine URL (optional fallback for tuple sync) */
@@ -32,7 +32,9 @@ declare class WardenAuthzProvider implements AuthzProvider {
     private readonly config;
     private readonly circuitBreaker;
     private readonly permissionCache;
-    constructor(config: WardenAuthzProviderConfig);
+    constructor(config: WardenAuthzProviderConfig & {
+        apiUrl: string;
+    });
     checkPermission(userId: string, resourceType: string, resourceId: string, permission: string, requestCache?: Map<string, boolean>): Promise<boolean>;
     checkPermissionsBatch(checks: PermissionCheck[], requestCache?: Map<string, boolean>): Promise<PermissionCheckResult[]>;
     writeTuples(tuples: AuthzTuple[], accessToken?: string): Promise<TupleSyncResult>;

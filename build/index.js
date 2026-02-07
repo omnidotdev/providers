@@ -2009,7 +2009,7 @@ var createAuthzProvider = (provider, config) => {
       if (!config?.apiUrl) {
         throw new Error("WardenAuthzProvider requires apiUrl in config");
       }
-      return new WardenAuthzProvider(config);
+      return new WardenAuthzProvider({ ...config, apiUrl: config.apiUrl });
     }
     case "local":
       return new LocalAuthzProvider;
@@ -2328,7 +2328,11 @@ var createBillingProvider = (provider, config) => {
       if (!config?.appId) {
         throw new Error("AetherBillingProvider requires appId in config");
       }
-      return new AetherBillingProvider(config);
+      return new AetherBillingProvider({
+        ...config,
+        baseUrl: config.baseUrl,
+        appId: config.appId
+      });
     }
     case "local":
       return new LocalBillingProvider;
