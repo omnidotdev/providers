@@ -18,7 +18,7 @@ const DEFAULT_CACHE_TTL_MS = 120_000;
 
 type WardenAuthzProviderConfig = {
   /** Warden PDP API URL */
-  apiUrl: string;
+  apiUrl?: string;
   /** Service key for service-to-service auth */
   serviceKey?: string;
   /** Vortex workflow engine URL (optional fallback for tuple sync) */
@@ -48,13 +48,13 @@ type WardenAuthzProviderConfig = {
  */
 class WardenAuthzProvider implements AuthzProvider {
   private readonly config: Required<
-    Pick<WardenAuthzProviderConfig, "apiUrl" | "cacheTtlMs">
+    Pick<WardenAuthzProviderConfig, "cacheTtlMs">
   > &
-    WardenAuthzProviderConfig;
+    WardenAuthzProviderConfig & { apiUrl: string };
   private readonly circuitBreaker: CircuitBreaker;
   private readonly permissionCache: TtlCache<boolean>;
 
-  constructor(config: WardenAuthzProviderConfig) {
+  constructor(config: WardenAuthzProviderConfig & { apiUrl: string }) {
     this.config = {
       ...config,
       cacheTtlMs: config.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS,

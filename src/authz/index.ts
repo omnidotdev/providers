@@ -22,7 +22,7 @@ const createAuthzProvider = (
       if (!config?.apiUrl) {
         throw new Error("WardenAuthzProvider requires apiUrl in config");
       }
-      return new WardenAuthzProvider(config);
+      return new WardenAuthzProvider({ ...config, apiUrl: config.apiUrl });
     }
     case "local":
       return new LocalAuthzProvider();

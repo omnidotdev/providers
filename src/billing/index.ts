@@ -25,7 +25,11 @@ const createBillingProvider = (
       if (!config?.appId) {
         throw new Error("AetherBillingProvider requires appId in config");
       }
-      return new AetherBillingProvider(config);
+      return new AetherBillingProvider({
+        ...config,
+        baseUrl: config.baseUrl,
+        appId: config.appId,
+      });
     }
     case "local":
       return new LocalBillingProvider();

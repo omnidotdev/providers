@@ -20,11 +20,11 @@ const DEFAULT_CACHE_TTL_MS = 300_000;
 
 type AetherBillingProviderConfig = {
   /** Aether billing service base URL */
-  baseUrl: string;
+  baseUrl?: string;
   /** Service API key for service-to-service auth */
   serviceApiKey?: string;
   /** Product identifier (e.g., "runa", "backfeed") */
-  appId: string;
+  appId?: string;
   /** Cache TTL in milliseconds */
   cacheTtlMs?: number;
   /** Circuit breaker failure threshold */
@@ -43,15 +43,18 @@ type AetherBillingProviderConfig = {
  * - Service API key authentication
  * - Structured JSON logging
  */
+type ValidatedAetherConfig = AetherBillingProviderConfig & {
+  baseUrl: string;
+  appId: string;
+};
+
 class AetherBillingProvider implements BillingProvider {
-  private readonly config: Required<
-    Pick<AetherBillingProviderConfig, "baseUrl" | "appId" | "cacheTtlMs">
-  > &
-    AetherBillingProviderConfig;
+  private readonly config: Required<Pick<ValidatedAetherConfig, "cacheTtlMs">> &
+    ValidatedAetherConfig;
   private readonly circuitBreaker: CircuitBreaker;
   private readonly cache: TtlCache<EntitlementsResponse>;
 
-  constructor(config: AetherBillingProviderConfig) {
+  constructor(config: ValidatedAetherConfig) {
     this.config = {
       ...config,
       cacheTtlMs: config.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS,
