@@ -16,10 +16,10 @@ const entries = [
     entrypoint: "./src/graphql/index.ts",
     outdir: "./build/graphql",
     target: "node" as const,
+    // Only externalize framework packages consumers already have.
+    // Bundle implementation deps (graphql-armor, query-core) so
+    // consumers don't need them as direct dependencies.
     external: [
-      "@envelop/types",
-      "@escape.tech/graphql-armor",
-      "@tanstack/query-core",
       "graphile-export",
       "graphile-export/helpers",
       "postgraphile",
