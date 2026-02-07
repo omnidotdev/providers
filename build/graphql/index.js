@@ -1304,7 +1304,7 @@ var require_instanceOf = __commonJS((exports) => {
   });
   exports.instanceOf = undefined;
   var _inspect = require_inspect();
-  var isProduction = globalThis.process && false;
+  var isProduction = globalThis.process && true;
   var instanceOf = isProduction ? function instanceOf(value, constructor) {
     return value instanceof constructor;
   } : function instanceOf(value, constructor) {
@@ -14298,8 +14298,8 @@ var require_graphql2 = __commonJS((exports) => {
   var _index6 = require_utilities();
 });
 
-// node_modules/@escape.tech/graphql-armor-block-field-suggestions/dist/graphql-armor-block-field-suggestions.cjs.dev.js
-var require_graphql_armor_block_field_suggestions_cjs_dev = __commonJS((exports) => {
+// node_modules/@escape.tech/graphql-armor-block-field-suggestions/dist/graphql-armor-block-field-suggestions.cjs.prod.js
+var require_graphql_armor_block_field_suggestions_cjs_prod = __commonJS((exports) => {
   Object.defineProperty(exports, "__esModule", { value: true });
   var graphql = require_graphql2();
   var blockFieldSuggestionsDefaultOptions = {
@@ -14334,13 +14334,13 @@ var require_graphql_armor_block_field_suggestions_cjs_dev = __commonJS((exports)
 
 // node_modules/@escape.tech/graphql-armor-block-field-suggestions/dist/graphql-armor-block-field-suggestions.cjs.js
 var require_graphql_armor_block_field_suggestions_cjs = __commonJS((exports, module) => {
-  if (false) {} else {
-    module.exports = require_graphql_armor_block_field_suggestions_cjs_dev();
-  }
+  if (true) {
+    module.exports = require_graphql_armor_block_field_suggestions_cjs_prod();
+  } else {}
 });
 
-// node_modules/@escape.tech/graphql-armor-cost-limit/dist/graphql-armor-cost-limit.cjs.dev.js
-var require_graphql_armor_cost_limit_cjs_dev = __commonJS((exports) => {
+// node_modules/@escape.tech/graphql-armor-cost-limit/dist/graphql-armor-cost-limit.cjs.prod.js
+var require_graphql_armor_cost_limit_cjs_prod = __commonJS((exports) => {
   Object.defineProperty(exports, "__esModule", { value: true });
   var graphql = require_graphql2();
   function _toPrimitive(input, hint) {
@@ -14494,13 +14494,13 @@ var require_graphql_armor_cost_limit_cjs_dev = __commonJS((exports) => {
 
 // node_modules/@escape.tech/graphql-armor-cost-limit/dist/graphql-armor-cost-limit.cjs.js
 var require_graphql_armor_cost_limit_cjs = __commonJS((exports, module) => {
-  if (false) {} else {
-    module.exports = require_graphql_armor_cost_limit_cjs_dev();
-  }
+  if (true) {
+    module.exports = require_graphql_armor_cost_limit_cjs_prod();
+  } else {}
 });
 
-// node_modules/@escape.tech/graphql-armor-max-aliases/dist/graphql-armor-max-aliases.cjs.dev.js
-var require_graphql_armor_max_aliases_cjs_dev = __commonJS((exports) => {
+// node_modules/@escape.tech/graphql-armor-max-aliases/dist/graphql-armor-max-aliases.cjs.prod.js
+var require_graphql_armor_max_aliases_cjs_prod = __commonJS((exports) => {
   Object.defineProperty(exports, "__esModule", { value: true });
   var graphql = require_graphql2();
   function _toPrimitive(input, hint) {
@@ -14621,13 +14621,13 @@ var require_graphql_armor_max_aliases_cjs_dev = __commonJS((exports) => {
 
 // node_modules/@escape.tech/graphql-armor-max-aliases/dist/graphql-armor-max-aliases.cjs.js
 var require_graphql_armor_max_aliases_cjs = __commonJS((exports, module) => {
-  if (false) {} else {
-    module.exports = require_graphql_armor_max_aliases_cjs_dev();
-  }
+  if (true) {
+    module.exports = require_graphql_armor_max_aliases_cjs_prod();
+  } else {}
 });
 
-// node_modules/@escape.tech/graphql-armor-max-depth/dist/graphql-armor-max-depth.cjs.dev.js
-var require_graphql_armor_max_depth_cjs_dev = __commonJS((exports) => {
+// node_modules/@escape.tech/graphql-armor-max-depth/dist/graphql-armor-max-depth.cjs.prod.js
+var require_graphql_armor_max_depth_cjs_prod = __commonJS((exports) => {
   Object.defineProperty(exports, "__esModule", { value: true });
   var graphql = require_graphql2();
   function _toPrimitive(input, hint) {
@@ -14756,13 +14756,13 @@ var require_graphql_armor_max_depth_cjs_dev = __commonJS((exports) => {
 
 // node_modules/@escape.tech/graphql-armor-max-depth/dist/graphql-armor-max-depth.cjs.js
 var require_graphql_armor_max_depth_cjs = __commonJS((exports, module) => {
-  if (false) {} else {
-    module.exports = require_graphql_armor_max_depth_cjs_dev();
-  }
+  if (true) {
+    module.exports = require_graphql_armor_max_depth_cjs_prod();
+  } else {}
 });
 
-// node_modules/@escape.tech/graphql-armor-max-directives/dist/graphql-armor-max-directives.cjs.dev.js
-var require_graphql_armor_max_directives_cjs_dev = __commonJS((exports) => {
+// node_modules/@escape.tech/graphql-armor-max-directives/dist/graphql-armor-max-directives.cjs.prod.js
+var require_graphql_armor_max_directives_cjs_prod = __commonJS((exports) => {
   Object.defineProperty(exports, "__esModule", { value: true });
   var graphql = require_graphql2();
   function _toPrimitive(input, hint) {
@@ -14883,13 +14883,13 @@ var require_graphql_armor_max_directives_cjs_dev = __commonJS((exports) => {
 
 // node_modules/@escape.tech/graphql-armor-max-directives/dist/graphql-armor-max-directives.cjs.js
 var require_graphql_armor_max_directives_cjs = __commonJS((exports, module) => {
-  if (false) {} else {
-    module.exports = require_graphql_armor_max_directives_cjs_dev();
-  }
+  if (true) {
+    module.exports = require_graphql_armor_max_directives_cjs_prod();
+  } else {}
 });
 
-// node_modules/@escape.tech/graphql-armor-max-tokens/dist/graphql-armor-max-tokens.cjs.dev.js
-var require_graphql_armor_max_tokens_cjs_dev = __commonJS((exports) => {
+// node_modules/@escape.tech/graphql-armor-max-tokens/dist/graphql-armor-max-tokens.cjs.prod.js
+var require_graphql_armor_max_tokens_cjs_prod = __commonJS((exports) => {
   Object.defineProperty(exports, "__esModule", { value: true });
   var graphql = require_graphql2();
   var parser = require_parser();
@@ -14995,13 +14995,13 @@ var require_graphql_armor_max_tokens_cjs_dev = __commonJS((exports) => {
 
 // node_modules/@escape.tech/graphql-armor-max-tokens/dist/graphql-armor-max-tokens.cjs.js
 var require_graphql_armor_max_tokens_cjs = __commonJS((exports, module) => {
-  if (false) {} else {
-    module.exports = require_graphql_armor_max_tokens_cjs_dev();
-  }
+  if (true) {
+    module.exports = require_graphql_armor_max_tokens_cjs_prod();
+  } else {}
 });
 
-// node_modules/@escape.tech/graphql-armor/dist/graphql-armor.cjs.dev.js
-var require_graphql_armor_cjs_dev = __commonJS((exports) => {
+// node_modules/@escape.tech/graphql-armor/dist/graphql-armor.cjs.prod.js
+var require_graphql_armor_cjs_prod = __commonJS((exports) => {
   Object.defineProperty(exports, "__esModule", { value: true });
   var graphqlArmorBlockFieldSuggestions = require_graphql_armor_block_field_suggestions_cjs();
   var graphqlArmorCostLimit = require_graphql_armor_cost_limit_cjs();
@@ -15370,9 +15370,9 @@ var require_graphql_armor_cjs_dev = __commonJS((exports) => {
 
 // node_modules/@escape.tech/graphql-armor/dist/graphql-armor.cjs.js
 var require_graphql_armor_cjs = __commonJS((exports, module) => {
-  if (false) {} else {
-    module.exports = require_graphql_armor_cjs_dev();
-  }
+  if (true) {
+    module.exports = require_graphql_armor_cjs_prod();
+  } else {}
 });
 
 // src/graphql/armor.ts
@@ -15429,29 +15429,19 @@ var TimeoutManager = class {
   #provider = defaultTimeoutProvider;
   #providerCalled = false;
   setTimeoutProvider(provider) {
-    if (true) {
-      if (this.#providerCalled && provider !== this.#provider) {
-        console.error(`[timeoutManager]: Switching provider after calls to previous provider might result in unexpected behavior.`, { previous: this.#provider, provider });
-      }
-    }
+    if (false) {}
     this.#provider = provider;
-    if (true) {
-      this.#providerCalled = false;
-    }
+    if (false) {}
   }
   setTimeout(callback, delay) {
-    if (true) {
-      this.#providerCalled = true;
-    }
+    if (false) {}
     return this.#provider.setTimeout(callback, delay);
   }
   clearTimeout(timeoutId) {
     this.#provider.clearTimeout(timeoutId);
   }
   setInterval(callback, delay) {
-    if (true) {
-      this.#providerCalled = true;
-    }
+    if (false) {}
     return this.#provider.setInterval(callback, delay);
   }
   clearInterval(intervalId) {
@@ -15635,14 +15625,7 @@ function replaceData(prevData, data, options) {
   if (typeof options.structuralSharing === "function") {
     return options.structuralSharing(prevData, data);
   } else if (options.structuralSharing !== false) {
-    if (true) {
-      try {
-        return replaceEqualDeep(prevData, data);
-      } catch (error) {
-        console.error(`Structural sharing requires data to be JSON serializable. To fix this, turn off structuralSharing or return JSON-serializable data from your queryFn. [${options.queryHash}]: ${error}`);
-        throw error;
-      }
-    }
+    if (false) {}
     return replaceEqualDeep(prevData, data);
   }
   return data;
@@ -15657,11 +15640,7 @@ function addToStart(items, item, max = 0) {
 }
 var skipToken = /* @__PURE__ */ Symbol();
 function ensureQueryFn(options, fetchOptions) {
-  if (true) {
-    if (options.queryFn === skipToken) {
-      console.error(`Attempted to invoke queryFn when set to skipToken. This is likely a configuration error. Query hash: '${options.queryHash}'`);
-    }
-  }
+  if (false) {}
   if (!options.queryFn && fetchOptions?.initialPromise) {
     return () => fetchOptions.initialPromise;
   }
@@ -16215,11 +16194,7 @@ var Query = class extends Removable {
         this.setOptions(observer.options);
       }
     }
-    if (true) {
-      if (!Array.isArray(this.options.queryKey)) {
-        console.error(`As of v4, queryKey needs to be an Array. If you are using a string like 'repoData', please change it to an Array, e.g. ['repoData']`);
-      }
-    }
+    if (false) {}
     const abortController = new AbortController;
     const addSignalProperty = (object) => {
       Object.defineProperty(object, "signal", {
@@ -16295,9 +16270,7 @@ var Query = class extends Removable {
     try {
       const data = await this.#retryer.start();
       if (data === undefined) {
-        if (true) {
-          console.error(`Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ${this.queryHash}`);
-        }
+        if (false) {}
         throw new Error(`${this.queryHash} data is undefined`);
       }
       this.setData(data);

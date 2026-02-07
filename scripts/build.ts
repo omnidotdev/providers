@@ -42,6 +42,8 @@ for (const { entrypoint, outdir, target, external } of entries) {
     format: "esm",
     target,
     external,
+    // Use production JSX runtime (react/jsx-runtime, not react/jsx-dev-runtime)
+    define: { "process.env.NODE_ENV": '"production"' },
   });
 
   if (!result.success) {

@@ -1,6 +1,6 @@
 // src/react/OrganizationProvider.tsx
 import { createContext, use, useMemo, useState } from "react";
-import { jsxDEV } from "react/jsx-dev-runtime";
+import { jsx } from "react/jsx-runtime";
 var OrganizationContext = createContext(null);
 function getDefaultOrganization(organizations) {
   const personalOrg = organizations.find((org) => org.type === "personal");
@@ -24,7 +24,7 @@ var OrganizationProvider = ({
     return organizations.find((o) => o.id === orgId);
   };
   const hasMultipleOrgs = organizations.length > 1;
-  return /* @__PURE__ */ jsxDEV(OrganizationContext, {
+  return /* @__PURE__ */ jsx(OrganizationContext, {
     value: {
       organizations,
       currentOrganization,
@@ -34,7 +34,7 @@ var OrganizationProvider = ({
       isDegradedMode
     },
     children
-  }, undefined, false, undefined, this);
+  });
 };
 var useOrganization = () => {
   return use(OrganizationContext);
