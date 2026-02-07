@@ -31,7 +31,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!!dist", "!!node_modules"]
+    "includes": ["**", "!!build", "!!node_modules"]
   },
   "formatter": {
     "indentStyle": "space",

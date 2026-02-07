@@ -68,6 +68,9 @@ async function deriveKey(secret: string, salt: string): Promise<Uint8Array> {
 /**
  * Verify a JWT access token using JWKS (SaaS mode).
  * Fetches the signing key from the auth service's JWKS endpoint.
+ * @param token - Raw JWT string
+ * @param config - JWKS verification config
+ * @returns Verified JWT claims including organization membership
  * @throws When token is invalid or JWKS endpoint is unreachable
  */
 async function verifyAccessToken(
@@ -90,6 +93,9 @@ async function verifyAccessToken(
 /**
  * Verify a self-hosted JWT signed with a symmetric secret.
  * Supports key rotation by trying current secret first, then previous.
+ * @param token - Raw JWT string
+ * @param config - Symmetric key verification config
+ * @returns Verified JWT claims including organization membership
  * @throws When token is invalid or secrets are not configured
  */
 async function verifySelfHostedToken(

@@ -10,6 +10,8 @@ type BillingProviderConfig = AetherBillingProviderConfig;
  * Create a billing provider by name.
  * @param provider - Provider name ("aether" or "local")
  * @param config - Provider-specific configuration
+ * @returns Configured billing provider instance
+ * @throws When provider name is unknown or required config is missing
  */
 const createBillingProvider = (
   provider: string,

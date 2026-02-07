@@ -7,19 +7,10 @@
  * @param defaultSelfHosted - Default provider for self-hosted mode
  * @returns Resolved provider name
  */
-const resolveProvider = (
-  explicit: string | undefined,
-  defaultSaas: string,
-  defaultSelfHosted = "local",
-): string => {
-  if (explicit) return explicit;
-  return isSelfHosted() ? defaultSelfHosted : defaultSaas;
-};
-
+declare const resolveProvider: (explicit: string | undefined, defaultSaas: string, defaultSelfHosted?: string) => string;
 /**
  * Check if the current environment is self-hosted.
  * Reads `SELF_HOSTED` env var at call time.
  */
-const isSelfHosted = (): boolean => process.env.SELF_HOSTED === "true";
-
+declare const isSelfHosted: () => boolean;
 export { isSelfHosted, resolveProvider };

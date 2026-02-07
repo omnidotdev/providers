@@ -7,14 +7,15 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "declaration": true,
-    "declarationDir": "dist",
+    "declarationDir": "build",
     "emitDeclarationOnly": true,
     "rootDir": "src",
-    "outDir": "dist",
+    "outDir": "build",
     "resolveJsonModule": true,
+    "jsx": "react-jsx",
     "erasableSyntaxOnly": true,
     "types": ["@types/bun"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/**/*.tsx"],
   "exclude": ["dist", "node_modules", "test"]
 }

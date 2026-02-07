@@ -10,6 +10,8 @@ type AuthzProviderConfig = WardenAuthzProviderConfig;
  * Create an authorization provider by name.
  * @param provider - Provider name ("warden" or "local")
  * @param config - Provider-specific configuration
+ * @returns Configured authorization provider instance
+ * @throws When provider name is unknown or required config is missing
  */
 const createAuthzProvider = (
   provider: string,

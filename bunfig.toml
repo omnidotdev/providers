@@ -1,0 +1,4 @@
+[test]
+
+# Preload happy-dom for React component tests
+preload = ["./test/setup-dom.ts"]
