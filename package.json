@@ -26,10 +26,7 @@
   ],
   "scripts": {
     "dev": "bun run build --watch",
-    "build": "bun run build:core && bun run build:graphql && bun run build:react && tsc --emitDeclarationOnly",
-    "build:core": "bun build ./src/index.ts --outdir ./build --format esm --target node",
-    "build:graphql": "bun build ./src/graphql/index.ts --outdir ./build/graphql --format esm --target node --external '*'",
-    "build:react": "bun build ./src/react/index.ts --outdir ./build/react --format esm --target browser --external '*'",
+    "build": "bun scripts/build.ts",
     "typecheck": "tsc --noEmit",
     "lint": "biome check",
     "format": "biome format --write",
