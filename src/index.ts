@@ -3,25 +3,20 @@ export {
   OMNI_CLAIMS_NAMESPACE,
   extractOrgClaims,
   verifyAccessToken,
-  verifySelfHostedToken,
 } from "./auth";
 // AuthZ
 export {
-  LocalAuthzProvider,
   WardenAuthzProvider,
   createAuthzProvider,
 } from "./authz";
 // Billing
 export {
   AetherBillingProvider,
-  LocalBillingProvider,
   createBillingProvider,
   isWithinLimit,
 } from "./billing";
-// Config
-export { isSelfHosted, resolveProvider } from "./config";
-export { TtlCache } from "./util/cache";
 // Utilities
+export { TtlCache } from "./util/cache";
 export { CircuitBreaker } from "./util/circuitBreaker";
 
 export type {
@@ -29,7 +24,6 @@ export type {
   TokenPayload,
   UserInfoClaims,
   VerifyAccessTokenConfig,
-  VerifySelfHostedTokenConfig,
 } from "./auth";
 export type {
   AuthzProvider,

@@ -1522,16 +1522,6 @@ function getJWKS(authBaseUrl) {
   }
   return jwks;
 }
-async function deriveKey(secret, salt) {
-  const encoder2 = new TextEncoder;
-  const keyMaterial = await crypto.subtle.importKey("raw", encoder2.encode(secret), "HKDF", false, ["deriveBits"]);
-  return new Uint8Array(await crypto.subtle.deriveBits({
-    name: "HKDF",
-    hash: "SHA-256",
-    salt: encoder2.encode(salt),
-    info: encoder2.encode("jwt-signing-key")
-  }, keyMaterial, 256));
-}
 async function verifyAccessToken(token, config) {
   const jwks = getJWKS(config.authBaseUrl);
   const { payload } = await jwtVerify(token, jwks, {
@@ -1542,48 +1532,6 @@ async function verifyAccessToken(token, config) {
   }
   return payload;
 }
-async function verifySelfHostedToken(token, config) {
-  const salt = config.salt ?? "self-hosted-auth";
-  const issuer = config.issuer ?? "self-hosted";
-  const keys = [await deriveKey(config.secret, salt)];
-  if (config.previousSecret) {
-    keys.push(await deriveKey(config.previousSecret, salt));
-  }
-  for (const key of keys) {
-    try {
-      const { payload } = await jwtVerify(token, key, { issuer });
-      if (!payload.sub) {
-        throw new Error("Missing required 'sub' claim");
-      }
-      return payload;
-    } catch (err) {
-      if (key === keys[keys.length - 1])
-        throw err;
-    }
-  }
-  throw new Error("Token verification failed");
-}
-// src/authz/local.ts
-class LocalAuthzProvider {
-  async checkPermission(_userId, _resourceType, _resourceId, _permission, _requestCache) {
-    return true;
-  }
-  async checkPermissionsBatch(checks, _requestCache) {
-    return checks.map((check) => ({ ...check, allowed: true }));
-  }
-  async writeTuples(_tuples, _accessToken) {
-    return { success: true };
-  }
-  async deleteTuples(_tuples, _accessToken) {
-    return { success: true };
-  }
-  invalidateCache(_pattern) {}
-  clearCache() {}
-  async healthCheck() {
-    return { healthy: true, message: "Local provider always healthy" };
-  }
-}
-
 // src/util/cache.ts
 var DEFAULT_TTL_MS = 300000;
 
@@ -2003,19 +1951,11 @@ function buildCacheKey(userId, resourceType, resourceId, permission) {
 }
 
 // src/authz/index.ts
-var createAuthzProvider = (provider, config) => {
-  switch (provider) {
-    case "warden": {
-      if (!config?.apiUrl) {
-        throw new Error("WardenAuthzProvider requires apiUrl in config");
-      }
-      return new WardenAuthzProvider({ ...config, apiUrl: config.apiUrl });
-    }
-    case "local":
-      return new LocalAuthzProvider;
-    default:
-      throw new Error(`Unknown authz provider: ${provider}`);
+var createAuthzProvider = (config) => {
+  if (!config?.apiUrl) {
+    throw new Error("WardenAuthzProvider requires apiUrl in config");
   }
+  return new WardenAuthzProvider({ ...config, apiUrl: config.apiUrl });
 };
 // src/billing/aether.ts
 var REQUEST_TIMEOUT_MS2 = 5000;
@@ -2219,79 +2159,6 @@ class AetherBillingProvider {
     return {};
   }
 }
-
-// src/billing/local.ts
-var createEntitlement = (featureKey, value, productId) => ({
-  id: `self-hosted-${featureKey}`,
-  featureKey,
-  value,
-  productId,
-  source: "self-hosted",
-  validFrom: "1970-01-01T00:00:00Z",
-  validUntil: null
-});
-var UNLIMITED_ENTITLEMENTS = {
-  billingAccountId: "self-hosted",
-  entityType: "organization",
-  entityId: "self-hosted",
-  entitlementVersion: 1,
-  entitlements: [
-    createEntitlement("tier", "enterprise", "platform"),
-    createEntitlement("max_members", "unlimited", "platform"),
-    createEntitlement("max_workspaces", "unlimited", "platform"),
-    createEntitlement("sso_enabled", "true", "platform"),
-    createEntitlement("audit_logs", "true", "platform")
-  ]
-};
-var SELF_HOSTED_SUBSCRIPTION = {
-  id: "self-hosted",
-  status: "active",
-  cancelAt: null,
-  currentPeriodEnd: Date.now() / 1000 + 365 * 24 * 60 * 60,
-  priceId: "self-hosted",
-  product: {
-    id: "self-hosted",
-    name: "Self-Hosted Enterprise",
-    description: "All features included",
-    marketing_features: [{ name: "Unlimited everything" }]
-  }
-};
-
-class LocalBillingProvider {
-  async getEntitlements(entityType, entityId, _productId, _accessToken) {
-    return {
-      ...UNLIMITED_ENTITLEMENTS,
-      entityType,
-      entityId
-    };
-  }
-  async checkEntitlement(_entityType, _entityId, _productId, featureKey, _accessToken) {
-    const entitlement = UNLIMITED_ENTITLEMENTS.entitlements.find((e) => e.featureKey === featureKey);
-    return entitlement?.value ?? "unlimited";
-  }
-  async getPrices(_appName) {
-    return [];
-  }
-  async createCheckoutSession(_params) {
-    throw new Error("Billing is not available in self-hosted mode");
-  }
-  async createCheckoutWithWorkspace(_params) {
-    throw new Error("Billing is not available in self-hosted mode");
-  }
-  async getSubscription(_entityType, _entityId, _accessToken) {
-    return SELF_HOSTED_SUBSCRIPTION;
-  }
-  async getBillingPortalUrl(_entityType, _entityId, _productId, returnUrl, _accessToken) {
-    return returnUrl;
-  }
-  async cancelSubscription(_entityType, _entityId, _accessToken) {
-    return "self-hosted";
-  }
-  async renewSubscription(_entityType, _entityId, _accessToken) {}
-  async healthCheck() {
-    return { healthy: true, message: "Local provider always healthy" };
-  }
-}
 // src/billing/helpers.ts
 var isWithinLimit = (entitlements, featureKey, currentCount, defaultLimits) => {
   if (!entitlements) {
@@ -2319,48 +2186,28 @@ var isWithinLimit = (entitlements, featureKey, currentCount, defaultLimits) => {
 };
 
 // src/billing/index.ts
-var createBillingProvider = (provider, config) => {
-  switch (provider) {
-    case "aether": {
-      if (!config?.baseUrl) {
-        throw new Error("AetherBillingProvider requires baseUrl in config");
-      }
-      if (!config?.appId) {
-        throw new Error("AetherBillingProvider requires appId in config");
-      }
-      return new AetherBillingProvider({
-        ...config,
-        baseUrl: config.baseUrl,
-        appId: config.appId
-      });
-    }
-    case "local":
-      return new LocalBillingProvider;
-    default:
-      throw new Error(`Unknown billing provider: ${provider}`);
+var createBillingProvider = (config) => {
+  if (!config?.baseUrl) {
+    throw new Error("AetherBillingProvider requires baseUrl in config");
   }
+  if (!config?.appId) {
+    throw new Error("AetherBillingProvider requires appId in config");
+  }
+  return new AetherBillingProvider({
+    ...config,
+    baseUrl: config.baseUrl,
+    appId: config.appId
+  });
 };
-// src/config.ts
-var resolveProvider = (explicit, defaultSaas, defaultSelfHosted = "local") => {
-  if (explicit)
-    return explicit;
-  return isSelfHosted() ? defaultSelfHosted : defaultSaas;
-};
-var isSelfHosted = () => process.env.SELF_HOSTED === "true";
 export {
-  verifySelfHostedToken,
   verifyAccessToken,
-  resolveProvider,
   isWithinLimit,
-  isSelfHosted,
   extractOrgClaims,
   createBillingProvider,
   createAuthzProvider,
   WardenAuthzProvider,
   TtlCache,
   OMNI_CLAIMS_NAMESPACE,
-  LocalBillingProvider,
-  LocalAuthzProvider,
   CircuitBreaker,
   AetherBillingProvider
 };
