@@ -15,6 +15,14 @@ export {
   createBillingProvider,
   isWithinLimit,
 } from "./billing";
+// Events
+export {
+  HttpEventsProvider,
+  IggyEventsProvider,
+  NoopEventsProvider,
+  createEventsProvider,
+  registerSchemas,
+} from "./events";
 // Utilities
 export { TtlCache } from "./util/cache";
 export { CircuitBreaker } from "./util/circuitBreaker";
@@ -49,5 +57,17 @@ export type {
   Recurring,
   Subscription,
 } from "./billing";
+export type {
+  EmitResult,
+  EventInput,
+  EventsProvider,
+  EventsProviderConfig,
+  EventsProviderStatus,
+  HttpEventsProviderConfig,
+  IggyEventsProviderConfig,
+  NoopEventsProviderConfig,
+  RegisteredSchema,
+  SchemaRegistration,
+} from "./events";
 export type { TtlCacheConfig } from "./util/cache";
 export type { CircuitBreakerConfig } from "./util/circuitBreaker";

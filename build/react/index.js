@@ -1,7 +1,23 @@
-// src/react/OrganizationProvider.tsx
-import { createContext, use, useMemo, useState } from "react";
+// src/react/EventsProvider.tsx
+import { createContext, use } from "react";
 import { jsx } from "react/jsx-runtime";
-var OrganizationContext = createContext(null);
+var EventsContext = createContext(null);
+var EventsProvider = ({
+  children,
+  provider
+}) => {
+  return /* @__PURE__ */ jsx(EventsContext, {
+    value: provider,
+    children
+  });
+};
+var useEvents = () => {
+  return use(EventsContext);
+};
+// src/react/OrganizationProvider.tsx
+import { createContext as createContext2, use as use2, useMemo, useState } from "react";
+import { jsx as jsx2 } from "react/jsx-runtime";
+var OrganizationContext = createContext2(null);
 function getDefaultOrganization(organizations) {
   const personalOrg = organizations.find((org) => org.type === "personal");
   if (personalOrg)
@@ -24,7 +40,7 @@ var OrganizationProvider = ({
     return organizations.find((o) => o.id === orgId);
   };
   const hasMultipleOrgs = organizations.length > 1;
-  return /* @__PURE__ */ jsx(OrganizationContext, {
+  return /* @__PURE__ */ jsx2(OrganizationContext, {
     value: {
       organizations,
       currentOrganization,
@@ -37,9 +53,11 @@ var OrganizationProvider = ({
   });
 };
 var useOrganization = () => {
-  return use(OrganizationContext);
+  return use2(OrganizationContext);
 };
 export {
   useOrganization,
-  OrganizationProvider
+  useEvents,
+  OrganizationProvider,
+  EventsProvider
 };

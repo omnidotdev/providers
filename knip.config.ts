@@ -6,6 +6,7 @@ export default {
     "happy-dom",
     "@envelop/types",
     "@escape.tech/graphql-armor",
+    "@iggy.rs/sdk",
     "@tanstack/query-core",
     "graphile-export",
     "postgraphile",

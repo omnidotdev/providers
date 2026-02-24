@@ -1305,9 +1305,9 @@ var require_instanceOf = __commonJS((exports) => {
   exports.instanceOf = undefined;
   var _inspect = require_inspect();
   var isProduction = globalThis.process && true;
-  var instanceOf = isProduction ? function instanceOf(value, constructor) {
+  var instanceOf = isProduction ? function instanceOf2(value, constructor) {
     return value instanceof constructor;
-  } : function instanceOf(value, constructor) {
+  } : function instanceOf2(value, constructor) {
     if (value instanceof constructor) {
       return true;
     }
@@ -17261,16 +17261,16 @@ ${fieldDefs}
       Query: {
         observer: EXPORTABLE((context2, lambda2, allFields2) => function observer() {
           const $observer = context2().get("observer");
-          return lambda2($observer, (observer) => {
-            if (!observer)
+          return lambda2($observer, (observer2) => {
+            if (!observer2)
               return null;
             const result = {};
             for (const field of allFields2) {
               const key = field.contextKey ?? field.name;
               if (key === "rowId") {
-                result[key] = observer.id;
+                result[key] = observer2.id;
               } else {
-                result[key] = observer[key];
+                result[key] = observer2[key];
               }
             }
             return result;
