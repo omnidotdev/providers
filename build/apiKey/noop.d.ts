@@ -15,6 +15,7 @@ declare class NoopApiKeyProvider implements ApiKeyProvider {
         healthy: boolean;
         message?: string;
     }>;
+    close(): Promise<void>;
 }
 export { NoopApiKeyProvider };
 export type { NoopApiKeyProviderConfig };

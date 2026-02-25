@@ -148,5 +148,7 @@ interface BillingProvider {
         healthy: boolean;
         message?: string;
     }>;
+    /** Close the provider connection (if stateful) */
+    close?(): Promise<void>;
 }
 export type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, Price, Product, Recurring, Subscription, };

@@ -47,6 +47,7 @@ declare class AetherBillingProvider implements BillingProvider {
         healthy: boolean;
         message?: string;
     }>;
+    close(): Promise<void>;
     private serviceHeaders;
 }
 export { AetherBillingProvider };

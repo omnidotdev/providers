@@ -5,4 +5,3 @@ type LogLevel = "info" | "warn" | "error";
  */
 declare function log(level: LogLevel, module: string, message: string, data?: Record<string, unknown>): void;
 export { log };
-export type { LogLevel };

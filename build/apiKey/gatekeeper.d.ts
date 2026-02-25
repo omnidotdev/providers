@@ -33,6 +33,7 @@ declare class GatekeeperApiKeyProvider implements ApiKeyProvider {
         healthy: boolean;
         message?: string;
     }>;
+    close(): Promise<void>;
 }
 export { GatekeeperApiKeyProvider };
 export type { GatekeeperApiKeyProviderConfig };

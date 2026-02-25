@@ -70,5 +70,7 @@ interface AuthzProvider {
         healthy: boolean;
         message?: string;
     }>;
+    /** Close the provider connection (if stateful) */
+    close?(): Promise<void>;
 }
 export type { AuthzProvider, AuthzTuple, PermissionCheck, PermissionCheckResult, TupleSyncResult, };

@@ -1,3 +1,5 @@
+import { SchemaCache } from "./validation";
+import type { BufferConfig } from "./buffer";
 import type { EmitResult, EventInput, EventsProvider } from "./interface";
 type HttpEventsProviderConfig = {
     /** Vortex API base URL */
@@ -16,6 +18,15 @@ type HttpEventsProviderConfig = {
     circuitBreakerThreshold?: number;
     /** Circuit breaker cooldown in milliseconds */
     circuitBreakerCooldownMs?: number;
+    /** Enable local batch queueing */
+    batch?: BufferConfig;
+    /**
+     * Enable pre-emission schema validation
+     * (requires schemas to be registered)
+     */
+    validation?: {
+        enabled: boolean;
+    };
 };
 type ValidatedHttpConfig = HttpEventsProviderConfig & {
     baseUrl: string;
@@ -26,10 +37,17 @@ type ValidatedHttpConfig = HttpEventsProviderConfig & {
  * POSTs events to the Vortex API with retry and circuit breaker.
  */
 declare class HttpEventsProvider implements EventsProvider {
+    #private;
     private readonly config;
     private readonly circuitBreaker;
     private readonly maxRetries;
     private readonly timeoutMs;
+    private readonly buffer;
+    /**
+     * Schema cache for pre-emission validation
+     * (populated by registerSchemas)
+     */
+    readonly schemaCache: SchemaCache;
     constructor(config: ValidatedHttpConfig);
     emit(event: EventInput): Promise<EmitResult>;
     emitBatch(events: EventInput[]): Promise<EmitResult[]>;

@@ -15,6 +15,10 @@ type S3StorageProviderConfig = {
     forcePathStyle?: boolean;
     /** Override base URL for public object URLs */
     publicBaseUrl?: string;
+    /** Circuit breaker failure threshold */
+    circuitBreakerThreshold?: number;
+    /** Circuit breaker cooldown in milliseconds */
+    circuitBreakerCooldownMs?: number;
 };
 type ValidatedS3Config = S3StorageProviderConfig & {
     bucket: string;
@@ -26,6 +30,7 @@ type ValidatedS3Config = S3StorageProviderConfig & {
 declare class S3StorageProvider implements StorageProvider {
     #private;
     private readonly config;
+    private readonly circuitBreaker;
     private client;
     constructor(config: ValidatedS3Config);
     upload(params: UploadParams): Promise<UploadResult>;

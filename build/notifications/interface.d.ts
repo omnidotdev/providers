@@ -47,5 +47,7 @@ interface NotificationProvider {
         healthy: boolean;
         message?: string;
     }>;
+    /** Close the provider connection (if stateful) */
+    close?(): Promise<void>;
 }
 export type { EmailParams, EmailResult, NotificationProvider };

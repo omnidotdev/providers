@@ -4,6 +4,10 @@ type ResendNotificationProviderConfig = {
     apiKey?: string;
     /** Default sender email address */
     defaultFrom?: string;
+    /** Circuit breaker failure threshold */
+    circuitBreakerThreshold?: number;
+    /** Circuit breaker cooldown in milliseconds */
+    circuitBreakerCooldownMs?: number;
 };
 type ValidatedResendConfig = ResendNotificationProviderConfig & {
     apiKey: string;
@@ -19,6 +23,7 @@ type ValidatedResendConfig = ResendNotificationProviderConfig & {
 declare class ResendNotificationProvider implements NotificationProvider {
     #private;
     private readonly config;
+    private readonly circuitBreaker;
     private client;
     constructor(config: ValidatedResendConfig);
     sendEmail(params: EmailParams): Promise<EmailResult>;
@@ -27,6 +32,7 @@ declare class ResendNotificationProvider implements NotificationProvider {
         healthy: boolean;
         message?: string;
     }>;
+    close(): Promise<void>;
 }
 export { ResendNotificationProvider };
 export type { ResendNotificationProviderConfig };

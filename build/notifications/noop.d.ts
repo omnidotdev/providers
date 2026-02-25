@@ -11,6 +11,7 @@ declare class NoopNotificationProvider implements NotificationProvider {
         healthy: boolean;
         message?: string;
     }>;
+    close(): Promise<void>;
 }
 export { NoopNotificationProvider };
 export type { NoopNotificationProviderConfig };

@@ -45,6 +45,7 @@ declare class WardenAuthzProvider implements AuthzProvider {
         healthy: boolean;
         message?: string;
     }>;
+    close(): Promise<void>;
     private authHeaders;
     private syncViaVortex;
     private syncDirect;
