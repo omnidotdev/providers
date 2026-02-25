@@ -10,7 +10,16 @@ const entries = [
     entrypoint: "./src/index.ts",
     outdir: "./build",
     target: "node" as const,
-    external: [],
+    // Externalize peer deps to avoid bundling CJS modules (e.g. @iggy.rs/sdk)
+    // which inject `createRequire` and break Vite browser builds
+    external: [
+      "@iggy.rs/sdk",
+      "@tanstack/query-core",
+      "unleash-client",
+      "resend",
+      "@aws-sdk/client-s3",
+      "@aws-sdk/s3-request-presigner",
+    ],
   },
   {
     entrypoint: "./src/graphql/index.ts",
@@ -55,6 +64,21 @@ for (const { entrypoint, outdir, target, external } of entries) {
 
     process.exit(1);
   }
+}
+
+// Strip dead `createRequire` CJS interop injected by Bun's bundler.
+// It's never called but breaks Vite browser builds that resolve the main entry.
+const mainBundle = "./build/index.js";
+const content = await Bun.file(mainBundle).text();
+const stripped = content
+  .replace('import { createRequire } from "node:module";\n', "")
+  .replace(
+    "var __require = /* @__PURE__ */ createRequire(import.meta.url);\n",
+    "",
+  );
+
+if (stripped !== content) {
+  await Bun.write(mainBundle, stripped);
 }
 
 // Emit type declarations
