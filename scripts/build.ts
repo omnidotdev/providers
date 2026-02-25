@@ -10,16 +10,10 @@ const entries = [
     entrypoint: "./src/index.ts",
     outdir: "./build",
     target: "node" as const,
-    // Externalize peer deps to avoid bundling CJS modules (e.g. @iggy.rs/sdk)
-    // which inject `createRequire` and break Vite browser builds
-    external: [
-      "@iggy.rs/sdk",
-      "@tanstack/query-core",
-      "unleash-client",
-      "resend",
-      "@aws-sdk/client-s3",
-      "@aws-sdk/s3-request-presigner",
-    ],
+    // Bundle all deps so consumers don't need them installed.
+    // Post-build step patches `createRequire` to a runtime-safe
+    // fallback that works on Bun/Node and doesn't break Vite.
+    external: [] as string[],
   },
   {
     entrypoint: "./src/graphql/index.ts",
@@ -66,19 +60,35 @@ for (const { entrypoint, outdir, target, external } of entries) {
   }
 }
 
-// Strip dead `createRequire` CJS interop injected by Bun's bundler.
-// It's never called but breaks Vite browser builds that resolve the main entry.
+// Patch the main bundle so it works in both Node/Bun and Vite browser
+// builds. Bun's bundler injects CJS interop (`createRequire`) and
+// leaves top-level `import … from "node:*"` for built-in modules.
+// Both break Vite when it resolves this file for the client bundle.
+//
+// Fix: replace `createRequire` with a runtime-safe `require` fallback,
+// and convert static `node:*` imports to lazy `__require` calls that
+// only execute at runtime (in Node/Bun) and never in the browser.
 const mainBundle = "./build/index.js";
-const content = await Bun.file(mainBundle).text();
-const stripped = content
+let patched = await Bun.file(mainBundle).text();
+
+// 1. Replace createRequire with runtime-safe fallback
+patched = patched
   .replace('import { createRequire } from "node:module";\n', "")
   .replace(
     "var __require = /* @__PURE__ */ createRequire(import.meta.url);\n",
-    "",
+    'var __require = typeof require !== "undefined" ? require : (id) => { throw new Error(`require() not available for "${id}"`) };\n',
   );
 
-if (stripped !== content) {
-  await Bun.write(mainBundle, stripped);
+// 2. Convert `import { X, Y } from "node:*"` to `var { X, Y } = __require("node:*")`
+//    so Vite doesn't try to resolve Node built-ins for the browser bundle
+patched = patched.replace(
+  /^import \{([^}]+)\} from "(node:[^"]+)";$/gm,
+  (_match, names, mod) =>
+    `var {${names}} = __require("${mod}");`,
+);
+
+if (patched !== (await Bun.file(mainBundle).text())) {
+  await Bun.write(mainBundle, patched);
 }
 
 // Emit type declarations
