@@ -68,3 +68,39 @@ describe("HttpEventsProvider", () => {
     expect(provider.healthCheck).toBeFunction();
   });
 });
+
+describe("HttpEventsProvider with batch", () => {
+  it("accepts batch config without errors", async () => {
+    const { HttpEventsProvider } = await import("../../src/events/http");
+
+    const provider = new HttpEventsProvider({
+      baseUrl: "https://api.vortex.test",
+      apiKey: "test-key",
+      batch: { maxSize: 10, flushIntervalMs: 100 },
+    });
+
+    expect(provider).toBeDefined();
+
+    await provider.close();
+  });
+
+  it("returns buffered result when batch is enabled", async () => {
+    const { HttpEventsProvider } = await import("../../src/events/http");
+
+    const provider = new HttpEventsProvider({
+      baseUrl: "https://api.vortex.test",
+      apiKey: "test-key",
+      batch: { maxSize: 50, flushIntervalMs: 5000 },
+    });
+
+    const result = await provider.emit({
+      type: "test.event",
+      data: { foo: "bar" },
+    });
+
+    expect(result.eventId).toBe("buffered");
+    expect(result.timestamp).toBeDefined();
+
+    await provider.close();
+  });
+});

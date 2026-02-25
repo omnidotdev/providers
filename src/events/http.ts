@@ -1,6 +1,8 @@
 import { CircuitBreaker } from "../util/circuitBreaker";
 import { log } from "../util/log";
+import { EventBuffer } from "./buffer";
 
+import type { BufferConfig } from "./buffer";
 import type { EmitResult, EventInput, EventsProvider } from "./interface";
 
 /** Request timeout in milliseconds */
@@ -29,6 +31,8 @@ type HttpEventsProviderConfig = {
   circuitBreakerThreshold?: number;
   /** Circuit breaker cooldown in milliseconds */
   circuitBreakerCooldownMs?: number;
+  /** Enable local batch queueing */
+  batch?: BufferConfig;
 };
 
 type ValidatedHttpConfig = HttpEventsProviderConfig & {
@@ -45,6 +49,7 @@ class HttpEventsProvider implements EventsProvider {
   private readonly circuitBreaker: CircuitBreaker;
   private readonly maxRetries: number;
   private readonly timeoutMs: number;
+  private readonly buffer: EventBuffer | null;
 
   constructor(config: ValidatedHttpConfig) {
     this.config = config;
@@ -55,9 +60,40 @@ class HttpEventsProvider implements EventsProvider {
       cooldownMs: config.circuitBreakerCooldownMs,
       label: "vortex-events",
     });
+    this.buffer = config.batch
+      ? new EventBuffer(config.batch, (events) => this.#emitDirect(events))
+      : null;
   }
 
   async emit(event: EventInput): Promise<EmitResult> {
+    if (this.buffer) {
+      await this.buffer.add(event);
+
+      return {
+        eventId: "buffered",
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    return this.#emitSingle(event);
+  }
+
+  async #emitDirect(events: EventInput[]): Promise<EmitResult[]> {
+    const results = await Promise.allSettled(
+      events.map((e) => this.#emitSingle(e)),
+    );
+
+    return results.map((r) =>
+      r.status === "fulfilled"
+        ? r.value
+        : {
+            eventId: "failed",
+            timestamp: new Date().toISOString(),
+          },
+    );
+  }
+
+  async #emitSingle(event: EventInput): Promise<EmitResult> {
     const startTime = Date.now();
 
     const body = {
@@ -140,7 +176,9 @@ class HttpEventsProvider implements EventsProvider {
     }
   }
 
-  async close(): Promise<void> {}
+  async close(): Promise<void> {
+    await this.buffer?.close();
+  }
 
   private authHeaders(): Record<string, string> {
     return { Authorization: this.config.apiKey };
