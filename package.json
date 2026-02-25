@@ -1,4 +1,5 @@
 {
+  "_todo": "Revisit package name — @omnidotdev/providers may not reflect the package's scope (shared auth, billing, events, storage, flags, notifications SDK)",
   "name": "@omnidotdev/providers",
   "version": "0.1.0",
   "description": "Shared auth, authorization, billing, events, feature flags, notifications, storage, and API key providers for the Omni ecosystem",
