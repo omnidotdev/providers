@@ -11,9 +11,7 @@ type AuthzProviderConfig = WardenAuthzProviderConfig;
  * @returns Configured authorization provider instance
  * @throws When required config is missing
  */
-const createAuthzProvider = (
-  config: AuthzProviderConfig,
-): AuthzProvider => {
+const createAuthzProvider = (config: AuthzProviderConfig): AuthzProvider => {
   if (!config?.apiUrl) {
     throw new Error("WardenAuthzProvider requires apiUrl in config");
   }

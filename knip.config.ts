@@ -11,5 +11,9 @@ export default {
     "graphile-export",
     "postgraphile",
     "react",
+    "unleash-client",
+    "resend",
+    "@aws-sdk/client-s3",
+    "@aws-sdk/s3-request-presigner",
   ],
 };

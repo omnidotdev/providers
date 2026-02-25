@@ -1,7 +1,7 @@
 {
   "name": "@omnidotdev/providers",
   "version": "0.1.0",
-  "description": "Shared auth, authorization, billing, and events providers for the Omni ecosystem",
+  "description": "Shared auth, authorization, billing, events, feature flags, notifications, storage, and API key providers for the Omni ecosystem",
   "license": "MIT",
   "type": "module",
   "main": "./build/index.js",
@@ -46,7 +46,11 @@
     "@tanstack/query-core": ">=5.0.0",
     "graphile-export": ">=1.0.0-rc.0",
     "postgraphile": ">=5.0.0-rc.0",
-    "react": ">=19.0.0"
+    "react": ">=19.0.0",
+    "unleash-client": ">=6.0.0",
+    "resend": ">=4.0.0",
+    "@aws-sdk/client-s3": ">=3.0.0",
+    "@aws-sdk/s3-request-presigner": ">=3.0.0"
   },
   "peerDependenciesMeta": {
     "@envelop/types": {
@@ -69,6 +73,18 @@
     },
     "react": {
       "optional": true
+    },
+    "unleash-client": {
+      "optional": true
+    },
+    "resend": {
+      "optional": true
+    },
+    "@aws-sdk/client-s3": {
+      "optional": true
+    },
+    "@aws-sdk/s3-request-presigner": {
+      "optional": true
     }
   },
   "devDependencies": {
@@ -86,6 +102,10 @@
     "postgraphile": "^5.0.0-rc.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "unleash-client": "^6.9.6",
+    "resend": "^6.9.2",
+    "@aws-sdk/client-s3": "^3.997.0",
+    "@aws-sdk/s3-request-presigner": "^3.997.0"
   }
 }

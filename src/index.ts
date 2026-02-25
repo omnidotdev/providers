@@ -1,4 +1,11 @@
 // Auth
+
+// API Key
+export {
+  GatekeeperApiKeyProvider,
+  NoopApiKeyProvider,
+  createApiKeyProvider,
+} from "./apiKey";
 export {
   OMNI_CLAIMS_NAMESPACE,
   extractOrgClaims,
@@ -23,10 +30,35 @@ export {
   createEventsProvider,
   registerSchemas,
 } from "./events";
+// Flags
+export {
+  NoopFlagProvider,
+  UnleashFlagProvider,
+  createFlagProvider,
+} from "./flags";
+// Notifications
+export {
+  NoopNotificationProvider,
+  ResendNotificationProvider,
+  createNotificationProvider,
+} from "./notifications";
+// Storage
+export {
+  NoopStorageProvider,
+  S3StorageProvider,
+  createStorageProvider,
+} from "./storage";
 // Utilities
 export { TtlCache } from "./util/cache";
 export { CircuitBreaker } from "./util/circuitBreaker";
 
+export type {
+  ApiKeyInfo,
+  ApiKeyProvider,
+  ApiKeyProviderConfig,
+  GatekeeperApiKeyProviderConfig,
+  NoopApiKeyProviderConfig,
+} from "./apiKey";
 export type {
   OrganizationClaim,
   TokenPayload,
@@ -69,5 +101,30 @@ export type {
   RegisteredSchema,
   SchemaRegistration,
 } from "./events";
+export type {
+  FlagContext,
+  FlagProvider,
+  FlagProviderConfig,
+  NoopFlagProviderConfig,
+  UnleashFlagProviderConfig,
+} from "./flags";
+export type {
+  EmailParams,
+  EmailResult,
+  NoopNotificationProviderConfig,
+  NotificationProvider,
+  NotificationProviderConfig,
+  ResendNotificationProviderConfig,
+} from "./notifications";
+export type {
+  NoopStorageProviderConfig,
+  PresignedParams,
+  PresignedResult,
+  S3StorageProviderConfig,
+  StorageProvider,
+  StorageProviderConfig,
+  UploadParams,
+  UploadResult,
+} from "./storage";
 export type { TtlCacheConfig } from "./util/cache";
 export type { CircuitBreakerConfig } from "./util/circuitBreaker";
