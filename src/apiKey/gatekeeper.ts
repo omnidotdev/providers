@@ -25,10 +25,15 @@ type GatekeeperApiKeyProviderConfig = {
 
 /** Raw response shape from the Gatekeeper API */
 type GatekeeperVerifyResponse = {
-  id: string;
-  name: string;
-  userId: string;
-  metadata?: string;
+  valid: boolean;
+  error?: { message: string; code: string };
+  key?: {
+    id: string;
+    name: string | null;
+    userId: string;
+    metadata: string | null;
+    enabled: boolean;
+  };
 };
 
 /**
@@ -94,18 +99,22 @@ class GatekeeperApiKeyProvider implements ApiKeyProvider {
 
         const raw = (await response.json()) as GatekeeperVerifyResponse;
 
+        if (!raw.valid || !raw.key) {
+          return null;
+        }
+
         // Parse metadata JSON string and extract organizationId
         let parsedMetadata: Record<string, unknown> | undefined;
 
-        if (raw.metadata) {
+        if (raw.key.metadata) {
           try {
-            parsedMetadata = JSON.parse(raw.metadata) as Record<
+            parsedMetadata = JSON.parse(raw.key.metadata) as Record<
               string,
               unknown
             >;
           } catch {
             log("warn", "api-key", "failed to parse metadata JSON", {
-              keyId: raw.id,
+              keyId: raw.key.id,
             });
           }
         }
@@ -113,15 +122,23 @@ class GatekeeperApiKeyProvider implements ApiKeyProvider {
         const orgId = parsedMetadata?.organizationId;
 
         const result: ApiKeyInfo = {
-          id: raw.id,
-          name: raw.name,
-          userId: raw.userId,
+          id: raw.key.id,
+          name: raw.key.name ?? "",
+          userId: raw.key.userId,
           organizationId: typeof orgId === "string" ? orgId : "",
           metadata: parsedMetadata,
         };
 
         return result;
       });
+
+      if (!info) {
+        log("info", "api-key", "key invalid", {
+          durationMs: Date.now() - startTime,
+        });
+
+        return null;
+      }
 
       // Cache verified key
       this.keyCache.set(key, info);
