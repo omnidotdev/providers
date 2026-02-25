@@ -87,6 +87,18 @@ patched = patched.replace(
     `var {${names}} = __require("${mod}");`,
 );
 
+// 3. Convert dynamic `await import("node:*")` and `await import("@react-email/*")`
+//    to `__require()` calls so Vite/Rollup doesn't try to resolve them.
+//    These are optional runtime deps that only execute on the server.
+patched = patched.replace(
+  /await import\("(node:[^"]+)"\)/g,
+  (_match, mod) => `__require("${mod}")`,
+);
+patched = patched.replace(
+  /await import\("(@react-email\/[^"]+)"\)/g,
+  (_match, mod) => `__require("${mod}")`,
+);
+
 if (patched !== (await Bun.file(mainBundle).text())) {
   await Bun.write(mainBundle, patched);
 }

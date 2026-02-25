@@ -46549,7 +46549,7 @@ function parseEmailToApiOptions(email) {
 async function render(node) {
   let render2;
   try {
-    ({ render: render2 } = await import("@react-email/render"));
+    ({ render: render2 } = __require("@react-email/render"));
   } catch {
     throw new Error("Failed to render React component. Make sure to install `@react-email/render` or `@react-email/components`.");
   }
@@ -47217,7 +47217,7 @@ var import_svix, version = "6.9.2", ApiKeys = class {
     if (payload.react) {
       if (!this.renderAsync)
         try {
-          const { renderAsync } = await import("@react-email/render");
+          const { renderAsync } = __require("@react-email/render");
           this.renderAsync = renderAsync;
         } catch {
           throw new Error("Failed to render React component. Make sure to install `@react-email/render`");
@@ -60515,7 +60515,7 @@ var require_invoke_store = __commonJS((exports) => {
     als;
     static async create() {
       const instance = new InvokeStoreMulti;
-      const asyncHooks = await import("node:async_hooks");
+      const asyncHooks = __require("node:async_hooks");
       instance.als = new asyncHooks.AsyncLocalStorage;
       return instance;
     }
