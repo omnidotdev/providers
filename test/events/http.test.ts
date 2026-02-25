@@ -104,3 +104,11 @@ describe("HttpEventsProvider with batch", () => {
     await provider.close();
   });
 });
+
+describe("getTraceHeaders", () => {
+  it("generates valid traceparent headers", async () => {
+    const { getTraceHeaders } = await import("../../src/util/traceContext");
+    const headers = getTraceHeaders();
+    expect(headers.traceparent).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-01$/);
+  });
+});

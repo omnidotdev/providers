@@ -1,5 +1,6 @@
 import { CircuitBreaker } from "../util/circuitBreaker";
 import { log } from "../util/log";
+import { getTraceHeaders } from "../util/traceContext";
 import { EventBuffer } from "./buffer";
 
 import type { BufferConfig } from "./buffer";
@@ -118,6 +119,7 @@ class HttpEventsProvider implements EventsProvider {
             headers: {
               "Content-Type": "application/json",
               ...this.authHeaders(),
+              ...getTraceHeaders(),
             },
             body: JSON.stringify(body),
             signal: AbortSignal.timeout(this.timeoutMs),
