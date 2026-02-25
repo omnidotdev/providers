@@ -2,6 +2,7 @@ import { CircuitBreaker } from "../util/circuitBreaker";
 import { log } from "../util/log";
 import { getTraceHeaders } from "../util/traceContext";
 import { EventBuffer } from "./buffer";
+import { SchemaCache, validateEventData } from "./validation";
 
 import type { BufferConfig } from "./buffer";
 import type { EmitResult, EventInput, EventsProvider } from "./interface";
@@ -34,6 +35,11 @@ type HttpEventsProviderConfig = {
   circuitBreakerCooldownMs?: number;
   /** Enable local batch queueing */
   batch?: BufferConfig;
+  /**
+   * Enable pre-emission schema validation
+   * (requires schemas to be registered)
+   */
+  validation?: { enabled: boolean };
 };
 
 type ValidatedHttpConfig = HttpEventsProviderConfig & {
@@ -51,11 +57,17 @@ class HttpEventsProvider implements EventsProvider {
   private readonly maxRetries: number;
   private readonly timeoutMs: number;
   private readonly buffer: EventBuffer | null;
+  /**
+   * Schema cache for pre-emission validation
+   * (populated by registerSchemas)
+   */
+  readonly schemaCache: SchemaCache;
 
   constructor(config: ValidatedHttpConfig) {
     this.config = config;
     this.maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
     this.timeoutMs = config.timeoutMs ?? REQUEST_TIMEOUT_MS;
+    this.schemaCache = new SchemaCache();
     this.circuitBreaker = new CircuitBreaker({
       threshold: config.circuitBreakerThreshold,
       cooldownMs: config.circuitBreakerCooldownMs,
@@ -95,6 +107,21 @@ class HttpEventsProvider implements EventsProvider {
   }
 
   async #emitSingle(event: EventInput): Promise<EmitResult> {
+    // Pre-emission validation (when enabled and schema is cached)
+    if (this.config.validation?.enabled) {
+      const schema = this.schemaCache.get(event.type);
+
+      if (schema) {
+        const result = validateEventData(event.data, schema);
+
+        if (!result.valid) {
+          throw new Error(
+            `Schema validation failed for "${event.type}": ${result.errors.join(", ")}`,
+          );
+        }
+      }
+    }
+
     const startTime = Date.now();
 
     const body = {

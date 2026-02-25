@@ -1,6 +1,7 @@
 import { log } from "../util/log";
 
 import type { RegisteredSchema, SchemaRegistration } from "./interface";
+import type { SchemaCache } from "./validation";
 
 /** Request timeout in milliseconds */
 const REQUEST_TIMEOUT_MS = 5000;
@@ -18,6 +19,7 @@ const registerSchemas = async (
   baseUrl: string,
   apiKey: string,
   schemas: SchemaRegistration[],
+  schemaCache?: SchemaCache,
 ): Promise<RegisteredSchema[]> => {
   const results: RegisteredSchema[] = [];
 
@@ -68,6 +70,10 @@ const registerSchemas = async (
         error: err instanceof Error ? err.message : String(err),
       });
     }
+  }
+
+  if (schemaCache && results.length > 0) {
+    schemaCache.populate(results);
   }
 
   return results;

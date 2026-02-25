@@ -71,6 +71,7 @@ export { registerSchemas } from "./helpers";
 export { HttpEventsProvider } from "./http";
 export { IggyEventsProvider } from "./iggy";
 export { NoopEventsProvider } from "./noop";
+export { SchemaCache, validateEventData } from "./validation";
 
 export type { EventsProviderConfig };
 
@@ -85,3 +86,4 @@ export type {
   SchemaRegistration,
 } from "./interface";
 export type { NoopEventsProviderConfig } from "./noop";
+export type { ValidationResult } from "./validation";
