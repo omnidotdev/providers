@@ -1,3 +1,4 @@
+import { CircuitBreaker } from "../util/circuitBreaker";
 import { log } from "../util/log";
 
 import type {
@@ -11,6 +12,10 @@ type ResendNotificationProviderConfig = {
   apiKey?: string;
   /** Default sender email address */
   defaultFrom?: string;
+  /** Circuit breaker failure threshold */
+  circuitBreakerThreshold?: number;
+  /** Circuit breaker cooldown in milliseconds */
+  circuitBreakerCooldownMs?: number;
 };
 
 type ValidatedResendConfig = ResendNotificationProviderConfig & {
@@ -27,11 +32,17 @@ type ValidatedResendConfig = ResendNotificationProviderConfig & {
  */
 class ResendNotificationProvider implements NotificationProvider {
   private readonly config: ValidatedResendConfig;
+  private readonly circuitBreaker: CircuitBreaker;
   // biome-ignore lint/suspicious/noExplicitAny: SDK types are dynamic
   private client: any = null;
 
   constructor(config: ValidatedResendConfig) {
     this.config = config;
+    this.circuitBreaker = new CircuitBreaker({
+      threshold: config.circuitBreakerThreshold,
+      cooldownMs: config.circuitBreakerCooldownMs,
+      label: "resend-notifications",
+    });
   }
 
   async sendEmail(params: EmailParams): Promise<EmailResult> {
@@ -49,7 +60,9 @@ class ResendNotificationProvider implements NotificationProvider {
         ...(params.bcc && { bcc: params.bcc }),
       };
 
-      const result = await client.emails.send(payload);
+      const result = await this.circuitBreaker.execute(async () =>
+        client.emails.send(payload),
+      );
 
       log("info", "notifications", "email sent", {
         messageId: result.data?.id,
@@ -89,7 +102,9 @@ class ResendNotificationProvider implements NotificationProvider {
         };
       });
 
-      const result = await client.batch.send(payloads);
+      const result = await this.circuitBreaker.execute(async () =>
+        client.batch.send(payloads),
+      );
 
       log("info", "notifications", "email batch sent", {
         count: params.length,
@@ -125,6 +140,11 @@ class ResendNotificationProvider implements NotificationProvider {
         message: error instanceof Error ? error.message : "Unknown error",
       };
     }
+  }
+
+  async close(): Promise<void> {
+    this.client = null;
+    log("info", "notifications", "Resend client closed");
   }
 
   async #requireClient() {

@@ -328,7 +328,7 @@ class AetherBillingProvider implements BillingProvider {
   async healthCheck(): Promise<{ healthy: boolean; message?: string }> {
     try {
       const response = await fetch(`${this.config.baseUrl}/health`, {
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
       return {
         healthy: response.ok,
@@ -341,6 +341,8 @@ class AetherBillingProvider implements BillingProvider {
       };
     }
   }
+
+  async close(): Promise<void> {}
 
   private serviceHeaders(): Record<string, string> {
     if (this.config.serviceApiKey) {

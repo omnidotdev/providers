@@ -87,6 +87,9 @@ interface AuthzProvider {
 
   /** Health check for the provider */
   healthCheck?(): Promise<{ healthy: boolean; message?: string }>;
+
+  /** Close the provider connection (if stateful) */
+  close?(): Promise<void>;
 }
 
 export type {

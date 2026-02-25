@@ -291,7 +291,7 @@ class WardenAuthzProvider implements AuthzProvider {
   async healthCheck(): Promise<{ healthy: boolean; message?: string }> {
     try {
       const response = await fetch(`${this.config.apiUrl}/health`, {
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
       return {
         healthy: response.ok,
@@ -304,6 +304,8 @@ class WardenAuthzProvider implements AuthzProvider {
       };
     }
   }
+
+  async close(): Promise<void> {}
 
   private authHeaders(): Record<string, string> {
     if (this.config.serviceKey) {

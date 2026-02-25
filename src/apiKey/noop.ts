@@ -23,6 +23,8 @@ class NoopApiKeyProvider implements ApiKeyProvider {
   async healthCheck(): Promise<{ healthy: boolean; message?: string }> {
     return { healthy: true, message: "noop" };
   }
+
+  async close(): Promise<void> {}
 }
 
 export { NoopApiKeyProvider };

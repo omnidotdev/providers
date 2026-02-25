@@ -177,6 +177,8 @@ class GatekeeperApiKeyProvider implements ApiKeyProvider {
       };
     }
   }
+
+  async close(): Promise<void> {}
 }
 
 export { GatekeeperApiKeyProvider };

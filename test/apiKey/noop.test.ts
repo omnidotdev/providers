@@ -33,4 +33,9 @@ describe("NoopApiKeyProvider", () => {
     expect(health.healthy).toBe(true);
     expect(health.message).toBe("noop");
   });
+
+  it("should close without error", async () => {
+    const provider = new NoopApiKeyProvider();
+    await expect(provider.close()).resolves.toBeUndefined();
+  });
 });

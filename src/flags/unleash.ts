@@ -2,7 +2,7 @@ import { log } from "../util/log";
 
 import type { FlagContext, FlagProvider } from "./interface";
 
-const INIT_TIMEOUT_MS = 5_000;
+const REQUEST_TIMEOUT_MS = 5_000;
 
 type UnleashFlagProviderConfig = {
   /** Unleash server URL */
@@ -129,7 +129,7 @@ class UnleashFlagProvider implements FlagProvider {
         new Promise<never>((_resolve, reject) =>
           setTimeout(
             () => reject(new Error("Unleash init timed out")),
-            INIT_TIMEOUT_MS,
+            REQUEST_TIMEOUT_MS,
           ),
         ),
       ]);

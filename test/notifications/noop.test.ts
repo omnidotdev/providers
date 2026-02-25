@@ -64,4 +64,9 @@ describe("NoopNotificationProvider", () => {
     expect(health.healthy).toBe(true);
     expect(health.message).toBe("noop");
   });
+
+  it("should close without error", async () => {
+    const provider = new NoopNotificationProvider();
+    await expect(provider.close()).resolves.toBeUndefined();
+  });
 });

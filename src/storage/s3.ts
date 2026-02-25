@@ -1,3 +1,4 @@
+import { CircuitBreaker } from "../util/circuitBreaker";
 import { log } from "../util/log";
 
 import type {
@@ -24,6 +25,10 @@ type S3StorageProviderConfig = {
   forcePathStyle?: boolean;
   /** Override base URL for public object URLs */
   publicBaseUrl?: string;
+  /** Circuit breaker failure threshold */
+  circuitBreakerThreshold?: number;
+  /** Circuit breaker cooldown in milliseconds */
+  circuitBreakerCooldownMs?: number;
 };
 
 type ValidatedS3Config = S3StorageProviderConfig & {
@@ -36,27 +41,35 @@ type ValidatedS3Config = S3StorageProviderConfig & {
  */
 class S3StorageProvider implements StorageProvider {
   private readonly config: ValidatedS3Config;
+  private readonly circuitBreaker: CircuitBreaker;
   // biome-ignore lint/suspicious/noExplicitAny: SDK types are dynamic
   private client: any = null;
 
   constructor(config: ValidatedS3Config) {
     this.config = config;
+    this.circuitBreaker = new CircuitBreaker({
+      threshold: config.circuitBreakerThreshold,
+      cooldownMs: config.circuitBreakerCooldownMs,
+      label: "s3-storage",
+    });
   }
 
   async upload(params: UploadParams): Promise<UploadResult> {
     const client = await this.#requireClient();
     const { PutObjectCommand } = await import("@aws-sdk/client-s3");
 
-    const command = new PutObjectCommand({
-      Bucket: this.config.bucket,
-      Key: params.key,
-      Body: params.body,
-      ContentType: params.contentType,
-      CacheControl: params.cacheControl,
-      Metadata: params.metadata,
-    });
+    await this.circuitBreaker.execute(async () => {
+      const command = new PutObjectCommand({
+        Bucket: this.config.bucket,
+        Key: params.key,
+        Body: params.body,
+        ContentType: params.contentType,
+        CacheControl: params.cacheControl,
+        Metadata: params.metadata,
+      });
 
-    await client.send(command);
+      await client.send(command);
+    });
 
     const url = this.getPublicUrl(params.key);
 
@@ -72,12 +85,14 @@ class S3StorageProvider implements StorageProvider {
     const client = await this.#requireClient();
     const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
 
-    const command = new DeleteObjectCommand({
-      Bucket: this.config.bucket,
-      Key: key,
-    });
+    await this.circuitBreaker.execute(async () => {
+      const command = new DeleteObjectCommand({
+        Bucket: this.config.bucket,
+        Key: key,
+      });
 
-    await client.send(command);
+      await client.send(command);
+    });
 
     log("info", "storage", "object deleted", {
       bucket: this.config.bucket,
@@ -94,13 +109,15 @@ class S3StorageProvider implements StorageProvider {
 
     const expiresIn = params.expiresIn ?? DEFAULT_PRESIGNED_EXPIRY;
 
-    const command = new PutObjectCommand({
-      Bucket: this.config.bucket,
-      Key: params.key,
-      ContentType: params.contentType,
-    });
+    const url = await this.circuitBreaker.execute(async () => {
+      const command = new PutObjectCommand({
+        Bucket: this.config.bucket,
+        Key: params.key,
+        ContentType: params.contentType,
+      });
 
-    const url = await getSignedUrl(client, command, { expiresIn });
+      return getSignedUrl(client, command, { expiresIn });
+    });
 
     log("info", "storage", "presigned URL generated", {
       bucket: this.config.bucket,
@@ -147,6 +164,7 @@ class S3StorageProvider implements StorageProvider {
   async close(): Promise<void> {
     this.client?.destroy();
     this.client = null;
+    log("info", "storage", "S3 client closed");
   }
 
   async #requireClient() {
