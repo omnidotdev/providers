@@ -60,24 +60,30 @@ for (const { entrypoint, outdir, target, external } of entries) {
   }
 }
 
-// Patch the main bundle so it works in both Node/Bun and Vite browser
-// builds. Bun's bundler injects CJS interop (`createRequire`) and
-// leaves top-level `import … from "node:*"` for built-in modules.
-// Both break Vite when it resolves this file for the client bundle.
+// Patch the main bundle so it works in Node ESM (Nitro), Bun, and
+// Vite browser builds. Bun's bundler injects CJS interop
+// (`createRequire`) and leaves top-level `import … from "node:*"`
+// for built-in modules. Static node:* imports break Vite when it
+// resolves this file for the client bundle.
 //
-// Fix: replace `createRequire` with a runtime-safe `require` fallback,
+// Fix: keep `createRequire` for Node ESM compat (where bare `require`
+// is undefined), prefer native `require` when available (Bun/CJS),
 // and convert static `node:*` imports to lazy `__require` calls that
-// only execute at runtime (in Node/Bun) and never in the browser.
+// only execute at runtime and never in the browser.
 const mainBundle = "./build/index.js";
 let patched = await Bun.file(mainBundle).text();
 
-// 1. Replace createRequire with runtime-safe fallback
-patched = patched
-  .replace('import { createRequire } from "node:module";\n', "")
-  .replace(
-    "var __require = /* @__PURE__ */ createRequire(import.meta.url);\n",
-    `var __require = typeof require !== "undefined" ? require : (id) => { throw new Error(\`require() not available for "\${id}"\`) };\n`,
-  );
+// NB: patch order matters — the createRequire import must be removed
+// first, otherwise step 2's `import { X } from "node:*"` regex would
+// convert it to a `__require("node:module")` call (before __require
+// is defined). Step 3 must run after step 1, because step 1 inserts
+// `await import("node:module")` which step 3 would incorrectly catch.
+
+// 1. Remove Bun's static `createRequire` import (will be replaced in step 4)
+patched = patched.replace(
+  'import { createRequire } from "node:module";\n',
+  "",
+);
 
 // 2. Convert `import { X, Y } from "node:*"` to `var { X, Y } = __require("node:*")`
 //    so Vite doesn't try to resolve Node built-ins for the browser bundle
@@ -96,6 +102,15 @@ patched = patched.replace(
 patched = patched.replace(
   /await import\("(@react-email\/[^"]+)"\)/g,
   (_match, mod) => `__require("${mod}")`,
+);
+
+// 4. Replace createRequire with runtime-safe fallback that works in:
+//    - CJS / Bun ESM: `require` is defined, use it directly
+//    - Node ESM (Nitro): `require` is undefined, use `createRequire`
+//    - Vite browser: never reaches this code (server-only entry)
+patched = patched.replace(
+  "var __require = /* @__PURE__ */ createRequire(import.meta.url);\n",
+  `var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);\n`,
 );
 
 if (patched !== (await Bun.file(mainBundle).text())) {
