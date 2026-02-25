@@ -1,4 +1,5 @@
 import { log } from "../util/log";
+import { generateTraceparent } from "../util/traceContext";
 
 import type { EmitResult, EventInput, EventsProvider } from "./interface";
 
@@ -74,6 +75,9 @@ class IggyEventsProvider implements EventsProvider {
       correlationId: event.correlationId,
       schemaId: event.schemaId,
       timestamp,
+      traceContext: {
+        traceparent: generateTraceparent(),
+      },
     };
 
     const { Partitioning } = await import("@iggy.rs/sdk");
