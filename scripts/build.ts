@@ -76,15 +76,14 @@ patched = patched
   .replace('import { createRequire } from "node:module";\n', "")
   .replace(
     "var __require = /* @__PURE__ */ createRequire(import.meta.url);\n",
-    'var __require = typeof require !== "undefined" ? require : (id) => { throw new Error(`require() not available for "${id}"`) };\n',
+    `var __require = typeof require !== "undefined" ? require : (id) => { throw new Error(\`require() not available for "\${id}"\`) };\n`,
   );
 
 // 2. Convert `import { X, Y } from "node:*"` to `var { X, Y } = __require("node:*")`
 //    so Vite doesn't try to resolve Node built-ins for the browser bundle
 patched = patched.replace(
   /^import \{([^}]+)\} from "(node:[^"]+)";$/gm,
-  (_match, names, mod) =>
-    `var {${names}} = __require("${mod}");`,
+  (_match, names, mod) => `var {${names}} = __require("${mod}");`,
 );
 
 // 3. Convert dynamic `await import("node:*")` and `await import("@react-email/*")`

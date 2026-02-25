@@ -28,5 +28,3 @@ function log(
 }
 
 export { log };
-
-export type { LogLevel };
