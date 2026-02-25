@@ -67,12 +67,14 @@ const createEventsProvider = (config: EventsProviderConfig): EventsProvider => {
 
 export { createEventsProvider };
 
+export { EventBuffer } from "./buffer";
 export { registerSchemas } from "./helpers";
 export { HttpEventsProvider } from "./http";
 export { IggyEventsProvider } from "./iggy";
 export { NoopEventsProvider } from "./noop";
 export { SchemaCache, validateEventData } from "./validation";
 
+export type { BufferConfig } from "./buffer";
 export type { EventsProviderConfig };
 
 export type { HttpEventsProviderConfig } from "./http";
