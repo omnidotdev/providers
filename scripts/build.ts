@@ -104,13 +104,14 @@ patched = patched.replace(
   (_match, mod) => `__require("${mod}")`,
 );
 
-// 4. Replace createRequire with runtime-safe fallback that works in:
+// 4. Replace __require with runtime-safe fallback that works in:
 //    - CJS / Bun ESM: `require` is defined, use it directly
 //    - Node ESM (Nitro): `require` is undefined, use `createRequire`
 //    - Vite browser: never reaches this code (server-only entry)
+//    Uses a regex to handle any `__require` format Bun may produce.
 patched = patched.replace(
-  "var __require = /* @__PURE__ */ createRequire(import.meta.url);\n",
-  `var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);\n`,
+  /^var __require = .+$/m,
+  `var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);`,
 );
 
 if (patched !== (await Bun.file(mainBundle).text())) {
