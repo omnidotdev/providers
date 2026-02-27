@@ -1,4 +1,11 @@
-import type { EmitResult, EventInput, EventsProvider } from "./interface";
+import type {
+  EmitResult,
+  EventInput,
+  EventsProvider,
+  Subscription,
+  SubscriptionCreated,
+  SubscriptionInput,
+} from "./interface";
 
 type NoopEventsProviderConfig = Record<string, never>;
 
@@ -23,6 +30,26 @@ class NoopEventsProvider implements EventsProvider {
 
   async healthCheck(): Promise<{ healthy: boolean; message?: string }> {
     return { healthy: true, message: "noop" };
+  }
+
+  async subscribe(input: SubscriptionInput): Promise<SubscriptionCreated> {
+    return {
+      id: crypto.randomUUID(),
+      name: input.name,
+      typePattern: input.typePattern,
+      targetUrl: input.targetUrl,
+      sourcePattern: input.sourcePattern ?? null,
+      signatureHeader: input.signatureHeader ?? "x-vortex-signature",
+      enabled: true,
+      createdAt: new Date().toISOString(),
+      hmacSecret: "noop-secret",
+    };
+  }
+
+  async unsubscribe(_subscriptionId: string): Promise<void> {}
+
+  async listSubscriptions(): Promise<Subscription[]> {
+    return [];
   }
 
   async close(): Promise<void> {}

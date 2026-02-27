@@ -100,7 +100,11 @@ export type {
   NoopEventsProviderConfig,
   RegisteredSchema,
   SchemaRegistration,
+  SubscriptionCreated,
+  SubscriptionInput,
 } from "./events";
+// Note: events Subscription is not re-exported here to avoid conflict
+// with billing Subscription. Import from "@omnidotdev/providers/events".
 export type {
   FlagContext,
   FlagProvider,

@@ -86,6 +86,9 @@ export type {
   EventsProviderStatus,
   RegisteredSchema,
   SchemaRegistration,
+  Subscription,
+  SubscriptionCreated,
+  SubscriptionInput,
 } from "./interface";
 export type { NoopEventsProviderConfig } from "./noop";
 export type { ValidationResult } from "./validation";

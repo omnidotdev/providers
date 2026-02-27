@@ -1,7 +1,14 @@
 import { log } from "../util/log";
 import { generateTraceparent } from "../util/traceContext";
 
-import type { EmitResult, EventInput, EventsProvider } from "./interface";
+import type {
+  EmitResult,
+  EventInput,
+  EventsProvider,
+  Subscription,
+  SubscriptionCreated,
+  SubscriptionInput,
+} from "./interface";
 
 const DEFAULT_PORT = 8090;
 const DEFAULT_STREAM_NAME = "omni-events";
@@ -121,6 +128,19 @@ class IggyEventsProvider implements EventsProvider {
         message: error instanceof Error ? error.message : "Unknown error",
       };
     }
+  }
+
+  // Subscriptions are always managed via the HTTP API, not Iggy
+  async subscribe(_input: SubscriptionInput): Promise<SubscriptionCreated> {
+    throw new Error("Subscriptions must be managed via the HTTP provider");
+  }
+
+  async unsubscribe(_subscriptionId: string): Promise<void> {
+    throw new Error("Subscriptions must be managed via the HTTP provider");
+  }
+
+  async listSubscriptions(): Promise<Subscription[]> {
+    throw new Error("Subscriptions must be managed via the HTTP provider");
   }
 
   async close(): Promise<void> {

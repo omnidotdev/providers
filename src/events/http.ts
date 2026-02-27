@@ -5,7 +5,14 @@ import { EventBuffer } from "./buffer";
 import { SchemaCache, validateEventData } from "./validation";
 
 import type { BufferConfig } from "./buffer";
-import type { EmitResult, EventInput, EventsProvider } from "./interface";
+import type {
+  EmitResult,
+  EventInput,
+  EventsProvider,
+  Subscription,
+  SubscriptionCreated,
+  SubscriptionInput,
+} from "./interface";
 
 /** Request timeout in milliseconds */
 const REQUEST_TIMEOUT_MS = 5000;
@@ -203,6 +210,59 @@ class HttpEventsProvider implements EventsProvider {
         message: error instanceof Error ? error.message : "Unknown error",
       };
     }
+  }
+
+  async subscribe(input: SubscriptionInput): Promise<SubscriptionCreated> {
+    const response = await fetch(
+      `${this.config.baseUrl}/api/v1/subscriptions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...this.authHeaders(),
+        },
+        body: JSON.stringify(input),
+        signal: AbortSignal.timeout(this.timeoutMs),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to create subscription: ${response.status}`);
+    }
+
+    return (await response.json()) as SubscriptionCreated;
+  }
+
+  async unsubscribe(subscriptionId: string): Promise<void> {
+    const response = await fetch(
+      `${this.config.baseUrl}/api/v1/subscriptions/${subscriptionId}`,
+      {
+        method: "DELETE",
+        headers: this.authHeaders(),
+        signal: AbortSignal.timeout(this.timeoutMs),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete subscription: ${response.status}`);
+    }
+  }
+
+  async listSubscriptions(): Promise<Subscription[]> {
+    const response = await fetch(
+      `${this.config.baseUrl}/api/v1/subscriptions`,
+      {
+        headers: this.authHeaders(),
+        signal: AbortSignal.timeout(this.timeoutMs),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to list subscriptions: ${response.status}`);
+    }
+
+    const result = (await response.json()) as { nodes: Subscription[] };
+    return result.nodes;
   }
 
   async close(): Promise<void> {
