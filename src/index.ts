@@ -8,6 +8,8 @@ export {
 } from "./apiKey";
 export {
   OMNI_CLAIMS_NAMESPACE,
+  createAuthCache,
+  createOidcClient,
   extractOrgClaims,
   verifyAccessToken,
 } from "./auth";
@@ -60,6 +62,12 @@ export type {
   NoopApiKeyProviderConfig,
 } from "./apiKey";
 export type {
+  AuthCache,
+  AuthCacheConfig,
+  CachedAuthData,
+  OidcClient,
+  OidcClientConfig,
+  OidcDiscovery,
   OrganizationClaim,
   TokenPayload,
   UserInfoClaims,

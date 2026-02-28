@@ -31,6 +31,6 @@ export type { BufferConfig } from "./buffer";
 export type { EventsProviderConfig };
 export type { HttpEventsProviderConfig } from "./http";
 export type { IggyEventsProviderConfig } from "./iggy";
-export type { EmitResult, EventInput, EventsProvider, EventsProviderStatus, RegisteredSchema, SchemaRegistration, } from "./interface";
+export type { EmitResult, EventInput, EventsProvider, EventsProviderStatus, RegisteredSchema, SchemaRegistration, Subscription, SubscriptionCreated, SubscriptionInput, } from "./interface";
 export type { NoopEventsProviderConfig } from "./noop";
 export type { ValidationResult } from "./validation";

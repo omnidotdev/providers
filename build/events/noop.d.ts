@@ -1,4 +1,4 @@
-import type { EmitResult, EventInput, EventsProvider } from "./interface";
+import type { EmitResult, EventInput, EventsProvider, Subscription, SubscriptionCreated, SubscriptionInput } from "./interface";
 type NoopEventsProviderConfig = Record<string, never>;
 /**
  * No-op events provider.
@@ -11,6 +11,9 @@ declare class NoopEventsProvider implements EventsProvider {
         healthy: boolean;
         message?: string;
     }>;
+    subscribe(input: SubscriptionInput): Promise<SubscriptionCreated>;
+    unsubscribe(_subscriptionId: string): Promise<void>;
+    listSubscriptions(): Promise<Subscription[]>;
     close(): Promise<void>;
 }
 export { NoopEventsProvider };

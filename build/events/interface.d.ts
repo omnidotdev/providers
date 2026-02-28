@@ -58,7 +58,47 @@ interface EventsProvider {
     }>;
     /** Close the provider connection (if stateful) */
     close?(): Promise<void>;
+    /** Create a webhook subscription for event delivery */
+    subscribe?(input: SubscriptionInput): Promise<SubscriptionCreated>;
+    /** Delete a webhook subscription */
+    unsubscribe?(subscriptionId: string): Promise<void>;
+    /** List active webhook subscriptions */
+    listSubscriptions?(): Promise<Subscription[]>;
 }
+/** Input for creating a webhook subscription */
+type SubscriptionInput = {
+    /** Human-readable name */
+    name: string;
+    /** Glob pattern to match event types (e.g. "aether.entitlement.*") */
+    typePattern: string;
+    /** HTTPS endpoint to deliver events to */
+    targetUrl: string;
+    /** Glob pattern to match event sources */
+    sourcePattern?: string;
+    /** Header name for HMAC signature */
+    signatureHeader?: string;
+    /** JSONata expression to reshape event data */
+    transform?: string;
+    /** "data" sends event.data only, "envelope" sends full CloudEvents */
+    payloadMode?: "data" | "envelope";
+    /** Maximum delivery retries */
+    maxRetries?: number;
+};
+/** Subscription returned from list/get (no secret) */
+type Subscription = {
+    id: string;
+    name: string;
+    typePattern: string;
+    targetUrl: string;
+    sourcePattern: string | null;
+    signatureHeader: string;
+    enabled: boolean;
+    createdAt: string;
+};
+/** Subscription returned on creation (includes secret) */
+type SubscriptionCreated = Subscription & {
+    hmacSecret: string;
+};
 /** Schema registration input for `registerSchemas` helper */
 type SchemaRegistration = {
     /** Dot-separated event name (e.g. "beacon.message.received") */
@@ -93,4 +133,4 @@ type RegisteredSchema = {
     createdAt: string;
     updatedAt: string;
 };
-export type { EmitResult, EventInput, EventsProvider, EventsProviderStatus, RegisteredSchema, SchemaRegistration, };
+export type { EmitResult, EventInput, EventsProvider, EventsProviderStatus, RegisteredSchema, SchemaRegistration, Subscription, SubscriptionCreated, SubscriptionInput, };

@@ -1,6 +1,6 @@
 import { SchemaCache } from "./validation";
 import type { BufferConfig } from "./buffer";
-import type { EmitResult, EventInput, EventsProvider } from "./interface";
+import type { EmitResult, EventInput, EventsProvider, Subscription, SubscriptionCreated, SubscriptionInput } from "./interface";
 type HttpEventsProviderConfig = {
     /** Vortex API base URL */
     baseUrl?: string;
@@ -55,6 +55,9 @@ declare class HttpEventsProvider implements EventsProvider {
         healthy: boolean;
         message?: string;
     }>;
+    subscribe(input: SubscriptionInput): Promise<SubscriptionCreated>;
+    unsubscribe(subscriptionId: string): Promise<void>;
+    listSubscriptions(): Promise<Subscription[]>;
     close(): Promise<void>;
     private authHeaders;
 }

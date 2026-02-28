@@ -1,4 +1,4 @@
-import type { EmitResult, EventInput, EventsProvider } from "./interface";
+import type { EmitResult, EventInput, EventsProvider, Subscription, SubscriptionCreated, SubscriptionInput } from "./interface";
 type IggyEventsProviderConfig = {
     /** Iggy server host */
     host?: string;
@@ -41,6 +41,9 @@ declare class IggyEventsProvider implements EventsProvider {
         healthy: boolean;
         message?: string;
     }>;
+    subscribe(_input: SubscriptionInput): Promise<SubscriptionCreated>;
+    unsubscribe(_subscriptionId: string): Promise<void>;
+    listSubscriptions(): Promise<Subscription[]>;
     close(): Promise<void>;
 }
 export { IggyEventsProvider };

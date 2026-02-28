@@ -8,6 +8,8 @@ type VerifyAccessTokenConfig = {
 /**
  * Verify a JWT access token using JWKS.
  * Fetches the signing key from the auth service's JWKS endpoint.
+ * @deprecated Use `createOidcClient` from `./oidc` instead, which adds
+ * OIDC discovery, configurable JWKS caching, and `verifyIdToken`
  * @param token - Raw JWT string
  * @param config - JWKS verification config
  * @returns Verified JWT claims including organization membership
