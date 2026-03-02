@@ -173,9 +173,9 @@ class AetherBillingProvider implements BillingProvider {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = await response.json().catch(() => null);
       throw new Error(
-        (error as { error?: string }).error ||
+        (error as { error?: string } | null)?.error ??
           "Failed to create checkout session",
       );
     }
@@ -206,9 +206,9 @@ class AetherBillingProvider implements BillingProvider {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = await response.json().catch(() => null);
       throw new Error(
-        (error as { error?: string }).error ||
+        (error as { error?: string } | null)?.error ??
           "Failed to create checkout session",
       );
     }
@@ -261,9 +261,9 @@ class AetherBillingProvider implements BillingProvider {
     );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = await response.json().catch(() => null);
       throw new Error(
-        (error as { error?: string }).error ||
+        (error as { error?: string } | null)?.error ??
           "Failed to get billing portal URL",
       );
     }
@@ -286,9 +286,9 @@ class AetherBillingProvider implements BillingProvider {
     );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = await response.json().catch(() => null);
       throw new Error(
-        (error as { error?: string }).error || "Failed to cancel subscription",
+        (error as { error?: string } | null)?.error ?? "Failed to cancel subscription",
       );
     }
 
@@ -310,9 +310,9 @@ class AetherBillingProvider implements BillingProvider {
     );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const error = await response.json().catch(() => null);
       throw new Error(
-        (error as { error?: string }).error || "Failed to renew subscription",
+        (error as { error?: string } | null)?.error ?? "Failed to renew subscription",
       );
     }
   }
