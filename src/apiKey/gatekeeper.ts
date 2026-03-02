@@ -87,7 +87,11 @@ class GatekeeperApiKeyProvider implements ApiKeyProvider {
           `${this.config.authBaseUrl}/api-key/verify`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              // Satisfy Better Auth CSRF check for server-to-server calls
+              Origin: this.config.authBaseUrl,
+            },
             body: JSON.stringify({ key }),
             signal: AbortSignal.timeout(this.config.timeoutMs),
           },
