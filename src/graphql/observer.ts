@@ -20,6 +20,7 @@ const BASE_FIELDS: ObserverField[] = [
 
 /**
  * Create an observer plugin that exposes the current authenticated user.
+ * Follows the observer pattern convention — see patterns.mdx for details.
  * @param config - Optional config to add extra fields to the Observer type
  */
 const createObserverPlugin = (config?: {
