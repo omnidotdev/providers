@@ -87389,7 +87389,10 @@ class GatekeeperApiKeyProvider {
       const info = await this.circuitBreaker.execute(async () => {
         const response = await fetch(`${this.config.authBaseUrl}/api-key/verify`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Origin: this.config.authBaseUrl
+          },
           body: JSON.stringify({ key }),
           signal: AbortSignal.timeout(this.config.timeoutMs)
         });
@@ -90348,6 +90351,23 @@ function createOidcClient(config) {
   }
   return { verifyIdToken, getDiscovery, getJwks, clearCache };
 }
+// src/auth/token.ts
+async function ensureFreshAccessToken(config) {
+  const result = await config.getAccessToken();
+  if (!result?.accessToken)
+    return result;
+  const expiresAt = result.accessTokenExpiresAt;
+  const buffer = config.refreshBufferMs ?? 5000;
+  const needsRefresh = !expiresAt || new Date(expiresAt).getTime() - Date.now() < buffer;
+  if (needsRefresh) {
+    try {
+      const refreshed = await config.refreshToken();
+      if (refreshed?.accessToken)
+        return refreshed;
+    } catch {}
+  }
+  return result;
+}
 // src/authz/warden.ts
 var REQUEST_TIMEOUT_MS2 = 5000;
 var DEFAULT_CACHE_TTL_MS2 = 120000;
@@ -90841,6 +90861,41 @@ class AetherBillingProvider {
     return {};
   }
 }
+
+// src/billing/noop.ts
+class NoopBillingProvider {
+  async getEntitlements(_entityType, _entityId, _productId, _accessToken) {
+    return null;
+  }
+  async checkEntitlement(_entityType, _entityId, _productId, _featureKey, _accessToken) {
+    return null;
+  }
+  async getPrices(_appName) {
+    return [];
+  }
+  async createCheckoutSession(_params) {
+    throw new Error("Billing is not configured");
+  }
+  async createCheckoutWithWorkspace(_params) {
+    throw new Error("Billing is not configured");
+  }
+  async getSubscription(_entityType, _entityId, _accessToken) {
+    return null;
+  }
+  async getBillingPortalUrl(_entityType, _entityId, _productId, _returnUrl, _accessToken) {
+    throw new Error("Billing is not configured");
+  }
+  async cancelSubscription(_entityType, _entityId, _accessToken) {
+    throw new Error("Billing is not configured");
+  }
+  async renewSubscription(_entityType, _entityId, _accessToken) {}
+  invalidateCache(_entityType, _entityId) {}
+  clearCache() {}
+  async healthCheck() {
+    return { healthy: true, message: "noop" };
+  }
+  async close() {}
+}
 // src/billing/helpers.ts
 var isWithinLimit = (entitlements, featureKey, currentCount, defaultLimits) => {
   if (!entitlements) {
@@ -90869,17 +90924,24 @@ var isWithinLimit = (entitlements, featureKey, currentCount, defaultLimits) => {
 
 // src/billing/index.ts
 var createBillingProvider = (config) => {
-  if (!config?.baseUrl) {
-    throw new Error("AetherBillingProvider requires baseUrl in config");
+  if (!("provider" in config) || config.provider === "noop") {
+    return new NoopBillingProvider;
   }
-  if (!config?.appId) {
-    throw new Error("AetherBillingProvider requires appId in config");
+  if (config.provider === "aether") {
+    if (!config.baseUrl) {
+      throw new Error("AetherBillingProvider requires baseUrl in config");
+    }
+    if (!config.appId) {
+      throw new Error("AetherBillingProvider requires appId in config");
+    }
+    return new AetherBillingProvider({
+      ...config,
+      baseUrl: config.baseUrl,
+      appId: config.appId
+    });
   }
-  return new AetherBillingProvider({
-    ...config,
-    baseUrl: config.baseUrl,
-    appId: config.appId
-  });
+  const _exhaustive = config;
+  throw new Error(`Unknown billing provider: ${_exhaustive}`);
 };
 // src/util/traceContext.ts
 var randomHex = (bytes) => {
@@ -91895,6 +91957,7 @@ export {
   registerSchemas,
   isWithinLimit,
   extractOrgClaims,
+  ensureFreshAccessToken,
   createStorageProvider,
   createOidcClient,
   createNotificationProvider,
@@ -91914,6 +91977,7 @@ export {
   NoopNotificationProvider,
   NoopFlagProvider,
   NoopEventsProvider,
+  NoopBillingProvider,
   NoopApiKeyProvider,
   IggyEventsProvider,
   HttpEventsProvider,
