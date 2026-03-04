@@ -2,6 +2,7 @@ export { createAuthCache } from "./cache";
 export { extractOrgClaims } from "./claims";
 export { verifyAccessToken } from "./jwt";
 export { createOidcClient } from "./oidc";
+export { ensureFreshAccessToken } from "./token";
 export { OMNI_CLAIMS_NAMESPACE } from "./types";
 
 export type { AuthCache, AuthCacheConfig, CachedAuthData } from "./cache";
@@ -11,6 +12,7 @@ export type {
   OidcClientConfig,
   OidcDiscovery,
 } from "./oidc";
+export type { EnsureFreshTokenConfig, TokenResult } from "./token";
 export type {
   OrganizationClaim,
   TokenPayload,

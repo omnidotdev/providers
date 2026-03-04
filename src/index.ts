@@ -10,6 +10,7 @@ export {
   OMNI_CLAIMS_NAMESPACE,
   createAuthCache,
   createOidcClient,
+  ensureFreshAccessToken,
   extractOrgClaims,
   verifyAccessToken,
 } from "./auth";
@@ -21,6 +22,7 @@ export {
 // Billing
 export {
   AetherBillingProvider,
+  NoopBillingProvider,
   createBillingProvider,
   isWithinLimit,
 } from "./billing";
@@ -65,11 +67,13 @@ export type {
   AuthCache,
   AuthCacheConfig,
   CachedAuthData,
+  EnsureFreshTokenConfig,
   OidcClient,
   OidcClientConfig,
   OidcDiscovery,
   OrganizationClaim,
   TokenPayload,
+  TokenResult,
   UserInfoClaims,
   VerifyAccessTokenConfig,
 } from "./auth";
@@ -92,6 +96,7 @@ export type {
   Entitlement,
   EntitlementsResponse,
   EntitlementsResult,
+  NoopBillingProviderConfig,
   Price,
   Product,
   Recurring,
