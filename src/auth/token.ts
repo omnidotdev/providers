@@ -2,7 +2,7 @@
 type TokenResult = {
   accessToken?: string;
   accessTokenExpiresAt?: Date | string;
-  idToken?: string;
+  idToken?: string | null;
 };
 
 type EnsureFreshTokenConfig = {

@@ -2,7 +2,7 @@
 type TokenResult = {
     accessToken?: string;
     accessTokenExpiresAt?: Date | string;
-    idToken?: string;
+    idToken?: string | null;
 };
 type EnsureFreshTokenConfig = {
     /** Retrieve the current access token (typically auth.api.getAccessToken) */
