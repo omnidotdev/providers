@@ -27,7 +27,17 @@ async function ensureFreshAccessToken(
   config: EnsureFreshTokenConfig,
 ): Promise<TokenResult | null> {
   const result = await config.getAccessToken();
-  if (!result?.accessToken) return result;
+
+  // If no token at all, try refreshing before giving up
+  if (!result?.accessToken) {
+    try {
+      const refreshed = await config.refreshToken();
+      if (refreshed?.accessToken) return refreshed;
+    } catch {
+      // Refresh failed — no token available
+    }
+    return result;
+  }
 
   const expiresAt = result.accessTokenExpiresAt;
   const buffer = config.refreshBufferMs ?? 5_000;
