@@ -2920,6 +2920,10 @@ var init_webapi = __esm(() => {
 });
 
 // src/auth/jwt.ts
+var exports_jwt = {};
+__export(exports_jwt, {
+  verifyAccessToken: () => verifyAccessToken
+});
 function getJWKS(authBaseUrl) {
   let jwks = jwksCache2.get(authBaseUrl);
   if (!jwks) {
@@ -90530,6 +90534,25 @@ function createOidcClient(config) {
   }
   return { verifyIdToken, getDiscovery, getJwks, clearCache };
 }
+// src/auth/resolve.ts
+async function fetchUserInfo(token, userinfoUrl) {
+  const response = await fetch(userinfoUrl, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(1e4)
+  });
+  if (!response.ok) {
+    throw new Error(`Userinfo request failed: ${response.status}`);
+  }
+  return response.json();
+}
+async function resolveAccessToken(token, config) {
+  const isJwt = token.split(".").length === 3;
+  if (isJwt) {
+    const { verifyAccessToken: verifyAccessToken2 } = await Promise.resolve().then(() => (init_jwt(), exports_jwt));
+    await verifyAccessToken2(token, config);
+  }
+  return fetchUserInfo(token, config.userinfoUrl);
+}
 // src/auth/token.ts
 async function ensureFreshAccessToken(config) {
   const result = await config.getAccessToken();
@@ -92139,8 +92162,10 @@ var createStorageProvider = (config) => {
 };
 export {
   verifyAccessToken,
+  resolveAccessToken,
   registerSchemas,
   isWithinLimit,
+  fetchUserInfo,
   extractOrgClaims,
   ensureFreshAccessToken,
   createStorageProvider,

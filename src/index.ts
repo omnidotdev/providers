@@ -12,6 +12,8 @@ export {
   createOidcClient,
   ensureFreshAccessToken,
   extractOrgClaims,
+  fetchUserInfo,
+  resolveAccessToken,
   verifyAccessToken,
 } from "./auth";
 // AuthZ
@@ -72,6 +74,7 @@ export type {
   OidcClientConfig,
   OidcDiscovery,
   OrganizationClaim,
+  ResolveAccessTokenConfig,
   TokenPayload,
   TokenResult,
   UserInfoClaims,
