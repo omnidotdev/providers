@@ -15,6 +15,57 @@ const entries = [
     // fallback that works on Bun/Node and doesn't break Vite.
     external: [] as string[],
   },
+  // Per-domain entry points so consumers can import individual
+  // providers without pulling in the entire bundle (e.g. importing
+  // billing won't bring in unleash-client's node:stream dependency)
+  {
+    entrypoint: "./src/apiKey/index.ts",
+    outdir: "./build/apiKey",
+    target: "node" as const,
+    external: [] as string[],
+  },
+  {
+    entrypoint: "./src/auth/index.ts",
+    outdir: "./build/auth",
+    target: "node" as const,
+    external: [] as string[],
+  },
+  {
+    entrypoint: "./src/authz/index.ts",
+    outdir: "./build/authz",
+    target: "node" as const,
+    external: [] as string[],
+  },
+  {
+    entrypoint: "./src/billing/index.ts",
+    outdir: "./build/billing",
+    target: "browser" as const,
+    external: [] as string[],
+  },
+  {
+    entrypoint: "./src/events/index.ts",
+    outdir: "./build/events",
+    target: "node" as const,
+    external: [] as string[],
+  },
+  {
+    entrypoint: "./src/flags/index.ts",
+    outdir: "./build/flags",
+    target: "node" as const,
+    external: [] as string[],
+  },
+  {
+    entrypoint: "./src/notifications/index.ts",
+    outdir: "./build/notifications",
+    target: "node" as const,
+    external: [] as string[],
+  },
+  {
+    entrypoint: "./src/storage/index.ts",
+    outdir: "./build/storage",
+    target: "node" as const,
+    external: [] as string[],
+  },
   {
     entrypoint: "./src/graphql/index.ts",
     outdir: "./build/graphql",

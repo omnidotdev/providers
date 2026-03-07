@@ -13,9 +13,37 @@
       "import": "./build/index.js",
       "types": "./build/index.d.ts"
     },
+    "./apiKey": {
+      "import": "./build/apiKey/index.js",
+      "types": "./build/apiKey/index.d.ts"
+    },
+    "./auth": {
+      "import": "./build/auth/index.js",
+      "types": "./build/auth/index.d.ts"
+    },
+    "./authz": {
+      "import": "./build/authz/index.js",
+      "types": "./build/authz/index.d.ts"
+    },
+    "./billing": {
+      "import": "./build/billing/index.js",
+      "types": "./build/billing/index.d.ts"
+    },
+    "./events": {
+      "import": "./build/events/index.js",
+      "types": "./build/events/index.d.ts"
+    },
+    "./flags": {
+      "import": "./build/flags/index.js",
+      "types": "./build/flags/index.d.ts"
+    },
     "./graphql": {
       "import": "./build/graphql/index.js",
       "types": "./build/graphql/index.d.ts"
+    },
+    "./notifications": {
+      "import": "./build/notifications/index.js",
+      "types": "./build/notifications/index.d.ts"
     },
     "./react": {
       "import": "./build/react/index.js",
@@ -24,6 +52,10 @@
     "./server": {
       "import": "./build/server/index.js",
       "types": "./build/server/index.d.ts"
+    },
+    "./storage": {
+      "import": "./build/storage/index.js",
+      "types": "./build/storage/index.d.ts"
     }
   },
   "files": [
