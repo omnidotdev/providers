@@ -6,6 +6,7 @@ export { HttpEventsProvider, IggyEventsProvider, NoopEventsProvider, createEvent
 export { NoopFlagProvider, UnleashFlagProvider, createFlagProvider, } from "./flags";
 export { NoopNotificationProvider, ResendNotificationProvider, createNotificationProvider, } from "./notifications";
 export { NoopStorageProvider, S3StorageProvider, createStorageProvider, } from "./storage";
+export { SECURITY_HEADERS } from "./server";
 export { TtlCache } from "./util/cache";
 export { CircuitBreaker } from "./util/circuitBreaker";
 export type { ApiKeyInfo, ApiKeyProvider, ApiKeyProviderConfig, GatekeeperApiKeyProviderConfig, NoopApiKeyProviderConfig, } from "./apiKey";

@@ -36,6 +36,12 @@ const entries = [
     target: "browser" as const,
     external: ["react"],
   },
+  {
+    entrypoint: "./src/server/index.ts",
+    outdir: "./build/server",
+    target: "node" as const,
+    external: [] as string[],
+  },
 ];
 
 for (const { entrypoint, outdir, target, external } of entries) {

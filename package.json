@@ -20,6 +20,10 @@
     "./react": {
       "import": "./build/react/index.js",
       "types": "./build/react/index.d.ts"
+    },
+    "./server": {
+      "import": "./build/server/index.js",
+      "types": "./build/server/index.d.ts"
     }
   },
   "files": [

@@ -92160,6 +92160,14 @@ var createStorageProvider = (config) => {
   const _exhaustive = config;
   throw new Error(`Unknown storage provider: ${_exhaustive}`);
 };
+// src/server/headers.ts
+var SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "X-XSS-Protection": "1; mode=block",
+  "Referrer-Policy": "strict-origin-when-cross-origin"
+};
+var headers_default = SECURITY_HEADERS;
 export {
   verifyAccessToken,
   resolveAccessToken,
@@ -92180,6 +92188,7 @@ export {
   WardenAuthzProvider,
   UnleashFlagProvider,
   TtlCache,
+  headers_default as SECURITY_HEADERS,
   S3StorageProvider,
   ResendNotificationProvider,
   OMNI_CLAIMS_NAMESPACE,
