@@ -15,6 +15,26 @@ type EnsureFreshTokenConfig = {
 };
 
 /**
+ * Check whether a JWT's `exp` claim is expired or within the buffer window.
+ * Decodes the payload without signature verification (this is only an expiry
+ * gate for refresh decisions, not an auth boundary).
+ * @param token - Raw JWT string
+ * @param bufferMs - Buffer in ms before expiry to consider "expired"
+ * @returns `true` if the token is expired or within the buffer window
+ */
+function isIdTokenExpired(token: string, bufferMs: number): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const expMs = (payload.exp as number) * 1000;
+
+    return expMs - Date.now() < bufferMs;
+  } catch {
+    // Malformed token — don't trigger a refresh on parse failure
+    return false;
+  }
+}
+
+/**
  * Get a valid access token, forcing a refresh when needed.
  *
  * Better Auth's `getAccessToken` only refreshes when `accessTokenExpiresAt`
@@ -22,6 +42,9 @@ type EnsureFreshTokenConfig = {
  * returned `expires_in`) has null `accessTokenExpiresAt`, so expired tokens
  * are silently returned. This wrapper detects that case and forces a refresh
  * via `auth.api.refreshToken`.
+ *
+ * Also checks the id_token `exp` claim — if the id_token is expired or within
+ * the buffer window, a refresh is triggered even when the access_token is fresh.
  */
 async function ensureFreshAccessToken(
   config: EnsureFreshTokenConfig,
@@ -41,10 +64,13 @@ async function ensureFreshAccessToken(
 
   const expiresAt = result.accessTokenExpiresAt;
   const buffer = config.refreshBufferMs ?? 5_000;
-  const needsRefresh =
+  const accessTokenNeedsRefresh =
     !expiresAt || new Date(expiresAt).getTime() - Date.now() < buffer;
 
-  if (needsRefresh) {
+  const idTokenNeedsRefresh =
+    !!result.idToken && isIdTokenExpired(result.idToken, buffer);
+
+  if (accessTokenNeedsRefresh || idTokenNeedsRefresh) {
     try {
       const refreshed = await config.refreshToken();
       if (refreshed?.accessToken) return refreshed;
@@ -56,6 +82,6 @@ async function ensureFreshAccessToken(
   return result;
 }
 
-export { ensureFreshAccessToken };
+export { ensureFreshAccessToken, isIdTokenExpired };
 
 export type { EnsureFreshTokenConfig, TokenResult };
