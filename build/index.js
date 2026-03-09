@@ -90554,6 +90554,15 @@ async function resolveAccessToken(token, config) {
   return fetchUserInfo(token, config.userinfoUrl);
 }
 // src/auth/token.ts
+function isIdTokenExpired(token, bufferMs) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const expMs = payload.exp * 1000;
+    return expMs - Date.now() < bufferMs;
+  } catch {
+    return false;
+  }
+}
 async function ensureFreshAccessToken(config) {
   const result = await config.getAccessToken();
   if (!result?.accessToken) {
@@ -90566,8 +90575,9 @@ async function ensureFreshAccessToken(config) {
   }
   const expiresAt = result.accessTokenExpiresAt;
   const buffer = config.refreshBufferMs ?? 5000;
-  const needsRefresh = !expiresAt || new Date(expiresAt).getTime() - Date.now() < buffer;
-  if (needsRefresh) {
+  const accessTokenNeedsRefresh = !expiresAt || new Date(expiresAt).getTime() - Date.now() < buffer;
+  const idTokenNeedsRefresh = !!result.idToken && isIdTokenExpired(result.idToken, buffer);
+  if (accessTokenNeedsRefresh || idTokenNeedsRefresh) {
     try {
       const refreshed = await config.refreshToken();
       if (refreshed?.accessToken)
@@ -90575,6 +90585,17 @@ async function ensureFreshAccessToken(config) {
     } catch {}
   }
   return result;
+}
+function isInvalidGrant(err) {
+  if (!(err instanceof Error))
+    return false;
+  if (err.message.includes("invalid_grant") || err.message.includes("invalid refresh token")) {
+    return true;
+  }
+  if ("cause" in err && typeof err.cause === "object" && err.cause !== null && "error" in err.cause && err.cause.error === "invalid_grant") {
+    return true;
+  }
+  return false;
 }
 // src/authz/warden.ts
 var REQUEST_TIMEOUT_MS2 = 5000;
@@ -92173,6 +92194,7 @@ export {
   resolveAccessToken,
   registerSchemas,
   isWithinLimit,
+  isInvalidGrant,
   fetchUserInfo,
   extractOrgClaims,
   ensureFreshAccessToken,

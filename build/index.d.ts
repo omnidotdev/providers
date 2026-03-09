@@ -1,5 +1,5 @@
 export { GatekeeperApiKeyProvider, NoopApiKeyProvider, createApiKeyProvider, } from "./apiKey";
-export { OMNI_CLAIMS_NAMESPACE, createAuthCache, createOidcClient, ensureFreshAccessToken, extractOrgClaims, fetchUserInfo, resolveAccessToken, verifyAccessToken, } from "./auth";
+export { OMNI_CLAIMS_NAMESPACE, createAuthCache, createOidcClient, ensureFreshAccessToken, extractOrgClaims, isInvalidGrant, fetchUserInfo, resolveAccessToken, verifyAccessToken, } from "./auth";
 export { WardenAuthzProvider, createAuthzProvider, } from "./authz";
 export { AetherBillingProvider, NoopBillingProvider, createBillingProvider, isWithinLimit, } from "./billing";
 export { HttpEventsProvider, IggyEventsProvider, NoopEventsProvider, createEventsProvider, registerSchemas, } from "./events";

@@ -13,6 +13,15 @@ type EnsureFreshTokenConfig = {
     refreshBufferMs?: number;
 };
 /**
+ * Check whether a JWT's `exp` claim is expired or within the buffer window.
+ * Decodes the payload without signature verification (this is only an expiry
+ * gate for refresh decisions, not an auth boundary).
+ * @param token - Raw JWT string
+ * @param bufferMs - Buffer in ms before expiry to consider "expired"
+ * @returns `true` if the token is expired or within the buffer window
+ */
+declare function isIdTokenExpired(token: string, bufferMs: number): boolean;
+/**
  * Get a valid access token, forcing a refresh when needed.
  *
  * Better Auth's `getAccessToken` only refreshes when `accessTokenExpiresAt`
@@ -20,7 +29,15 @@ type EnsureFreshTokenConfig = {
  * returned `expires_in`) has null `accessTokenExpiresAt`, so expired tokens
  * are silently returned. This wrapper detects that case and forces a refresh
  * via `auth.api.refreshToken`.
+ *
+ * Also checks the id_token `exp` claim — if the id_token is expired or within
+ * the buffer window, a refresh is triggered even when the access_token is fresh.
  */
 declare function ensureFreshAccessToken(config: EnsureFreshTokenConfig): Promise<TokenResult | null>;
-export { ensureFreshAccessToken };
+/**
+ * Check if an error represents a permanently invalid refresh token.
+ * When true, the session should be cleared to force re-authentication.
+ */
+declare function isInvalidGrant(err: unknown): boolean;
+export { ensureFreshAccessToken, isIdTokenExpired, isInvalidGrant };
 export type { EnsureFreshTokenConfig, TokenResult };
