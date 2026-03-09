@@ -12,6 +12,7 @@ export {
   createOidcClient,
   ensureFreshAccessToken,
   extractOrgClaims,
+  isInvalidGrant,
   fetchUserInfo,
   resolveAccessToken,
   verifyAccessToken,

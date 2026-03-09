@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { ensureFreshAccessToken } from "../../src/auth/token";
+import { ensureFreshAccessToken, isInvalidGrant } from "../../src/auth/token";
 
 import type { TokenResult } from "../../src/auth/token";
 
@@ -133,5 +133,32 @@ describe("ensureFreshAccessToken", () => {
     });
 
     expect(result).toBe(refreshed);
+  });
+});
+
+describe("isInvalidGrant", () => {
+  it("should detect 'invalid_grant' in error message", () => {
+    expect(isInvalidGrant(new Error("invalid_grant"))).toBe(true);
+  });
+
+  it("should detect 'invalid refresh token' in error message", () => {
+    expect(isInvalidGrant(new Error("invalid refresh token"))).toBe(true);
+  });
+
+  it("should detect invalid_grant in error cause", () => {
+    const err = new Error("token refresh failed", {
+      cause: { error: "invalid_grant" },
+    });
+
+    expect(isInvalidGrant(err)).toBe(true);
+  });
+
+  it("should return false for unrelated errors", () => {
+    expect(isInvalidGrant(new Error("network timeout"))).toBe(false);
+  });
+
+  it("should return false for non-Error values", () => {
+    expect(isInvalidGrant("invalid_grant")).toBe(false);
+    expect(isInvalidGrant(null)).toBe(false);
   });
 });

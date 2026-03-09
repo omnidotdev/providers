@@ -82,6 +82,33 @@ async function ensureFreshAccessToken(
   return result;
 }
 
-export { ensureFreshAccessToken, isIdTokenExpired };
+/**
+ * Check if an error represents a permanently invalid refresh token.
+ * When true, the session should be cleared to force re-authentication.
+ */
+function isInvalidGrant(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+
+  if (
+    err.message.includes("invalid_grant") ||
+    err.message.includes("invalid refresh token")
+  ) {
+    return true;
+  }
+
+  if (
+    "cause" in err &&
+    typeof err.cause === "object" &&
+    err.cause !== null &&
+    "error" in err.cause &&
+    (err.cause as { error: string }).error === "invalid_grant"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export { ensureFreshAccessToken, isIdTokenExpired, isInvalidGrant };
 
 export type { EnsureFreshTokenConfig, TokenResult };
