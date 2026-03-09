@@ -46,7 +46,7 @@ describe("isWithinLimit", () => {
   it("should use tier-based defaults when no specific entitlement", () => {
     const ent = createEntitlements([{ key: "tier", value: "free" }]);
     const defaultLimits = {
-      max_projects: { free: 2, basic: 10, team: -1, enterprise: -1 },
+      max_projects: { free: 2, pro: 10, team: -1, enterprise: -1 },
     };
 
     expect(isWithinLimit(ent, "max_projects", 1, defaultLimits)).toBe(true);
@@ -56,7 +56,7 @@ describe("isWithinLimit", () => {
   it("should use unlimited tier-based defaults correctly", () => {
     const ent = createEntitlements([{ key: "tier", value: "enterprise" }]);
     const defaultLimits = {
-      max_projects: { free: 2, basic: 10, team: -1, enterprise: -1 },
+      max_projects: { free: 2, pro: 10, team: -1, enterprise: -1 },
     };
 
     expect(isWithinLimit(ent, "max_projects", 99999, defaultLimits)).toBe(true);
@@ -64,7 +64,7 @@ describe("isWithinLimit", () => {
 
   it("should use free tier defaults when entitlements are null", () => {
     const defaultLimits = {
-      max_projects: { free: 2, basic: 10 },
+      max_projects: { free: 2, pro: 10 },
     };
 
     expect(isWithinLimit(null, "max_projects", 1, defaultLimits)).toBe(true);
