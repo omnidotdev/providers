@@ -71,7 +71,8 @@
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "prepare": "husky"
   },
   "dependencies": {
     "ajv": "^8.18.0",
@@ -130,6 +131,8 @@
     }
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.997.0",
+    "@aws-sdk/s3-request-presigner": "^3.997.0",
     "@biomejs/biome": "2.3.12",
     "@envelop/types": "^5.0.0",
     "@escape.tech/graphql-armor": "^3.2.0",
@@ -140,14 +143,13 @@
     "@types/react": "^19.1.6",
     "graphile-export": "^1.0.0-rc.0",
     "happy-dom": "^20.5.0",
+    "husky": "^9.1.7",
     "knip": "^5.82.1",
     "postgraphile": "^5.0.0-rc.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "typescript": "^5.8.3",
-    "unleash-client": "^6.9.6",
     "resend": "^6.9.2",
-    "@aws-sdk/client-s3": "^3.997.0",
-    "@aws-sdk/s3-request-presigner": "^3.997.0"
+    "typescript": "^5.8.3",
+    "unleash-client": "^6.9.6"
   }
 }
