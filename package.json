@@ -3,7 +3,7 @@
   "name": "@omnidotdev/providers",
   "version": "0.1.0",
   "description": "Shared auth, authorization, billing, events, feature flags, notifications, storage, and API key providers for the Omni ecosystem",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./build/index.js",
   "module": "./build/index.js",
