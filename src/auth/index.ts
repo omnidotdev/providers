@@ -4,6 +4,7 @@ export { verifyAccessToken } from "./jwt";
 export { createOidcClient } from "./oidc";
 export { fetchUserInfo, resolveAccessToken } from "./resolve";
 export { ensureFreshAccessToken, isIdTokenExpired, isInvalidGrant } from "./token";
+export { GatekeeperOrgClient, GatekeeperOrgError } from "./gatekeeperOrg";
 export { OMNI_CLAIMS_NAMESPACE } from "./types";
 
 export type { AuthCache, AuthCacheConfig, CachedAuthData } from "./cache";
@@ -15,6 +16,12 @@ export type {
 } from "./oidc";
 export type { ResolveAccessTokenConfig } from "./resolve";
 export type { EnsureFreshTokenConfig, TokenResult } from "./token";
+export type {
+  GatekeeperInvitation,
+  GatekeeperMember,
+  GatekeeperMemberRole,
+  GatekeeperOrganization,
+} from "./gatekeeperOrg";
 export type {
   OrganizationClaim,
   TokenPayload,

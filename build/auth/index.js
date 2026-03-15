@@ -3116,6 +3116,157 @@ function isInvalidGrant(err) {
   }
   return false;
 }
+// src/auth/gatekeeperOrg.ts
+class GatekeeperOrgError extends Error {
+  status;
+  constructor(message2, status) {
+    super(message2);
+    this.name = "GatekeeperOrgError";
+    this.status = status;
+  }
+  get isSessionExpired() {
+    return this.status === 401;
+  }
+  get isForbidden() {
+    return this.status === 403;
+  }
+}
+var slugify = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50);
+
+class GatekeeperOrgClient {
+  baseUrl;
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl;
+  }
+  authHeaders(accessToken, json) {
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      Origin: this.baseUrl
+    };
+    if (json) {
+      headers["Content-Type"] = "application/json";
+    }
+    return headers;
+  }
+  async parseError(response, fallback) {
+    if (response.status === 401) {
+      return new GatekeeperOrgError("Session expired. Please sign out and sign back in to re-authenticate.", 401);
+    }
+    try {
+      const body = await response.json();
+      return new GatekeeperOrgError(body.message || fallback, response.status);
+    } catch {
+      return new GatekeeperOrgError(fallback, response.status);
+    }
+  }
+  async createOrganization(params, accessToken) {
+    const slug = params.slug || slugify(params.name);
+    const response = await fetch(`${this.baseUrl}/organization/create`, {
+      method: "POST",
+      headers: this.authHeaders(accessToken, true),
+      body: JSON.stringify({ name: params.name, slug })
+    });
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to create organization");
+    }
+    return response.json();
+  }
+  async inviteMember(params, accessToken) {
+    const response = await fetch(`${this.baseUrl}/organization/invite-member`, {
+      method: "POST",
+      headers: this.authHeaders(accessToken, true),
+      body: JSON.stringify(params)
+    });
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to invite member");
+    }
+    return response.json();
+  }
+  async listInvitations(organizationId, accessToken) {
+    const url = new URL(`${this.baseUrl}/organization/list-invitations`);
+    url.searchParams.set("organizationId", organizationId);
+    const response = await fetch(url.toString(), {
+      headers: this.authHeaders(accessToken)
+    });
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to list invitations");
+    }
+    return response.json();
+  }
+  async cancelInvitation(invitationId, accessToken) {
+    const response = await fetch(`${this.baseUrl}/organization/cancel-invitation`, {
+      method: "POST",
+      headers: this.authHeaders(accessToken, true),
+      body: JSON.stringify({ invitationId })
+    });
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to cancel invitation");
+    }
+    return response.json();
+  }
+  async getOrganizationBySlug(slug, accessToken) {
+    const url = new URL(`${this.baseUrl}/organization/get-full-organization`);
+    url.searchParams.set("organizationSlug", slug);
+    try {
+      const response = await fetch(url.toString(), {
+        headers: this.authHeaders(accessToken)
+      });
+      if (!response.ok) {
+        return null;
+      }
+      return response.json();
+    } catch {
+      return null;
+    }
+  }
+  async fetchOrganizationBySlug(slug) {
+    const response = await fetch(`${this.baseUrl}/api/organization/by-slug/${encodeURIComponent(slug)}`);
+    if (response.status === 404) {
+      return null;
+    }
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to fetch organization by slug");
+    }
+    return response.json();
+  }
+  async listMembers(organizationId, accessToken) {
+    const url = new URL(`${this.baseUrl}/api/organization/members`);
+    url.searchParams.set("orgId", organizationId);
+    const response = await fetch(url.toString(), {
+      headers: this.authHeaders(accessToken)
+    });
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to list members");
+    }
+    return response.json();
+  }
+  async updateMemberRole(params, accessToken) {
+    const url = new URL(`${this.baseUrl}/api/organization/members`);
+    url.searchParams.set("orgId", params.organizationId);
+    url.searchParams.set("memberId", params.memberId);
+    const response = await fetch(url.toString(), {
+      method: "PATCH",
+      headers: this.authHeaders(accessToken, true),
+      body: JSON.stringify({ role: params.role })
+    });
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to update member role");
+    }
+    return response.json();
+  }
+  async removeMember(params, accessToken) {
+    const url = new URL(`${this.baseUrl}/api/organization/members`);
+    url.searchParams.set("orgId", params.organizationId);
+    url.searchParams.set("memberId", params.memberId);
+    const response = await fetch(url.toString(), {
+      method: "DELETE",
+      headers: this.authHeaders(accessToken)
+    });
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to remove member");
+    }
+  }
+}
 export {
   verifyAccessToken,
   resolveAccessToken,
@@ -3126,5 +3277,7 @@ export {
   ensureFreshAccessToken,
   createOidcClient,
   createAuthCache,
-  OMNI_CLAIMS_NAMESPACE
+  OMNI_CLAIMS_NAMESPACE,
+  GatekeeperOrgError,
+  GatekeeperOrgClient
 };

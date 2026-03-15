@@ -7,6 +7,8 @@ export {
   createApiKeyProvider,
 } from "./apiKey";
 export {
+  GatekeeperOrgClient,
+  GatekeeperOrgError,
   OMNI_CLAIMS_NAMESPACE,
   createAuthCache,
   createOidcClient,
@@ -73,6 +75,10 @@ export type {
   AuthCacheConfig,
   CachedAuthData,
   EnsureFreshTokenConfig,
+  GatekeeperInvitation,
+  GatekeeperMember,
+  GatekeeperMemberRole,
+  GatekeeperOrganization,
   OidcClient,
   OidcClientConfig,
   OidcDiscovery,
