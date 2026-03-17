@@ -2988,134 +2988,6 @@ var OMNI_CLAIMS_NAMESPACE = "https://manifold.omni.dev/@omni/claims/organization
 var extractOrgClaims = (claims) => {
   return claims[OMNI_CLAIMS_NAMESPACE] ?? [];
 };
-
-// src/auth/index.ts
-init_jwt();
-
-// src/auth/oidc.ts
-init_webapi();
-var DISCOVERY_TTL = 24 * 60 * 60 * 1000;
-var JWKS_TTL = 60 * 60 * 1000;
-function createOidcClient(config) {
-  let discoveryCache = null;
-  let discoveryExpiry = 0;
-  let jwksCache3 = null;
-  let jwksExpiry = 0;
-  async function getDiscovery() {
-    const now = Date.now();
-    if (discoveryCache && now < discoveryExpiry)
-      return discoveryCache;
-    const url = new URL("/.well-known/openid-configuration", config.authBaseUrl);
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(15000)
-    });
-    if (!response.ok) {
-      throw new Error(`OIDC discovery failed: ${response.status} ${response.statusText}`);
-    }
-    const discovery = await response.json();
-    if (!discovery.issuer || !discovery.jwks_uri) {
-      throw new Error("Invalid OIDC discovery document");
-    }
-    discoveryCache = discovery;
-    discoveryExpiry = now + DISCOVERY_TTL;
-    return discovery;
-  }
-  async function getJwks() {
-    const now = Date.now();
-    if (jwksCache3 && now < jwksExpiry)
-      return jwksCache3;
-    const discovery = await getDiscovery();
-    jwksCache3 = createRemoteJWKSet(new URL(discovery.jwks_uri), {
-      timeoutDuration: 15000,
-      cooldownDuration: 30000
-    });
-    jwksExpiry = now + JWKS_TTL;
-    return jwksCache3;
-  }
-  async function verifyIdToken(token) {
-    const [discovery, jwks] = await Promise.all([
-      getDiscovery(),
-      getJwks()
-    ]);
-    const { payload } = await jwtVerify(token, jwks, {
-      issuer: discovery.issuer
-    });
-    if (!payload.sub) {
-      throw new Error("Missing required 'sub' claim");
-    }
-    return payload;
-  }
-  function clearCache() {
-    discoveryCache = null;
-    discoveryExpiry = 0;
-    jwksCache3 = null;
-    jwksExpiry = 0;
-  }
-  return { verifyIdToken, getDiscovery, getJwks, clearCache };
-}
-// src/auth/resolve.ts
-async function fetchUserInfo(token, userinfoUrl) {
-  const response = await fetch(userinfoUrl, {
-    headers: { Authorization: `Bearer ${token}` },
-    signal: AbortSignal.timeout(1e4)
-  });
-  if (!response.ok) {
-    throw new Error(`Userinfo request failed: ${response.status}`);
-  }
-  return response.json();
-}
-async function resolveAccessToken(token, config) {
-  const isJwt = token.split(".").length === 3;
-  if (isJwt) {
-    const { verifyAccessToken: verifyAccessToken2 } = await Promise.resolve().then(() => (init_jwt(), exports_jwt));
-    await verifyAccessToken2(token, config);
-  }
-  return fetchUserInfo(token, config.userinfoUrl);
-}
-// src/auth/token.ts
-function isIdTokenExpired(token, bufferMs) {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const expMs = payload.exp * 1000;
-    return expMs - Date.now() < bufferMs;
-  } catch {
-    return false;
-  }
-}
-async function ensureFreshAccessToken(config) {
-  const result = await config.getAccessToken();
-  if (!result?.accessToken) {
-    try {
-      const refreshed = await config.refreshToken();
-      if (refreshed?.accessToken)
-        return refreshed;
-    } catch {}
-    return result;
-  }
-  const expiresAt = result.accessTokenExpiresAt;
-  const buffer = config.refreshBufferMs ?? 5000;
-  const accessTokenNeedsRefresh = !expiresAt || new Date(expiresAt).getTime() - Date.now() < buffer;
-  const idTokenNeedsRefresh = !!result.idToken && isIdTokenExpired(result.idToken, buffer);
-  if (accessTokenNeedsRefresh || idTokenNeedsRefresh) {
-    try {
-      const refreshed = await config.refreshToken();
-      if (refreshed?.accessToken)
-        return refreshed;
-    } catch {}
-  }
-  return result;
-}
-function isInvalidGrant(err) {
-  if (!(err instanceof Error))
-    return false;
-  if (err.message.includes("invalid_grant") || err.message.includes("invalid refresh token")) {
-    return true;
-  }
-  if ("cause" in err && typeof err.cause === "object" && err.cause !== null && "error" in err.cause && err.cause.error === "invalid_grant") {
-    return true;
-  }
-  return false;
-}
 // src/auth/gatekeeperOrg.ts
 class GatekeeperOrgError extends Error {
   status;
@@ -3267,9 +3139,162 @@ class GatekeeperOrgClient {
     }
   }
 }
+var isInvitationExpired = (invitation) => new Date(invitation.expiresAt) < new Date;
+var validateInvitation = ({
+  email,
+  pendingInvitations,
+  memberEmails
+}) => {
+  const normalizedEmail = email.toLowerCase();
+  const hasActivePendingInvite = pendingInvitations.some((inv) => inv.status === "pending" && !isInvitationExpired(inv) && inv.email.toLowerCase() === normalizedEmail);
+  if (hasActivePendingInvite) {
+    return {
+      valid: false,
+      reason: "An invitation is already pending for this email"
+    };
+  }
+  const isExistingMember = memberEmails.some((memberEmail) => memberEmail.toLowerCase() === normalizedEmail);
+  if (isExistingMember) {
+    return {
+      valid: false,
+      reason: "This email is already a member of the organization"
+    };
+  }
+  return { valid: true };
+};
+
+// src/auth/index.ts
+init_jwt();
+
+// src/auth/oidc.ts
+init_webapi();
+var DISCOVERY_TTL = 24 * 60 * 60 * 1000;
+var JWKS_TTL = 60 * 60 * 1000;
+function createOidcClient(config) {
+  let discoveryCache = null;
+  let discoveryExpiry = 0;
+  let jwksCache3 = null;
+  let jwksExpiry = 0;
+  async function getDiscovery() {
+    const now = Date.now();
+    if (discoveryCache && now < discoveryExpiry)
+      return discoveryCache;
+    const url = new URL("/.well-known/openid-configuration", config.authBaseUrl);
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(15000)
+    });
+    if (!response.ok) {
+      throw new Error(`OIDC discovery failed: ${response.status} ${response.statusText}`);
+    }
+    const discovery = await response.json();
+    if (!discovery.issuer || !discovery.jwks_uri) {
+      throw new Error("Invalid OIDC discovery document");
+    }
+    discoveryCache = discovery;
+    discoveryExpiry = now + DISCOVERY_TTL;
+    return discovery;
+  }
+  async function getJwks() {
+    const now = Date.now();
+    if (jwksCache3 && now < jwksExpiry)
+      return jwksCache3;
+    const discovery = await getDiscovery();
+    jwksCache3 = createRemoteJWKSet(new URL(discovery.jwks_uri), {
+      timeoutDuration: 15000,
+      cooldownDuration: 30000
+    });
+    jwksExpiry = now + JWKS_TTL;
+    return jwksCache3;
+  }
+  async function verifyIdToken(token) {
+    const [discovery, jwks] = await Promise.all([
+      getDiscovery(),
+      getJwks()
+    ]);
+    const { payload } = await jwtVerify(token, jwks, {
+      issuer: discovery.issuer
+    });
+    if (!payload.sub) {
+      throw new Error("Missing required 'sub' claim");
+    }
+    return payload;
+  }
+  function clearCache() {
+    discoveryCache = null;
+    discoveryExpiry = 0;
+    jwksCache3 = null;
+    jwksExpiry = 0;
+  }
+  return { verifyIdToken, getDiscovery, getJwks, clearCache };
+}
+// src/auth/resolve.ts
+async function fetchUserInfo(token, userinfoUrl) {
+  const response = await fetch(userinfoUrl, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(1e4)
+  });
+  if (!response.ok) {
+    throw new Error(`Userinfo request failed: ${response.status}`);
+  }
+  return response.json();
+}
+async function resolveAccessToken(token, config) {
+  const isJwt = token.split(".").length === 3;
+  if (isJwt) {
+    const { verifyAccessToken: verifyAccessToken2 } = await Promise.resolve().then(() => (init_jwt(), exports_jwt));
+    await verifyAccessToken2(token, config);
+  }
+  return fetchUserInfo(token, config.userinfoUrl);
+}
+// src/auth/token.ts
+function isIdTokenExpired(token, bufferMs) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const expMs = payload.exp * 1000;
+    return expMs - Date.now() < bufferMs;
+  } catch {
+    return false;
+  }
+}
+async function ensureFreshAccessToken(config) {
+  const result = await config.getAccessToken();
+  if (!result?.accessToken) {
+    try {
+      const refreshed = await config.refreshToken();
+      if (refreshed?.accessToken)
+        return refreshed;
+    } catch {}
+    return result;
+  }
+  const expiresAt = result.accessTokenExpiresAt;
+  const buffer = config.refreshBufferMs ?? 5000;
+  const accessTokenNeedsRefresh = !expiresAt || new Date(expiresAt).getTime() - Date.now() < buffer;
+  const idTokenNeedsRefresh = !!result.idToken && isIdTokenExpired(result.idToken, buffer);
+  if (accessTokenNeedsRefresh || idTokenNeedsRefresh) {
+    try {
+      const refreshed = await config.refreshToken();
+      if (refreshed?.accessToken)
+        return refreshed;
+    } catch {}
+  }
+  return result;
+}
+function isInvalidGrant(err) {
+  if (!(err instanceof Error))
+    return false;
+  if (err.message.includes("invalid_grant") || err.message.includes("invalid refresh token")) {
+    return true;
+  }
+  if ("cause" in err && typeof err.cause === "object" && err.cause !== null && "error" in err.cause && err.cause.error === "invalid_grant") {
+    return true;
+  }
+  return false;
+}
 export {
   verifyAccessToken,
+  validateInvitation,
   resolveAccessToken,
+  isInvitationExpired,
   isInvalidGrant,
   isIdTokenExpired,
   fetchUserInfo,

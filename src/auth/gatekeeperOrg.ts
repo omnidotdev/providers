@@ -105,10 +105,7 @@ class GatekeeperOrgClient {
     try {
       const body = (await response.json()) as { message?: string };
 
-      return new GatekeeperOrgError(
-        body.message || fallback,
-        response.status,
-      );
+      return new GatekeeperOrgError(body.message || fallback, response.status);
     } catch {
       return new GatekeeperOrgError(fallback, response.status);
     }
@@ -139,14 +136,11 @@ class GatekeeperOrgClient {
     params: { organizationId: string; email: string; role: "admin" | "member" },
     accessToken: string,
   ): Promise<GatekeeperInvitation> {
-    const response = await fetch(
-      `${this.baseUrl}/organization/invite-member`,
-      {
-        method: "POST",
-        headers: this.authHeaders(accessToken, true),
-        body: JSON.stringify(params),
-      },
-    );
+    const response = await fetch(`${this.baseUrl}/organization/invite-member`, {
+      method: "POST",
+      headers: this.authHeaders(accessToken, true),
+      body: JSON.stringify(params),
+    });
 
     if (!response.ok) {
       throw await this.parseError(response, "Failed to invite member");
@@ -200,9 +194,7 @@ class GatekeeperOrgClient {
     slug: string,
     accessToken: string,
   ): Promise<GatekeeperOrganization | null> {
-    const url = new URL(
-      `${this.baseUrl}/organization/get-full-organization`,
-    );
+    const url = new URL(`${this.baseUrl}/organization/get-full-organization`);
     url.searchParams.set("organizationSlug", slug);
 
     try {
@@ -307,11 +299,73 @@ class GatekeeperOrgClient {
   }
 }
 
-export { GatekeeperOrgClient, GatekeeperOrgError };
+/**
+ * Check whether an invitation has expired based on its `expiresAt` timestamp.
+ */
+const isInvitationExpired = (invitation: GatekeeperInvitation): boolean =>
+  new Date(invitation.expiresAt) < new Date();
+
+type InvitationValidationResult =
+  | { valid: true }
+  | { valid: false; reason: string };
+
+interface ValidateInvitationParams {
+  email: string;
+  pendingInvitations: GatekeeperInvitation[];
+  memberEmails: string[];
+}
+
+/**
+ * Validate that an invitation email doesn't conflict with existing
+ * active (non-expired) pending invitations or current org members.
+ */
+const validateInvitation = ({
+  email,
+  pendingInvitations,
+  memberEmails,
+}: ValidateInvitationParams): InvitationValidationResult => {
+  const normalizedEmail = email.toLowerCase();
+
+  const hasActivePendingInvite = pendingInvitations.some(
+    (inv) =>
+      inv.status === "pending" &&
+      !isInvitationExpired(inv) &&
+      inv.email.toLowerCase() === normalizedEmail,
+  );
+
+  if (hasActivePendingInvite) {
+    return {
+      valid: false,
+      reason: "An invitation is already pending for this email",
+    };
+  }
+
+  const isExistingMember = memberEmails.some(
+    (memberEmail) => memberEmail.toLowerCase() === normalizedEmail,
+  );
+
+  if (isExistingMember) {
+    return {
+      valid: false,
+      reason: "This email is already a member of the organization",
+    };
+  }
+
+  return { valid: true };
+};
+
+export {
+  GatekeeperOrgClient,
+  GatekeeperOrgError,
+  isInvitationExpired,
+  validateInvitation,
+};
 
 export type {
   GatekeeperInvitation,
   GatekeeperMember,
   GatekeeperMemberRole,
   GatekeeperOrganization,
+  InvitationValidationResult,
+  ValidateInvitationParams,
 };

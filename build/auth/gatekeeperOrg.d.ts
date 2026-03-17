@@ -84,5 +84,25 @@ declare class GatekeeperOrgClient {
         memberId: string;
     }, accessToken: string): Promise<void>;
 }
-export { GatekeeperOrgClient, GatekeeperOrgError };
-export type { GatekeeperInvitation, GatekeeperMember, GatekeeperMemberRole, GatekeeperOrganization, };
+/**
+ * Check whether an invitation has expired based on its `expiresAt` timestamp.
+ */
+declare const isInvitationExpired: (invitation: GatekeeperInvitation) => boolean;
+type InvitationValidationResult = {
+    valid: true;
+} | {
+    valid: false;
+    reason: string;
+};
+interface ValidateInvitationParams {
+    email: string;
+    pendingInvitations: GatekeeperInvitation[];
+    memberEmails: string[];
+}
+/**
+ * Validate that an invitation email doesn't conflict with existing
+ * active (non-expired) pending invitations or current org members.
+ */
+declare const validateInvitation: ({ email, pendingInvitations, memberEmails, }: ValidateInvitationParams) => InvitationValidationResult;
+export { GatekeeperOrgClient, GatekeeperOrgError, isInvitationExpired, validateInvitation, };
+export type { GatekeeperInvitation, GatekeeperMember, GatekeeperMemberRole, GatekeeperOrganization, InvitationValidationResult, ValidateInvitationParams, };
