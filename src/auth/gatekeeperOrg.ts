@@ -354,9 +354,52 @@ const validateInvitation = ({
   return { valid: true };
 };
 
+type InviteTimeInfo = {
+  sentAgo: string;
+  expiresLabel: string;
+  isExpired: boolean;
+};
+
+/**
+ * Derive human-readable time info for an invitation.
+ * @param invitation - Gatekeeper invitation with `createdAt` and `expiresAt`
+ */
+const getInviteTimeInfo = (invitation: GatekeeperInvitation): InviteTimeInfo => {
+  const now = Date.now();
+  const created = new Date(invitation.createdAt).getTime();
+  const expires = new Date(invitation.expiresAt).getTime();
+  const expired = expires < now;
+
+  return {
+    sentAgo: formatRelativeTime(now - created),
+    expiresLabel: expired
+      ? `Expired ${formatRelativeTime(now - expires)} ago`
+      : `Expires in ${formatRelativeTime(expires - now)}`,
+    isExpired: expired,
+  };
+};
+
+/**
+ * Format a millisecond duration as a human-readable relative time string.
+ * @param ms - Duration in milliseconds
+ */
+const formatRelativeTime = (ms: number): string => {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `${days}d`;
+  if (hours > 0) return `${hours}h`;
+  if (minutes > 0) return `${minutes}m`;
+  return "just now";
+};
+
 export {
   GatekeeperOrgClient,
   GatekeeperOrgError,
+  formatRelativeTime,
+  getInviteTimeInfo,
   isInvitationExpired,
   validateInvitation,
 };
@@ -367,5 +410,6 @@ export type {
   GatekeeperMemberRole,
   GatekeeperOrganization,
   InvitationValidationResult,
+  InviteTimeInfo,
   ValidateInvitationParams,
 };

@@ -3,6 +3,8 @@ import { describe, expect, it } from "bun:test";
 import {
   GatekeeperOrgClient,
   GatekeeperOrgError,
+  formatRelativeTime,
+  getInviteTimeInfo,
   isInvitationExpired,
   validateInvitation,
 } from "./gatekeeperOrg";
@@ -181,5 +183,58 @@ describe("validateInvitation", () => {
       memberEmails: ["existing@example.com"],
     });
     expect(result).toEqual({ valid: true });
+  });
+});
+
+describe("formatRelativeTime", () => {
+  it("should return days for durations >= 24h", () => {
+    expect(formatRelativeTime(3 * 86_400_000)).toBe("3d");
+  });
+
+  it("should return hours for durations >= 1h", () => {
+    expect(formatRelativeTime(5 * 3_600_000)).toBe("5h");
+  });
+
+  it("should return minutes for durations >= 1m", () => {
+    expect(formatRelativeTime(45 * 60_000)).toBe("45m");
+  });
+
+  it("should return 'just now' for durations < 1m", () => {
+    expect(formatRelativeTime(30_000)).toBe("just now");
+    expect(formatRelativeTime(0)).toBe("just now");
+  });
+});
+
+describe("getInviteTimeInfo", () => {
+  it("should return isExpired=false for an active invitation", () => {
+    const invitation = makeInvitation("active@example.com", {
+      createdAt: new Date(Date.now() - 3_600_000).toISOString(),
+      expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+    });
+    const info = getInviteTimeInfo(invitation);
+
+    expect(info.isExpired).toBe(false);
+    expect(info.expiresLabel).toStartWith("Expires in");
+    expect(info.sentAgo).toBe("1h");
+  });
+
+  it("should return isExpired=true for an expired invitation", () => {
+    const invitation = makeInvitation("expired@example.com", {
+      createdAt: new Date(Date.now() - 7 * 86_400_000).toISOString(),
+      expiresAt: new Date(Date.now() - 86_400_000).toISOString(),
+    });
+    const info = getInviteTimeInfo(invitation);
+
+    expect(info.isExpired).toBe(true);
+    expect(info.expiresLabel).toStartWith("Expired");
+  });
+
+  it("should format sentAgo relative to creation time", () => {
+    const invitation = makeInvitation("old@example.com", {
+      createdAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
+    });
+    const info = getInviteTimeInfo(invitation);
+
+    expect(info.sentAgo).toBe("3d");
   });
 });

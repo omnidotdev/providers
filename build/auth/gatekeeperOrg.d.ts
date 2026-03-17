@@ -104,5 +104,20 @@ interface ValidateInvitationParams {
  * active (non-expired) pending invitations or current org members.
  */
 declare const validateInvitation: ({ email, pendingInvitations, memberEmails, }: ValidateInvitationParams) => InvitationValidationResult;
-export { GatekeeperOrgClient, GatekeeperOrgError, isInvitationExpired, validateInvitation, };
-export type { GatekeeperInvitation, GatekeeperMember, GatekeeperMemberRole, GatekeeperOrganization, InvitationValidationResult, ValidateInvitationParams, };
+type InviteTimeInfo = {
+    sentAgo: string;
+    expiresLabel: string;
+    isExpired: boolean;
+};
+/**
+ * Derive human-readable time info for an invitation.
+ * @param invitation - Gatekeeper invitation with `createdAt` and `expiresAt`
+ */
+declare const getInviteTimeInfo: (invitation: GatekeeperInvitation) => InviteTimeInfo;
+/**
+ * Format a millisecond duration as a human-readable relative time string.
+ * @param ms - Duration in milliseconds
+ */
+declare const formatRelativeTime: (ms: number) => string;
+export { GatekeeperOrgClient, GatekeeperOrgError, formatRelativeTime, getInviteTimeInfo, isInvitationExpired, validateInvitation, };
+export type { GatekeeperInvitation, GatekeeperMember, GatekeeperMemberRole, GatekeeperOrganization, InvitationValidationResult, InviteTimeInfo, ValidateInvitationParams, };

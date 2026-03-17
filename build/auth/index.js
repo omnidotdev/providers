@@ -3162,6 +3162,30 @@ var validateInvitation = ({
   }
   return { valid: true };
 };
+var getInviteTimeInfo = (invitation) => {
+  const now = Date.now();
+  const created = new Date(invitation.createdAt).getTime();
+  const expires = new Date(invitation.expiresAt).getTime();
+  const expired = expires < now;
+  return {
+    sentAgo: formatRelativeTime(now - created),
+    expiresLabel: expired ? `Expired ${formatRelativeTime(now - expires)} ago` : `Expires in ${formatRelativeTime(expires - now)}`,
+    isExpired: expired
+  };
+};
+var formatRelativeTime = (ms) => {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days > 0)
+    return `${days}d`;
+  if (hours > 0)
+    return `${hours}h`;
+  if (minutes > 0)
+    return `${minutes}m`;
+  return "just now";
+};
 
 // src/auth/index.ts
 init_jwt();
@@ -3297,6 +3321,8 @@ export {
   isInvitationExpired,
   isInvalidGrant,
   isIdTokenExpired,
+  getInviteTimeInfo,
+  formatRelativeTime,
   fetchUserInfo,
   extractOrgClaims,
   ensureFreshAccessToken,

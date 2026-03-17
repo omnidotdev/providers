@@ -3,6 +3,8 @@ export { extractOrgClaims } from "./claims";
 export {
   GatekeeperOrgClient,
   GatekeeperOrgError,
+  formatRelativeTime,
+  getInviteTimeInfo,
   isInvitationExpired,
   validateInvitation,
 } from "./gatekeeperOrg";
@@ -23,6 +25,7 @@ export type {
   GatekeeperMemberRole,
   GatekeeperOrganization,
   InvitationValidationResult,
+  InviteTimeInfo,
   ValidateInvitationParams,
 } from "./gatekeeperOrg";
 export type { VerifyAccessTokenConfig } from "./jwt";
