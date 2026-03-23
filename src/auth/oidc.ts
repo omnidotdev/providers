@@ -77,7 +77,16 @@ function createOidcClient(config: OidcClientConfig): OidcClient {
     if (jwksCache && now < jwksExpiry) return jwksCache;
 
     const discovery = await getDiscovery();
-    jwksCache = createRemoteJWKSet(new URL(discovery.jwks_uri), {
+
+    // Rewrite jwks_uri to use authBaseUrl — the discovery document returns
+    // external URLs (e.g. localhost:3001) which are unreachable from Docker
+    // containers. Use the internal URL we were configured with instead.
+    const jwksUrl = new URL(discovery.jwks_uri);
+    const baseUrl = new URL(config.authBaseUrl);
+    jwksUrl.protocol = baseUrl.protocol;
+    jwksUrl.host = baseUrl.host;
+
+    jwksCache = createRemoteJWKSet(jwksUrl, {
       timeoutDuration: 15_000,
       cooldownDuration: 30_000,
     });
