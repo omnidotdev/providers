@@ -90657,7 +90657,11 @@ function createOidcClient(config) {
     if (jwksCache3 && now < jwksExpiry)
       return jwksCache3;
     const discovery = await getDiscovery();
-    jwksCache3 = createRemoteJWKSet(new URL(discovery.jwks_uri), {
+    const jwksUrl = new URL(discovery.jwks_uri);
+    const baseUrl = new URL(config.authBaseUrl);
+    jwksUrl.protocol = baseUrl.protocol;
+    jwksUrl.host = baseUrl.host;
+    jwksCache3 = createRemoteJWKSet(jwksUrl, {
       timeoutDuration: 15000,
       cooldownDuration: 30000
     });
