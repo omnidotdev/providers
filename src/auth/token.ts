@@ -85,23 +85,45 @@ async function ensureFreshAccessToken(
 /**
  * Check if an error represents a permanently invalid refresh token.
  * When true, the session should be cleared to force re-authentication.
+ *
+ * Detects three error shapes:
+ * 1. Direct Error with "invalid_grant" in the message
+ * 2. Error with a `cause.error === "invalid_grant"` (nested)
+ * 3. Better Auth APIError wrapper — BA catches the real error and
+ *    re-throws a generic `FAILED_TO_GET_ACCESS_TOKEN` code, hiding
+ *    the inner `invalid_grant`. We treat this wrapper as stale tokens
+ *    since a persistent token-fetch failure means re-auth is needed.
  */
 function isInvalidGrant(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
+  if (err == null || typeof err !== "object") return false;
 
+  // Shape 1: Error with message containing the grant error
   if (
-    err.message.includes("invalid_grant") ||
-    err.message.includes("invalid refresh token")
+    err instanceof Error &&
+    (err.message.includes("invalid_grant") ||
+      err.message.includes("invalid refresh token"))
   ) {
     return true;
   }
 
+  // Shape 2: Error with nested cause
   if (
+    err instanceof Error &&
     "cause" in err &&
     typeof err.cause === "object" &&
     err.cause !== null &&
     "error" in err.cause &&
     (err.cause as { error: string }).error === "invalid_grant"
+  ) {
+    return true;
+  }
+
+  // Shape 3: Better Auth APIError wrapper (body.code)
+  if (
+    "body" in err &&
+    typeof (err as { body: unknown }).body === "object" &&
+    (err as { body: { code?: string } }).body?.code ===
+      "FAILED_TO_GET_ACCESS_TOKEN"
   ) {
     return true;
   }
