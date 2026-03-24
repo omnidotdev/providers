@@ -37,6 +37,14 @@ declare function ensureFreshAccessToken(config: EnsureFreshTokenConfig): Promise
 /**
  * Check if an error represents a permanently invalid refresh token.
  * When true, the session should be cleared to force re-authentication.
+ *
+ * Detects three error shapes:
+ * 1. Direct Error with "invalid_grant" in the message
+ * 2. Error with a `cause.error === "invalid_grant"` (nested)
+ * 3. Better Auth APIError wrapper — BA catches the real error and
+ *    re-throws a generic `FAILED_TO_GET_ACCESS_TOKEN` code, hiding
+ *    the inner `invalid_grant`. We treat this wrapper as stale tokens
+ *    since a persistent token-fetch failure means re-auth is needed.
  */
 declare function isInvalidGrant(err: unknown): boolean;
 export { ensureFreshAccessToken, isIdTokenExpired, isInvalidGrant };

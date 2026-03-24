@@ -1,5 +1,7 @@
 export { createAuthCache } from "./cache";
 export { extractOrgClaims } from "./claims";
+export { createGetAuth } from "./getAuth";
+export { createOmniOAuthConfig } from "./oauth";
 export {
   GatekeeperOrgClient,
   GatekeeperOrgError,
@@ -19,6 +21,13 @@ export {
 export { OMNI_CLAIMS_NAMESPACE } from "./types";
 
 export type { AuthCache, AuthCacheConfig, CachedAuthData } from "./cache";
+export type {
+  BetterAuthApi,
+  GetAuthConfig,
+  GetAuthSession,
+  SetCookieFn,
+} from "./getAuth";
+export type { OmniOAuthConfig } from "./oauth";
 export type {
   GatekeeperInvitation,
   GatekeeperMember,
