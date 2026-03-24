@@ -56,8 +56,9 @@ async function ensureFreshAccessToken(
     try {
       const refreshed = await config.refreshToken();
       if (refreshed?.accessToken) return refreshed;
-    } catch {
-      // Refresh failed — no token available
+    } catch (err) {
+      // Permanently invalid grants must propagate so callers can force re-auth
+      if (isInvalidGrant(err)) throw err;
     }
     return result;
   }
@@ -74,8 +75,10 @@ async function ensureFreshAccessToken(
     try {
       const refreshed = await config.refreshToken();
       if (refreshed?.accessToken) return refreshed;
-    } catch {
-      // Fall through to original token
+    } catch (err) {
+      // Permanently invalid grants must propagate so callers can force re-auth
+      if (isInvalidGrant(err)) throw err;
+      // Transient errors fall through to original token
     }
   }
 

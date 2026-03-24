@@ -74,7 +74,7 @@ describe("ensureFreshAccessToken", () => {
     expect(result).toBe(refreshed);
   });
 
-  it("should fall back to original token when id_token refresh fails", async () => {
+  it("should fall back to original token when refresh fails with transient error", async () => {
     const expiredId = freshAccessToken(
       fakeJwt({ exp: Math.floor(Date.now() / 1000) - 60 }),
     );
@@ -82,11 +82,37 @@ describe("ensureFreshAccessToken", () => {
     const result = await ensureFreshAccessToken({
       getAccessToken: async () => expiredId,
       refreshToken: async () => {
-        throw new Error("refresh failed");
+        throw new Error("network timeout");
       },
     });
 
     expect(result).toBe(expiredId);
+  });
+
+  it("should propagate invalid_grant error when refresh fails on expired token", async () => {
+    const expiredId = freshAccessToken(
+      fakeJwt({ exp: Math.floor(Date.now() / 1000) - 60 }),
+    );
+
+    await expect(
+      ensureFreshAccessToken({
+        getAccessToken: async () => expiredId,
+        refreshToken: async () => {
+          throw new Error("invalid_grant");
+        },
+      }),
+    ).rejects.toThrow("invalid_grant");
+  });
+
+  it("should propagate invalid_grant error when no access token and refresh fails", async () => {
+    await expect(
+      ensureFreshAccessToken({
+        getAccessToken: async () => ({}),
+        refreshToken: async () => {
+          throw new Error("invalid_grant");
+        },
+      }),
+    ).rejects.toThrow("invalid_grant");
   });
 
   it("should skip id_token check when idToken is null", async () => {
