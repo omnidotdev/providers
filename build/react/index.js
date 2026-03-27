@@ -55,7 +55,33 @@ var OrganizationProvider = ({
 var useOrganization = () => {
   return use2(OrganizationContext);
 };
+// src/react/useSessionRefresh.ts
+import { useEffect, useRef } from "react";
+function useSessionRefresh(refreshFn, intervalMs = 4 * 60 * 1000) {
+  const lastRefresh = useRef(Date.now());
+  useEffect(() => {
+    const refresh = () => {
+      lastRefresh.current = Date.now();
+      refreshFn();
+    };
+    const id = setInterval(refresh, intervalMs);
+    const onVisibilityChange = () => {
+      if (document.visibilityState !== "visible")
+        return;
+      const elapsed = Date.now() - lastRefresh.current;
+      if (elapsed > intervalMs / 2) {
+        refresh();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [refreshFn, intervalMs]);
+}
 export {
+  useSessionRefresh,
   useOrganization,
   useEvents,
   OrganizationProvider,

@@ -3,3 +3,4 @@ export {
   OrganizationProvider,
   useOrganization,
 } from "./OrganizationProvider";
+export { useSessionRefresh } from "./useSessionRefresh";
