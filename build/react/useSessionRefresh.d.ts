@@ -12,5 +12,5 @@
  *   (typically the app's `fetchSession` server function)
  * @param intervalMs - Refresh interval in milliseconds (default: 4 min)
  */
-declare function useSessionRefresh(refreshFn: () => void | Promise<void>, intervalMs?: number): void;
+declare function useSessionRefresh(refreshFn: () => void | Promise<unknown>, intervalMs?: number): void;
 export { useSessionRefresh };

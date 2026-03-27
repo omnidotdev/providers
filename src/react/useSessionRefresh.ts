@@ -15,7 +15,7 @@ import { useEffect, useRef } from "react";
  * @param intervalMs - Refresh interval in milliseconds (default: 4 min)
  */
 function useSessionRefresh(
-  refreshFn: () => void | Promise<void>,
+  refreshFn: () => void | Promise<unknown>,
   intervalMs = 4 * 60 * 1000,
 ) {
   const lastRefresh = useRef(Date.now());
