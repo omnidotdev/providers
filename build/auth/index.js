@@ -3005,7 +3005,10 @@ async function ensureFreshAccessToken(config) {
       const refreshed = await config.refreshToken();
       if (refreshed?.accessToken)
         return refreshed;
-    } catch {}
+    } catch (err) {
+      if (isInvalidGrant(err))
+        throw err;
+    }
     return result;
   }
   const expiresAt = result.accessTokenExpiresAt;
@@ -3017,7 +3020,10 @@ async function ensureFreshAccessToken(config) {
       const refreshed = await config.refreshToken();
       if (refreshed?.accessToken)
         return refreshed;
-    } catch {}
+    } catch (err) {
+      if (isInvalidGrant(err))
+        throw err;
+    }
   }
   return result;
 }

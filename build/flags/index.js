@@ -30478,14 +30478,14 @@ var createFlagProvider = (config) => {
     return new NoopFlagProvider(config);
   }
   if (config.provider === "unleash") {
-    if (!config.url) {
-      throw new Error("UnleashFlagProvider requires url in config");
-    }
-    if (!config.apiKey) {
-      throw new Error("UnleashFlagProvider requires apiKey in config");
-    }
-    if (!config.appName) {
-      throw new Error("UnleashFlagProvider requires appName in config");
+    if (!config.url || !config.apiKey || !config.appName) {
+      const missing = [
+        !config.url && "url",
+        !config.apiKey && "apiKey",
+        !config.appName && "appName"
+      ].filter(Boolean);
+      console.warn(`UnleashFlagProvider missing ${missing.join(", ")}, falling back to noop`);
+      return new NoopFlagProvider({});
     }
     return new UnleashFlagProvider({
       ...config,

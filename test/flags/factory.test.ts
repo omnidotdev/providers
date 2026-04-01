@@ -28,33 +28,33 @@ describe("createFlagProvider", () => {
     expect(provider).toBeInstanceOf(UnleashFlagProvider);
   });
 
-  it("should throw when unleash url is missing", () => {
-    expect(() =>
-      createFlagProvider({
-        provider: "unleash",
-        apiKey: "key",
-        appName: "app",
-      }),
-    ).toThrow("UnleashFlagProvider requires url in config");
+  it("should fall back to noop when unleash url is missing", () => {
+    const provider = createFlagProvider({
+      provider: "unleash",
+      apiKey: "key",
+      appName: "app",
+    });
+
+    expect(provider).toBeInstanceOf(NoopFlagProvider);
   });
 
-  it("should throw when unleash apiKey is missing", () => {
-    expect(() =>
-      createFlagProvider({
-        provider: "unleash",
-        url: "http://localhost:4242/api",
-        appName: "app",
-      }),
-    ).toThrow("UnleashFlagProvider requires apiKey in config");
+  it("should fall back to noop when unleash apiKey is missing", () => {
+    const provider = createFlagProvider({
+      provider: "unleash",
+      url: "http://localhost:4242/api",
+      appName: "app",
+    });
+
+    expect(provider).toBeInstanceOf(NoopFlagProvider);
   });
 
-  it("should throw when unleash appName is missing", () => {
-    expect(() =>
-      createFlagProvider({
-        provider: "unleash",
-        url: "http://localhost:4242/api",
-        apiKey: "key",
-      }),
-    ).toThrow("UnleashFlagProvider requires appName in config");
+  it("should fall back to noop when unleash appName is missing", () => {
+    const provider = createFlagProvider({
+      provider: "unleash",
+      url: "http://localhost:4242/api",
+      apiKey: "key",
+    });
+
+    expect(provider).toBeInstanceOf(NoopFlagProvider);
   });
 });
