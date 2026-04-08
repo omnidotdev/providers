@@ -90676,7 +90676,7 @@ class GatekeeperOrgError extends Error {
     return this.status === 403;
   }
 }
-var slugify = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50);
+var slugify = (name) => name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50);
 
 class GatekeeperOrgClient {
   baseUrl;
