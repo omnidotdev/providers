@@ -1,9 +1,9 @@
 /**
  * Periodically call a refresh function to keep the OAuth session alive.
  *
- * Without periodic refresh the short-lived access token (~5 min) expires
- * while the user idles on a page, causing the next server call to fail
- * and logging the user out.
+ * Calls `refreshFn` on a fixed interval so that the session cookie cache
+ * stays warm and BA's built-in access token refresh fires before the token
+ * expires during idle periods.
  *
  * The hook fires on a fixed interval **and** when the window regains
  * focus after being hidden for more than half the interval.

@@ -128,10 +128,19 @@ function createGetAuth(config: GetAuthConfig) {
         const tokenResult = await ensureFreshAccessToken({
           getAccessToken: async () => {
             try {
-              return await authApi.getAccessToken({
+              const result = await authApi.getAccessToken({
                 body: { providerId },
                 headers: request.headers,
               });
+
+              if (!result?.accessToken) {
+                console.warn(
+                  `${logPrefix} getAccessToken returned no token`,
+                  { hasResult: !!result },
+                );
+              }
+
+              return result;
             } catch (err) {
               const body =
                 err && typeof err === "object" && "body" in err

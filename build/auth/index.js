@@ -3000,30 +3000,16 @@ function isIdTokenExpired(token, bufferMs) {
 }
 async function ensureFreshAccessToken(config) {
   const result = await config.getAccessToken();
-  if (!result?.accessToken) {
-    try {
-      const refreshed = await config.refreshToken();
-      if (refreshed?.accessToken)
-        return refreshed;
-    } catch (err) {
-      if (isInvalidGrant(err))
-        throw err;
-    }
+  if (result?.accessToken) {
     return result;
   }
-  const expiresAt = result.accessTokenExpiresAt;
-  const buffer = config.refreshBufferMs ?? 5000;
-  const accessTokenNeedsRefresh = !expiresAt || new Date(expiresAt).getTime() - Date.now() < buffer;
-  const idTokenNeedsRefresh = !!result.idToken && isIdTokenExpired(result.idToken, buffer);
-  if (accessTokenNeedsRefresh || idTokenNeedsRefresh) {
-    try {
-      const refreshed = await config.refreshToken();
-      if (refreshed?.accessToken)
-        return refreshed;
-    } catch (err) {
-      if (isInvalidGrant(err))
-        throw err;
-    }
+  try {
+    const refreshed = await config.refreshToken();
+    if (refreshed?.accessToken)
+      return refreshed;
+  } catch (err) {
+    if (isInvalidGrant(err))
+      throw err;
   }
   return result;
 }
@@ -3072,10 +3058,14 @@ function createGetAuth(config) {
         const tokenResult = await ensureFreshAccessToken({
           getAccessToken: async () => {
             try {
-              return await authApi.getAccessToken({
+              const result = await authApi.getAccessToken({
                 body: { providerId },
                 headers: request.headers
               });
+              if (!result?.accessToken) {
+                console.warn(`${logPrefix} getAccessToken returned no token`, { hasResult: !!result });
+              }
+              return result;
             } catch (err) {
               const body = err && typeof err === "object" && "body" in err ? err.body : undefined;
               console.error(`${logPrefix} getAccessToken failed:`, {

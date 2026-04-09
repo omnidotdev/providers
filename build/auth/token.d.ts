@@ -9,8 +9,6 @@ type EnsureFreshTokenConfig = {
     getAccessToken: () => Promise<TokenResult | null>;
     /** Force-refresh using the stored refresh token (typically auth.api.refreshToken) */
     refreshToken: () => Promise<TokenResult | null>;
-    /** Buffer in ms before expiry to trigger refresh (default: 5000) */
-    refreshBufferMs?: number;
 };
 /**
  * Check whether a JWT's `exp` claim is expired or within the buffer window.
@@ -22,16 +20,23 @@ type EnsureFreshTokenConfig = {
  */
 declare function isIdTokenExpired(token: string, bufferMs: number): boolean;
 /**
- * Get a valid access token, forcing a refresh when needed.
+ * Get a valid access token, refreshing when needed.
  *
- * Better Auth's `getAccessToken` only refreshes when `accessTokenExpiresAt`
- * is set and past. Stale account data (e.g. created before the OIDC provider
- * returned `expires_in`) has null `accessTokenExpiresAt`, so expired tokens
- * are silently returned. This wrapper detects that case and forces a refresh
- * via `auth.api.refreshToken`.
+ * Better Auth's `getAccessToken` already performs an internal refresh when
+ * `accessTokenExpiresAt` is set and the token is near expiry (within 5 s).
+ * That internal refresh hits the OIDC provider, which rotates the refresh
+ * token (revokes old, issues new).
  *
- * Also checks the id_token `exp` claim — if the id_token is expired or within
- * the buffer window, a refresh is triggered even when the access_token is fresh.
+ * IMPORTANT: We must NOT call `refreshToken` separately after `getAccessToken`
+ * has already returned a valid access token. With refresh token rotation, a
+ * second refresh attempt would use the OLD refresh token from the request
+ * cookies (the cookie update from the first refresh is in the response, not
+ * yet visible to subsequent internal API calls). The OIDC provider sees the
+ * revoked token and deletes ALL tokens for that client/user, permanently
+ * poisoning the session.
+ *
+ * We only call `refreshToken` when `getAccessToken` returned NO access token
+ * at all (e.g. the account cookie is missing or corrupt).
  */
 declare function ensureFreshAccessToken(config: EnsureFreshTokenConfig): Promise<TokenResult | null>;
 /**

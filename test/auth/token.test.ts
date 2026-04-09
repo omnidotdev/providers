@@ -21,7 +21,7 @@ function freshAccessToken(idToken?: string | null): TokenResult {
 }
 
 describe("ensureFreshAccessToken", () => {
-  it("should return current tokens when both access_token and id_token are fresh", async () => {
+  it("should return current tokens when access_token is present", async () => {
     const fresh = freshAccessToken(
       fakeJwt({ exp: Math.floor(Date.now() / 1000) + 60 }),
     );
@@ -36,45 +36,7 @@ describe("ensureFreshAccessToken", () => {
     expect(result).toBe(fresh);
   });
 
-  it("should refresh when access_token is fresh but id_token is expired", async () => {
-    const expired = freshAccessToken(
-      fakeJwt({ exp: Math.floor(Date.now() / 1000) - 60 }),
-    );
-    const refreshed: TokenResult = {
-      accessToken: "new-access",
-      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-      idToken: fakeJwt({ exp: Math.floor(Date.now() / 1000) + 60 }),
-    };
-
-    const result = await ensureFreshAccessToken({
-      getAccessToken: async () => expired,
-      refreshToken: async () => refreshed,
-    });
-
-    expect(result).toBe(refreshed);
-  });
-
-  it("should refresh when id_token is within leeway buffer", async () => {
-    // 3 seconds left, buffer is 5000ms — should trigger refresh
-    const almostExpired = freshAccessToken(
-      fakeJwt({ exp: Math.floor(Date.now() / 1000) + 3 }),
-    );
-    const refreshed: TokenResult = {
-      accessToken: "new-access",
-      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-      idToken: fakeJwt({ exp: Math.floor(Date.now() / 1000) + 60 }),
-    };
-
-    const result = await ensureFreshAccessToken({
-      getAccessToken: async () => almostExpired,
-      refreshToken: async () => refreshed,
-      refreshBufferMs: 5_000,
-    });
-
-    expect(result).toBe(refreshed);
-  });
-
-  it("should fall back to original token when refresh fails with transient error", async () => {
+  it("should NOT refresh when access_token is valid but id_token is expired (BA handles refresh internally)", async () => {
     const expiredId = freshAccessToken(
       fakeJwt({ exp: Math.floor(Date.now() / 1000) - 60 }),
     );
@@ -82,37 +44,30 @@ describe("ensureFreshAccessToken", () => {
     const result = await ensureFreshAccessToken({
       getAccessToken: async () => expiredId,
       refreshToken: async () => {
-        throw new Error("network timeout");
+        throw new Error("should not be called");
       },
     });
 
+    // Should return original token; BA's getAccessToken handles refresh internally
     expect(result).toBe(expiredId);
   });
 
-  it("should propagate invalid_grant error when refresh fails on expired token", async () => {
-    const expiredId = freshAccessToken(
-      fakeJwt({ exp: Math.floor(Date.now() / 1000) - 60 }),
-    );
+  it("should NOT refresh when accessTokenExpiresAt is missing but access token is present", async () => {
+    const noExpiry: TokenResult = {
+      accessToken: "access-tok",
+      idToken: fakeJwt({ exp: Math.floor(Date.now() / 1000) + 60 }),
+    };
 
-    await expect(
-      ensureFreshAccessToken({
-        getAccessToken: async () => expiredId,
-        refreshToken: async () => {
-          throw new Error("invalid_grant");
-        },
-      }),
-    ).rejects.toThrow("invalid_grant");
-  });
+    const result = await ensureFreshAccessToken({
+      getAccessToken: async () => noExpiry,
+      refreshToken: async () => {
+        throw new Error("should not be called");
+      },
+    });
 
-  it("should propagate invalid_grant error when no access token and refresh fails", async () => {
-    await expect(
-      ensureFreshAccessToken({
-        getAccessToken: async () => ({}),
-        refreshToken: async () => {
-          throw new Error("invalid_grant");
-        },
-      }),
-    ).rejects.toThrow("invalid_grant");
+    // With token rotation, forcing a separate refresh is dangerous.
+    // BA's getAccessToken handles refresh internally when needed.
+    expect(result).toBe(noExpiry);
   });
 
   it("should skip id_token check when idToken is null", async () => {
@@ -128,24 +83,6 @@ describe("ensureFreshAccessToken", () => {
     expect(result).toBe(noId);
   });
 
-  it("should refresh when accessTokenExpiresAt is missing", async () => {
-    const noExpiry: TokenResult = {
-      accessToken: "access-tok",
-      idToken: fakeJwt({ exp: Math.floor(Date.now() / 1000) + 60 }),
-    };
-    const refreshed: TokenResult = {
-      accessToken: "new-access",
-      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
-    };
-
-    const result = await ensureFreshAccessToken({
-      getAccessToken: async () => noExpiry,
-      refreshToken: async () => refreshed,
-    });
-
-    expect(result).toBe(refreshed);
-  });
-
   it("should refresh when accessToken is missing entirely", async () => {
     const noToken: TokenResult = {};
     const refreshed: TokenResult = {
@@ -159,6 +96,44 @@ describe("ensureFreshAccessToken", () => {
     });
 
     expect(result).toBe(refreshed);
+  });
+
+  it("should refresh when getAccessToken returns null", async () => {
+    const refreshed: TokenResult = {
+      accessToken: "new-access",
+      accessTokenExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+    };
+
+    const result = await ensureFreshAccessToken({
+      getAccessToken: async () => null,
+      refreshToken: async () => refreshed,
+    });
+
+    expect(result).toBe(refreshed);
+  });
+
+  it("should propagate invalid_grant error when no access token and refresh fails", async () => {
+    await expect(
+      ensureFreshAccessToken({
+        getAccessToken: async () => ({}),
+        refreshToken: async () => {
+          throw new Error("invalid_grant");
+        },
+      }),
+    ).rejects.toThrow("invalid_grant");
+  });
+
+  it("should return original result when refresh fails with transient error", async () => {
+    const noToken: TokenResult = {};
+
+    const result = await ensureFreshAccessToken({
+      getAccessToken: async () => noToken,
+      refreshToken: async () => {
+        throw new Error("network timeout");
+      },
+    });
+
+    expect(result).toBe(noToken);
   });
 });
 
