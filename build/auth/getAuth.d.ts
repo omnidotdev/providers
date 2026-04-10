@@ -66,7 +66,16 @@ type GetAuthSession = {
     organizations: OrganizationClaim[];
     user: {
         id: string;
+        name: string;
+        email: string;
+        emailVerified: boolean;
+        image?: string | null;
         identityProviderId?: string | null;
+        [key: string]: unknown;
+    };
+    session: {
+        token: string;
+        expiresAt: Date | string;
         [key: string]: unknown;
     };
     [key: string]: unknown;
