@@ -13,7 +13,9 @@ import type { OrganizationClaim } from "./types";
 type BetterAuthApi = {
   getSession: (opts: {
     headers: Headers;
-  }) => Promise<{ user: { id: string; [key: string]: unknown }; [key: string]: unknown } | null>;
+  }) => Promise<{ user: { id: string; // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
+    [key: string]: any }; // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
+    [key: string]: any } | null>;
   getAccessToken: (opts: {
     body: { providerId: string };
     headers: Headers;
@@ -70,14 +72,17 @@ type GetAuthSession = {
     emailVerified: boolean;
     image?: string | null;
     identityProviderId?: string | null;
-    [key: string]: unknown;
+    // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
+    [key: string]: any;
   };
   session: {
     token: string;
     expiresAt: Date | string;
-    [key: string]: unknown;
+    // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
+    [key: string]: any;
   };
-  [key: string]: unknown;
+  // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
+    [key: string]: any;
 };
 
 /**

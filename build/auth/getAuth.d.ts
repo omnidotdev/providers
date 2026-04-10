@@ -12,9 +12,9 @@ type BetterAuthApi = {
     }) => Promise<{
         user: {
             id: string;
-            [key: string]: unknown;
+            [key: string]: any;
         };
-        [key: string]: unknown;
+        [key: string]: any;
     } | null>;
     getAccessToken: (opts: {
         body: {
@@ -71,14 +71,14 @@ type GetAuthSession = {
         emailVerified: boolean;
         image?: string | null;
         identityProviderId?: string | null;
-        [key: string]: unknown;
+        [key: string]: any;
     };
     session: {
         token: string;
         expiresAt: Date | string;
-        [key: string]: unknown;
+        [key: string]: any;
     };
-    [key: string]: unknown;
+    [key: string]: any;
 };
 /**
  * Create a `getAuth` function for an Omni app.
