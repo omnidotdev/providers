@@ -8,7 +8,8 @@ import type {
   Subscription,
 } from "./interface";
 
-type NoopBillingProviderConfig = Record<string, never>;
+// biome-ignore lint/complexity/noBannedTypes: intentionally empty config
+type NoopBillingProviderConfig = {};
 
 /**
  * No-op billing provider for self-hosted, dev, and testing.

@@ -80,6 +80,7 @@ type CheckoutParams = {
     customerName?: string;
     customerId?: string;
     metadata?: Record<string, string>;
+    bundleSlug?: string;
 };
 /**
  * Checkout with workspace parameters.
@@ -90,7 +91,10 @@ type CheckoutWithWorkspaceParams = {
     priceId: string;
     successUrl: string;
     cancelUrl: string;
+    bundleSlug?: string;
     accessToken: string;
+    /** Number of seats for per-seat pricing */
+    quantity?: number;
     /** Upgrade existing workspace */
     workspaceId?: string;
     /** Create new workspace */

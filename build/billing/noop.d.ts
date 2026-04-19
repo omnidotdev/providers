@@ -1,5 +1,5 @@
 import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, EntitlementsResponse, Price, Subscription } from "./interface";
-type NoopBillingProviderConfig = Record<string, never>;
+type NoopBillingProviderConfig = {};
 /**
  * No-op billing provider for self-hosted, dev, and testing.
  * Returns null for queries (consumers fall back to free-tier defaults).

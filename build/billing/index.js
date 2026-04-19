@@ -246,7 +246,9 @@ class AetherBillingProvider {
         ...params.workspaceId && { workspaceId: params.workspaceId },
         ...params.createWorkspace && {
           createWorkspace: params.createWorkspace
-        }
+        },
+        ...params.quantity && { quantity: params.quantity },
+        ...params.bundleSlug && { bundleSlug: params.bundleSlug }
       })
     });
     if (!response.ok) {
