@@ -11,11 +11,13 @@ import type { OrganizationClaim } from "./types";
  * keeping providers decoupled from Better Auth's full type surface.
  */
 type BetterAuthApi = {
-  getSession: (opts: {
-    headers: Headers;
-  }) => Promise<{ user: { id: string; // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
-    [key: string]: any }; // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
-    [key: string]: any } | null>;
+  getSession: (opts: { headers: Headers }) => Promise<{
+    user: {
+      id: string; // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
+      [key: string]: any;
+    }; // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
+    [key: string]: any;
+  } | null>;
   getAccessToken: (opts: {
     body: { providerId: string };
     headers: Headers;
@@ -82,7 +84,7 @@ type GetAuthSession = {
     [key: string]: any;
   };
   // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
-    [key: string]: any;
+  [key: string]: any;
 };
 
 /**
@@ -130,8 +132,7 @@ function createGetAuth(config: GetAuthConfig) {
       const cachedOrganizations = customUser.organizations;
 
       // Check if we have complete cached data (avoids OIDC verify on every request)
-      const hasCachedData =
-        identityProviderId && cachedOrganizations?.length;
+      const hasCachedData = identityProviderId && cachedOrganizations?.length;
 
       if (hasCachedData) {
         organizations = cachedOrganizations;
@@ -148,10 +149,9 @@ function createGetAuth(config: GetAuthConfig) {
               });
 
               if (!result?.accessToken) {
-                console.warn(
-                  `${logPrefix} getAccessToken returned no token`,
-                  { hasResult: !!result },
-                );
+                console.warn(`${logPrefix} getAccessToken returned no token`, {
+                  hasResult: !!result,
+                });
               }
 
               return result;
@@ -246,6 +246,9 @@ function createGetAuth(config: GetAuthConfig) {
         organizations,
         user: {
           ...session.user,
+          // Always set rowId from the BA user ID so it's available on the
+          // first request after OAuth (before the cache cookie round-trips)
+          rowId: session.user.id,
           identityProviderId,
         },
       } as GetAuthSession;
@@ -258,9 +261,4 @@ function createGetAuth(config: GetAuthConfig) {
 
 export { createGetAuth };
 
-export type {
-  BetterAuthApi,
-  GetAuthConfig,
-  GetAuthSession,
-  SetCookieFn,
-};
+export type { BetterAuthApi, GetAuthConfig, GetAuthSession, SetCookieFn };
