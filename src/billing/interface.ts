@@ -78,6 +78,7 @@ type CheckoutParams = {
   customerName?: string;
   customerId?: string;
   metadata?: Record<string, string>;
+  bundleSlug?: string;
 };
 
 /**
@@ -89,6 +90,7 @@ type CheckoutWithWorkspaceParams = {
   priceId: string;
   successUrl: string;
   cancelUrl: string;
+  bundleSlug?: string;
   accessToken: string;
   /** Upgrade existing workspace */
   workspaceId?: string;

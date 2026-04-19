@@ -202,6 +202,7 @@ class AetherBillingProvider implements BillingProvider {
         ...(params.createWorkspace && {
           createWorkspace: params.createWorkspace,
         }),
+        ...(params.bundleSlug && { bundleSlug: params.bundleSlug }),
       }),
     });
 
@@ -288,7 +289,8 @@ class AetherBillingProvider implements BillingProvider {
     if (!response.ok) {
       const error = await response.json().catch(() => null);
       throw new Error(
-        (error as { error?: string } | null)?.error ?? "Failed to cancel subscription",
+        (error as { error?: string } | null)?.error ??
+          "Failed to cancel subscription",
       );
     }
 
@@ -312,7 +314,8 @@ class AetherBillingProvider implements BillingProvider {
     if (!response.ok) {
       const error = await response.json().catch(() => null);
       throw new Error(
-        (error as { error?: string } | null)?.error ?? "Failed to renew subscription",
+        (error as { error?: string } | null)?.error ??
+          "Failed to renew subscription",
       );
     }
   }
