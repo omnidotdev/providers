@@ -93,7 +93,7 @@ type CheckoutWithWorkspaceParams = {
     cancelUrl: string;
     bundleSlug?: string;
     accessToken: string;
-    /** Number of seats for per-seat pricing */
+    /** Quantity for line items */
     quantity?: number;
     /** Upgrade existing workspace */
     workspaceId?: string;
