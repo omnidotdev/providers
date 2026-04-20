@@ -259,7 +259,7 @@ class AetherBillingProvider {
   }
   async getSubscription(entityType, entityId, accessToken) {
     try {
-      const response = await fetch(`${this.config.baseUrl}/billing-portal/subscription/${entityType}/${entityId}`, {
+      const response = await fetch(`${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
       });
@@ -272,7 +272,7 @@ class AetherBillingProvider {
     }
   }
   async getBillingPortalUrl(entityType, entityId, productId, returnUrl, accessToken) {
-    const response = await fetch(`${this.config.baseUrl}/billing-portal/${entityType}/${entityId}`, {
+    const response = await fetch(`${this.config.baseUrl}/billing-portal/${productId}/${entityType}/${entityId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -288,7 +288,7 @@ class AetherBillingProvider {
     return url;
   }
   async cancelSubscription(entityType, entityId, accessToken) {
-    const response = await fetch(`${this.config.baseUrl}/billing-portal/subscription/${entityType}/${entityId}/cancel`, {
+    const response = await fetch(`${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}/cancel`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` }
     });
@@ -300,7 +300,7 @@ class AetherBillingProvider {
     return id;
   }
   async renewSubscription(entityType, entityId, accessToken) {
-    const response = await fetch(`${this.config.baseUrl}/billing-portal/subscription/${entityType}/${entityId}/renew`, {
+    const response = await fetch(`${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}/renew`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` }
     });

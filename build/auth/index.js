@@ -3137,6 +3137,7 @@ function createGetAuth(config) {
         organizations,
         user: {
           ...session.user,
+          rowId: session.user.id,
           identityProviderId
         }
       };
