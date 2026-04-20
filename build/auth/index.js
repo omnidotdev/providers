@@ -3063,7 +3063,9 @@ function createGetAuth(config) {
                 headers: request.headers
               });
               if (!result?.accessToken) {
-                console.warn(`${logPrefix} getAccessToken returned no token`, { hasResult: !!result });
+                console.warn(`${logPrefix} getAccessToken returned no token`, {
+                  hasResult: !!result
+                });
               }
               return result;
             } catch (err) {
@@ -3417,10 +3419,7 @@ function createOidcClient(config) {
     return jwksCache3;
   }
   async function verifyIdToken(token) {
-    const [discovery, jwks] = await Promise.all([
-      getDiscovery(),
-      getJwks()
-    ]);
+    const [discovery, jwks] = await Promise.all([getDiscovery(), getJwks()]);
     const { payload } = await jwtVerify(token, jwks, {
       issuer: discovery.issuer
     });

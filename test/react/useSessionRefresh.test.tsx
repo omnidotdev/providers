@@ -78,12 +78,10 @@ describe("useSessionRefresh", () => {
     const removeCalls: string[] = [];
 
     const originalRemove = document.removeEventListener;
-    document.removeEventListener = mock(
-      (event: string, ...args: unknown[]) => {
-        removeCalls.push(event);
-        return originalRemove.call(document, event, ...args);
-      },
-    ) as typeof document.removeEventListener;
+    document.removeEventListener = mock((event: string, ...args: unknown[]) => {
+      removeCalls.push(event);
+      return originalRemove.call(document, event, ...args);
+    }) as typeof document.removeEventListener;
 
     const { unmount } = render(
       <HookHost refreshFn={refreshFn} intervalMs={60_000} />,

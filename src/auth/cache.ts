@@ -113,9 +113,7 @@ function createAuthCache(config: AuthCacheConfig): AuthCache {
       .encrypt(key);
   }
 
-  async function decrypt(
-    encrypted: string,
-  ): Promise<CachedAuthData | null> {
+  async function decrypt(encrypted: string): Promise<CachedAuthData | null> {
     // Try current key
     try {
       const key = await getKey();

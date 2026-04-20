@@ -1,10 +1,4 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import { createAuthCache } from "../../src/auth/cache";
 
@@ -96,8 +90,7 @@ describe("createAuthCache", () => {
     const encrypted = await cache.encrypt(MOCK_DATA);
 
     // Rotate: move current to previous, set new current
-    process.env.AUTH_SECRET_PREVIOUS =
-      process.env.AUTH_SECRET;
+    process.env.AUTH_SECRET_PREVIOUS = process.env.AUTH_SECRET;
     process.env.AUTH_SECRET = "new-secret-key-after-rotation-5678";
 
     // Should still decrypt using previous key

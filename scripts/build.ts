@@ -137,10 +137,7 @@ let patched = await Bun.file(mainBundle).text();
 // `await import("node:module")` which step 3 would incorrectly catch.
 
 // 1. Remove Bun's static `createRequire` import (will be replaced in step 4)
-patched = patched.replace(
-  'import { createRequire } from "node:module";\n',
-  "",
-);
+patched = patched.replace('import { createRequire } from "node:module";\n', "");
 
 // 2. Convert `import { X, Y } from "node:*"` to `var { X, Y } = __require("node:*")`
 //    so Vite doesn't try to resolve Node built-ins for the browser bundle

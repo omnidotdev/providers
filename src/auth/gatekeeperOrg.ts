@@ -365,7 +365,9 @@ type InviteTimeInfo = {
  * Derive human-readable time info for an invitation.
  * @param invitation - Gatekeeper invitation with `createdAt` and `expiresAt`
  */
-const getInviteTimeInfo = (invitation: GatekeeperInvitation): InviteTimeInfo => {
+const getInviteTimeInfo = (
+  invitation: GatekeeperInvitation,
+): InviteTimeInfo => {
   const now = Date.now();
   const created = new Date(invitation.createdAt).getTime();
   const expires = new Date(invitation.expiresAt).getTime();

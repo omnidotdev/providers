@@ -95,4 +95,4 @@ type GetAuthSession = {
  */
 declare function createGetAuth(config: GetAuthConfig): (request: Request) => Promise<GetAuthSession | null>;
 export { createGetAuth };
-export type { BetterAuthApi, GetAuthConfig, GetAuthSession, SetCookieFn, };
+export type { BetterAuthApi, GetAuthConfig, GetAuthSession, SetCookieFn };

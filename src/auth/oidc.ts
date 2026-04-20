@@ -96,10 +96,7 @@ function createOidcClient(config: OidcClientConfig): OidcClient {
   }
 
   async function verifyIdToken(token: string): Promise<UserInfoClaims> {
-    const [discovery, jwks] = await Promise.all([
-      getDiscovery(),
-      getJwks(),
-    ]);
+    const [discovery, jwks] = await Promise.all([getDiscovery(), getJwks()]);
 
     const { payload } = await jwtVerify(token, jwks, {
       issuer: discovery.issuer,
