@@ -204,6 +204,7 @@ class AetherBillingProvider implements BillingProvider {
         }),
         ...(params.quantity && { quantity: params.quantity }),
         ...(params.bundleSlug && { bundleSlug: params.bundleSlug }),
+        ...(params.trialPeriodDays !== undefined && { trialPeriodDays: params.trialPeriodDays }),
       }),
     });
 
