@@ -95,6 +95,8 @@ type CheckoutWithWorkspaceParams = {
     accessToken: string;
     /** Quantity for line items */
     quantity?: number;
+    /** Free trial duration in days (0 to disable, defaults to 14 in Aether) */
+    trialPeriodDays?: number;
     /** Upgrade existing workspace */
     workspaceId?: string;
     /** Create new workspace */

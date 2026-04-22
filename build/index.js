@@ -91285,7 +91285,8 @@ class AetherBillingProvider {
           createWorkspace: params.createWorkspace
         },
         ...params.quantity && { quantity: params.quantity },
-        ...params.bundleSlug && { bundleSlug: params.bundleSlug }
+        ...params.bundleSlug && { bundleSlug: params.bundleSlug },
+        ...params.trialPeriodDays !== undefined && { trialPeriodDays: params.trialPeriodDays }
       })
     });
     if (!response.ok) {
