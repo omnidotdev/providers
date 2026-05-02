@@ -29,7 +29,9 @@ const registerSchemas = async (
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: apiKey,
+          Authorization: apiKey.startsWith("Bearer ")
+            ? apiKey
+            : `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           name: schema.name,

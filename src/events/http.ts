@@ -270,7 +270,10 @@ class HttpEventsProvider implements EventsProvider {
   }
 
   private authHeaders(): Record<string, string> {
-    return { Authorization: this.config.apiKey };
+    const key = this.config.apiKey;
+    return {
+      Authorization: key.startsWith("Bearer ") ? key : `Bearer ${key}`,
+    };
   }
 }
 
