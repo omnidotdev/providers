@@ -11160,7 +11160,10 @@ class HttpEventsProvider {
     await this.buffer?.close();
   }
   authHeaders() {
-    return { Authorization: this.config.apiKey };
+    const key = this.config.apiKey;
+    return {
+      Authorization: key.startsWith("Bearer ") ? key : `Bearer ${key}`
+    };
   }
 }
 async function retryWithBackoff(fn, maxRetries) {
@@ -11372,7 +11375,7 @@ var registerSchemas = async (baseUrl, apiKey, schemas, schemaCache) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: apiKey
+          Authorization: apiKey.startsWith("Bearer ") ? apiKey : `Bearer ${apiKey}`
         },
         body: JSON.stringify({
           name: schema.name,
