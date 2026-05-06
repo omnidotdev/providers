@@ -2931,11 +2931,10 @@ async function deriveKeyFromSecret(secret, salt, info) {
   }, keyMaterial, 256));
 }
 function parseCachePayload(payload) {
-  if (typeof payload.rowId !== "string" || typeof payload.identityProviderId !== "string") {
+  if (typeof payload.identityProviderId !== "string")
     return null;
-  }
   return {
-    rowId: payload.rowId,
+    ...typeof payload.rowId === "string" ? { rowId: payload.rowId } : {},
     identityProviderId: payload.identityProviderId,
     organizations: Array.isArray(payload.organizations) ? payload.organizations : []
   };
@@ -2952,7 +2951,7 @@ function createAuthCache(config) {
   async function encrypt3(data) {
     const key = await getKey();
     return new EncryptJWT({
-      rowId: data.rowId,
+      ...data.rowId !== undefined ? { rowId: data.rowId } : {},
       identityProviderId: data.identityProviderId,
       organizations: data.organizations
     }).setProtectedHeader({ alg: "dir", enc: "A256GCM" }).setIssuedAt().setExpirationTime(`${COOKIE_TTL_SECONDS}s`).encrypt(key);
@@ -3036,7 +3035,8 @@ function createGetAuth(config) {
     authCache,
     setCookie,
     providerId = "omni",
-    logPrefix = "[getAuth]"
+    logPrefix = "[getAuth]",
+    resolveRowId
   } = config;
   return async function getAuth(request) {
     try {
@@ -3049,6 +3049,7 @@ function createGetAuth(config) {
       let organizations = [];
       const customUser = session.user;
       let identityProviderId = customUser.identityProviderId;
+      let rowId = customUser.rowId ?? undefined;
       const cachedOrganizations = customUser.organizations;
       const hasCachedData = identityProviderId && cachedOrganizations?.length;
       if (hasCachedData) {
@@ -3107,8 +3108,21 @@ function createGetAuth(config) {
           }
         }
         if (!hasCachedData && identityProviderId && organizations.length) {
+          if (resolveRowId && accessToken && rowId === undefined) {
+            try {
+              const resolved = await resolveRowId({
+                identityProviderId,
+                accessToken,
+                user: session.user
+              });
+              if (resolved)
+                rowId = resolved;
+            } catch (resolveErr) {
+              console.error(`${logPrefix} resolveRowId failed:`, resolveErr instanceof Error ? resolveErr.message : String(resolveErr));
+            }
+          }
           const encrypted = await authCache.encrypt({
-            rowId: session.user.id,
+            ...rowId !== undefined ? { rowId } : {},
             identityProviderId,
             organizations
           });
@@ -3137,7 +3151,7 @@ function createGetAuth(config) {
         organizations,
         user: {
           ...session.user,
-          rowId: session.user.id,
+          ...rowId !== undefined ? { rowId } : {},
           identityProviderId
         }
       };
