@@ -49,6 +49,17 @@ type SetCookieFn = (
   },
 ) => void;
 
+type ResolveRowIdParams = {
+  /** OIDC `sub` claim — stable identity-provider user identifier */
+  identityProviderId: string;
+  /** Fresh access token for calling the consuming app's API */
+  accessToken: string;
+  /** Better Auth user record (includes `id`, `email`, plugin fields) */
+  user: { id: string; email: string; [key: string]: unknown };
+};
+
+type ResolveRowIdFn = (params: ResolveRowIdParams) => Promise<string | null>;
+
 type GetAuthConfig = {
   /** Better Auth server instance (`auth.api`) */
   authApi: BetterAuthApi;
@@ -62,6 +73,21 @@ type GetAuthConfig = {
   providerId?: string;
   /** Log prefix for console output (default: "[getAuth]") */
   logPrefix?: string;
+  /**
+   * Resolve the consuming app's user-row UUID for the authenticated caller.
+   * Called once on cache miss after the access token and `identityProviderId`
+   * are available. The resolved value is stored in the encrypted cache cookie
+   * and exposed as `session.user.rowId` on subsequent requests.
+   *
+   * Without this resolver, `session.user.rowId` is left undefined — the
+   * Better Auth `user.id` is NOT a substitute, since it is not the consuming
+   * app's row UUID.
+   *
+   * Resolver errors are logged and swallowed so transient failures don't
+   * collapse the session; `rowId` simply remains unset until a later request
+   * succeeds.
+   */
+  resolveRowId?: ResolveRowIdFn;
 };
 
 type GetAuthSession = {
@@ -74,6 +100,12 @@ type GetAuthSession = {
     emailVerified: boolean;
     image?: string | null;
     identityProviderId?: string | null;
+    /**
+     * Consuming app's user-row UUID. Populated via the `resolveRowId`
+     * callback supplied to `createGetAuth`; undefined if no resolver was
+     * configured or the resolver has not yet succeeded.
+     */
+    rowId?: string;
     // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
     [key: string]: any;
   };
@@ -108,6 +140,7 @@ function createGetAuth(config: GetAuthConfig) {
     setCookie,
     providerId = "omni",
     logPrefix = "[getAuth]",
+    resolveRowId,
   } = config;
 
   return async function getAuth(
@@ -125,10 +158,12 @@ function createGetAuth(config: GetAuthConfig) {
 
       // Access custom session properties added by customSession plugin
       const customUser = session.user as typeof session.user & {
+        rowId?: string | null;
         identityProviderId?: string | null;
         organizations?: OrganizationClaim[];
       };
       let identityProviderId = customUser.identityProviderId;
+      let rowId: string | undefined = customUser.rowId ?? undefined;
       const cachedOrganizations = customUser.organizations;
 
       // Check if we have complete cached data (avoids OIDC verify on every request)
@@ -210,8 +245,26 @@ function createGetAuth(config: GetAuthConfig) {
 
         // Write cache on first successful token decode (cache miss path)
         if (!hasCachedData && identityProviderId && organizations.length) {
+          if (resolveRowId && accessToken && rowId === undefined) {
+            try {
+              const resolved = await resolveRowId({
+                identityProviderId,
+                accessToken,
+                user: session.user as ResolveRowIdParams["user"],
+              });
+              if (resolved) rowId = resolved;
+            } catch (resolveErr) {
+              console.error(
+                `${logPrefix} resolveRowId failed:`,
+                resolveErr instanceof Error
+                  ? resolveErr.message
+                  : String(resolveErr),
+              );
+            }
+          }
+
           const encrypted = await authCache.encrypt({
-            rowId: session.user.id,
+            ...(rowId !== undefined ? { rowId } : {}),
             identityProviderId,
             organizations,
           });
@@ -246,9 +299,7 @@ function createGetAuth(config: GetAuthConfig) {
         organizations,
         user: {
           ...session.user,
-          // Always set rowId from the BA user ID so it's available on the
-          // first request after OAuth (before the cache cookie round-trips)
-          rowId: session.user.id,
+          ...(rowId !== undefined ? { rowId } : {}),
           identityProviderId,
         },
       } as GetAuthSession;
@@ -261,4 +312,11 @@ function createGetAuth(config: GetAuthConfig) {
 
 export { createGetAuth };
 
-export type { BetterAuthApi, GetAuthConfig, GetAuthSession, SetCookieFn };
+export type {
+  BetterAuthApi,
+  GetAuthConfig,
+  GetAuthSession,
+  ResolveRowIdFn,
+  ResolveRowIdParams,
+  SetCookieFn,
+};

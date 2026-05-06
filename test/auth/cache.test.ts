@@ -133,4 +133,21 @@ describe("createAuthCache", () => {
     const decrypted = await cache.decrypt(encrypted);
     expect(decrypted?.organizations).toEqual([]);
   });
+
+  it("should round-trip without rowId when resolver is absent", async () => {
+    const cache = createAuthCache({ appName: "test" });
+
+    const data: CachedAuthData = {
+      identityProviderId: MOCK_DATA.identityProviderId,
+      organizations: MOCK_DATA.organizations,
+    };
+
+    const encrypted = await cache.encrypt(data);
+    const decrypted = await cache.decrypt(encrypted);
+
+    expect(decrypted).not.toBeNull();
+    expect(decrypted?.rowId).toBeUndefined();
+    expect(decrypted?.identityProviderId).toBe(MOCK_DATA.identityProviderId);
+    expect(decrypted?.organizations).toEqual(MOCK_DATA.organizations);
+  });
 });

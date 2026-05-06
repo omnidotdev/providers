@@ -25,6 +25,8 @@ export type {
   BetterAuthApi,
   GetAuthConfig,
   GetAuthSession,
+  ResolveRowIdFn,
+  ResolveRowIdParams,
   SetCookieFn,
 } from "./getAuth";
 export type { OmniOAuthConfig } from "./oauth";
