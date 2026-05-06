@@ -1,5 +1,5 @@
-import { ensureFreshAccessToken, isInvalidGrant } from "./token";
 import { extractOrgClaims } from "./claims";
+import { ensureFreshAccessToken, isInvalidGrant } from "./token";
 
 import type { AuthCache } from "./cache";
 import type { OidcClient } from "./oidc";

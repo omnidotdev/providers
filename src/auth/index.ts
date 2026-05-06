@@ -1,7 +1,5 @@
 export { createAuthCache } from "./cache";
 export { extractOrgClaims } from "./claims";
-export { createGetAuth } from "./getAuth";
-export { createOmniOAuthConfig } from "./oauth";
 export {
   GatekeeperOrgClient,
   GatekeeperOrgError,
@@ -10,7 +8,9 @@ export {
   isInvitationExpired,
   validateInvitation,
 } from "./gatekeeperOrg";
+export { createGetAuth } from "./getAuth";
 export { verifyAccessToken } from "./jwt";
+export { createOmniOAuthConfig } from "./oauth";
 export { createOidcClient } from "./oidc";
 export { fetchUserInfo, resolveAccessToken } from "./resolve";
 export {
@@ -22,15 +22,6 @@ export { OMNI_CLAIMS_NAMESPACE } from "./types";
 
 export type { AuthCache, AuthCacheConfig, CachedAuthData } from "./cache";
 export type {
-  BetterAuthApi,
-  GetAuthConfig,
-  GetAuthSession,
-  ResolveRowIdFn,
-  ResolveRowIdParams,
-  SetCookieFn,
-} from "./getAuth";
-export type { OmniOAuthConfig } from "./oauth";
-export type {
   GatekeeperInvitation,
   GatekeeperMember,
   GatekeeperMemberRole,
@@ -39,7 +30,16 @@ export type {
   InviteTimeInfo,
   ValidateInvitationParams,
 } from "./gatekeeperOrg";
+export type {
+  BetterAuthApi,
+  GetAuthConfig,
+  GetAuthSession,
+  ResolveRowIdFn,
+  ResolveRowIdParams,
+  SetCookieFn,
+} from "./getAuth";
 export type { VerifyAccessTokenConfig } from "./jwt";
+export type { OmniOAuthConfig } from "./oauth";
 export type {
   OidcClient,
   OidcClientConfig,
