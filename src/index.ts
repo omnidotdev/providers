@@ -16,8 +16,8 @@ export {
   createOmniOAuthConfig,
   ensureFreshAccessToken,
   extractOrgClaims,
-  isInvalidGrant,
   fetchUserInfo,
+  isInvalidGrant,
   resolveAccessToken,
   verifyAccessToken,
 } from "./auth";
@@ -53,14 +53,14 @@ export {
   ResendNotificationProvider,
   createNotificationProvider,
 } from "./notifications";
+// Server
+export { SECURITY_HEADERS } from "./server";
 // Storage
 export {
   NoopStorageProvider,
   S3StorageProvider,
   createStorageProvider,
 } from "./storage";
-// Server
-export { SECURITY_HEADERS } from "./server";
 // Utilities
 export { TtlCache } from "./util/cache";
 export { CircuitBreaker } from "./util/circuitBreaker";
@@ -78,12 +78,12 @@ export type {
   BetterAuthApi,
   CachedAuthData,
   EnsureFreshTokenConfig,
-  GetAuthConfig,
-  GetAuthSession,
   GatekeeperInvitation,
   GatekeeperMember,
   GatekeeperMemberRole,
   GatekeeperOrganization,
+  GetAuthConfig,
+  GetAuthSession,
   OidcClient,
   OidcClientConfig,
   OidcDiscovery,

@@ -42,13 +42,21 @@ describe("AetherBillingProvider URL paths", () => {
     fetchCalls.length = 0;
     await provider.getSubscription("organization", "org-123", "token");
     const url = fetchCalls[0];
-    expect(url).toContain("/billing-portal/subscription/fractal/organization/org-123");
+    expect(url).toContain(
+      "/billing-portal/subscription/fractal/organization/org-123",
+    );
   });
 
   it("getBillingPortalUrl includes appId in path", async () => {
     fetchCalls.length = 0;
     try {
-      await provider.getBillingPortalUrl("organization", "org-123", "fractal", "https://return.url", "token");
+      await provider.getBillingPortalUrl(
+        "organization",
+        "org-123",
+        "fractal",
+        "https://return.url",
+        "token",
+      );
     } catch {
       // may fail due to mock response, but URL is captured
     }
@@ -64,7 +72,9 @@ describe("AetherBillingProvider URL paths", () => {
       // may fail due to mock response
     }
     const url = fetchCalls[0];
-    expect(url).toContain("/billing-portal/subscription/fractal/organization/org-123/cancel");
+    expect(url).toContain(
+      "/billing-portal/subscription/fractal/organization/org-123/cancel",
+    );
   });
 
   it("renewSubscription includes appId in path", async () => {
@@ -75,13 +85,17 @@ describe("AetherBillingProvider URL paths", () => {
       // may fail due to mock response
     }
     const url = fetchCalls[0];
-    expect(url).toContain("/billing-portal/subscription/fractal/organization/org-123/renew");
+    expect(url).toContain(
+      "/billing-portal/subscription/fractal/organization/org-123/renew",
+    );
   });
 
   it("no billing-portal URL should be missing appId segment", async () => {
     // All captured URLs that hit billing-portal should have 4+ path segments
     // (billing-portal / appId / entityType / entityId)
-    const billingUrls = fetchCalls.filter((u) => u.includes("/billing-portal/"));
+    const billingUrls = fetchCalls.filter((u) =>
+      u.includes("/billing-portal/"),
+    );
     for (const url of billingUrls) {
       const path = new URL(url).pathname;
       const segments = path.split("/").filter(Boolean);
@@ -89,7 +103,8 @@ describe("AetherBillingProvider URL paths", () => {
       expect(segments.length).toBeGreaterThanOrEqual(4);
       // Second segment after "billing-portal" should NOT be "organization" or "user"
       // (that would mean appId is missing)
-      const afterBillingPortal = segments[segments.indexOf("billing-portal") + 1];
+      const afterBillingPortal =
+        segments[segments.indexOf("billing-portal") + 1];
       expect(afterBillingPortal).not.toBe("organization");
       expect(afterBillingPortal).not.toBe("user");
     }

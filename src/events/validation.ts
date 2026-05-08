@@ -74,4 +74,4 @@ const validateEventData = (
 
 export { SchemaCache, validateEventData };
 
-export type { CacheableSchema, ValidationResult };
+export type { ValidationResult };

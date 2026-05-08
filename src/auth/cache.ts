@@ -5,7 +5,12 @@ import type { OrganizationClaim } from "./types";
 
 /** Cached auth data stored in an encrypted cookie */
 type CachedAuthData = {
-  rowId: string;
+  /**
+   * Consuming app's user-row UUID. Populated by `createGetAuth`'s
+   * `resolveRowId` callback on cache miss; absent if no resolver was
+   * configured or the resolver returned null.
+   */
+  rowId?: string;
   identityProviderId: string;
   organizations: OrganizationClaim[];
 };
@@ -65,15 +70,10 @@ async function deriveKeyFromSecret(
 function parseCachePayload(
   payload: JWTDecryptResult["payload"],
 ): CachedAuthData | null {
-  if (
-    typeof payload.rowId !== "string" ||
-    typeof payload.identityProviderId !== "string"
-  ) {
-    return null;
-  }
+  if (typeof payload.identityProviderId !== "string") return null;
 
   return {
-    rowId: payload.rowId,
+    ...(typeof payload.rowId === "string" ? { rowId: payload.rowId } : {}),
     identityProviderId: payload.identityProviderId,
     organizations: Array.isArray(payload.organizations)
       ? (payload.organizations as OrganizationClaim[])
@@ -103,7 +103,7 @@ function createAuthCache(config: AuthCacheConfig): AuthCache {
     const key = await getKey();
 
     return new EncryptJWT({
-      rowId: data.rowId,
+      ...(data.rowId !== undefined ? { rowId: data.rowId } : {}),
       identityProviderId: data.identityProviderId,
       organizations: data.organizations,
     })

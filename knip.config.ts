@@ -1,5 +1,4 @@
 export default {
-  entry: ["src/index.ts", "src/graphql/index.ts", "src/react/index.ts"],
   project: ["src/**/*.{ts,tsx}"],
   ignore: ["build/**"],
   ignoreDependencies: [
@@ -15,5 +14,6 @@ export default {
     "resend",
     "@aws-sdk/client-s3",
     "@aws-sdk/s3-request-presigner",
+    "ajv",
   ],
 };
