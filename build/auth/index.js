@@ -3305,7 +3305,8 @@ function createGetAuth(config) {
             console.error(`${logPrefix} JWT verification failed:`, jwtError);
           }
         }
-        if (!hasCachedData && identityProviderId) {
+        const needsRowId = !!resolveRowId && rowId === undefined && !!accessToken;
+        if (identityProviderId && (!hasCachedData || needsRowId)) {
           if (resolveRowId && accessToken && rowId === undefined) {
             try {
               const resolved = await resolveRowId({

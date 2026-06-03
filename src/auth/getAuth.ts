@@ -247,10 +247,21 @@ function createGetAuth(config: GetAuthConfig) {
           }
         }
 
-        // Write cache on first successful token decode (cache miss path).
+        // Retry rowId resolution whenever it is still missing, even for an
+        // already-cached session. The cache cookie is keyed on
+        // identityProviderId, so a session cached before rowId resolved (the
+        // API user did not exist yet, or a transient resolver failure) would
+        // otherwise have hasCachedData=true forever and never re-attempt,
+        // stranding the user until the cookie expired. Resolving on cache hit
+        // makes rowId self-healing across requests without forcing re-auth.
+        const needsRowId =
+          !!resolveRowId && rowId === undefined && !!accessToken;
+
+        // Write cache on first successful token decode (cache miss path), or
+        // when retrying rowId resolution for an already-cached session.
         // Gate on identity only: an authenticated user with no organizations
         // must still be cached so rowId resolves and we stop re-verifying.
-        if (!hasCachedData && identityProviderId) {
+        if (identityProviderId && (!hasCachedData || needsRowId)) {
           if (resolveRowId && accessToken && rowId === undefined) {
             try {
               const resolved = await resolveRowId({
