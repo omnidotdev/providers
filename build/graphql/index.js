@@ -14350,7 +14350,7 @@ var require_graphql_armor_block_field_suggestions_cjs_prod = __commonJS((exports
 var require_graphql_armor_block_field_suggestions_cjs = __commonJS((exports, module) => {
   if (true) {
     module.exports = require_graphql_armor_block_field_suggestions_cjs_prod();
-  } else {}
+  }
 });
 
 // node_modules/@escape.tech/graphql-armor-cost-limit/dist/graphql-armor-cost-limit.cjs.prod.js
@@ -14510,7 +14510,7 @@ var require_graphql_armor_cost_limit_cjs_prod = __commonJS((exports) => {
 var require_graphql_armor_cost_limit_cjs = __commonJS((exports, module) => {
   if (true) {
     module.exports = require_graphql_armor_cost_limit_cjs_prod();
-  } else {}
+  }
 });
 
 // node_modules/@escape.tech/graphql-armor-max-aliases/dist/graphql-armor-max-aliases.cjs.prod.js
@@ -14637,7 +14637,7 @@ var require_graphql_armor_max_aliases_cjs_prod = __commonJS((exports) => {
 var require_graphql_armor_max_aliases_cjs = __commonJS((exports, module) => {
   if (true) {
     module.exports = require_graphql_armor_max_aliases_cjs_prod();
-  } else {}
+  }
 });
 
 // node_modules/@escape.tech/graphql-armor-max-depth/dist/graphql-armor-max-depth.cjs.prod.js
@@ -14772,7 +14772,7 @@ var require_graphql_armor_max_depth_cjs_prod = __commonJS((exports) => {
 var require_graphql_armor_max_depth_cjs = __commonJS((exports, module) => {
   if (true) {
     module.exports = require_graphql_armor_max_depth_cjs_prod();
-  } else {}
+  }
 });
 
 // node_modules/@escape.tech/graphql-armor-max-directives/dist/graphql-armor-max-directives.cjs.prod.js
@@ -14899,7 +14899,7 @@ var require_graphql_armor_max_directives_cjs_prod = __commonJS((exports) => {
 var require_graphql_armor_max_directives_cjs = __commonJS((exports, module) => {
   if (true) {
     module.exports = require_graphql_armor_max_directives_cjs_prod();
-  } else {}
+  }
 });
 
 // node_modules/@escape.tech/graphql-armor-max-tokens/dist/graphql-armor-max-tokens.cjs.prod.js
@@ -15011,7 +15011,7 @@ var require_graphql_armor_max_tokens_cjs_prod = __commonJS((exports) => {
 var require_graphql_armor_max_tokens_cjs = __commonJS((exports, module) => {
   if (true) {
     module.exports = require_graphql_armor_max_tokens_cjs_prod();
-  } else {}
+  }
 });
 
 // node_modules/@escape.tech/graphql-armor/dist/graphql-armor.cjs.prod.js
@@ -15386,7 +15386,7 @@ var require_graphql_armor_cjs_prod = __commonJS((exports) => {
 var require_graphql_armor_cjs = __commonJS((exports, module) => {
   if (true) {
     module.exports = require_graphql_armor_cjs_prod();
-  } else {}
+  }
 });
 
 // src/graphql/armor.ts

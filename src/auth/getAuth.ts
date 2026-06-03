@@ -166,11 +166,15 @@ function createGetAuth(config: GetAuthConfig) {
       let rowId: string | undefined = customUser.rowId ?? undefined;
       const cachedOrganizations = customUser.organizations;
 
-      // Check if we have complete cached data (avoids OIDC verify on every request)
-      const hasCachedData = identityProviderId && cachedOrganizations?.length;
+      // A cached identityProviderId is the marker that getAuth previously wrote
+      // the cache for this session, so trust it to skip OIDC verify on every
+      // request. Do NOT also require cached organizations: a user with zero org
+      // claims is a valid, fully-cached state, and gating on org count left such
+      // users uncached forever (rowId never resolved).
+      const hasCachedData = !!identityProviderId;
 
       if (hasCachedData) {
-        organizations = cachedOrganizations;
+        organizations = cachedOrganizations ?? [];
       }
 
       // Get tokens from Gatekeeper via Better Auth
@@ -243,8 +247,10 @@ function createGetAuth(config: GetAuthConfig) {
           }
         }
 
-        // Write cache on first successful token decode (cache miss path)
-        if (!hasCachedData && identityProviderId && organizations.length) {
+        // Write cache on first successful token decode (cache miss path).
+        // Gate on identity only: an authenticated user with no organizations
+        // must still be cached so rowId resolves and we stop re-verifying.
+        if (!hasCachedData && identityProviderId) {
           if (resolveRowId && accessToken && rowId === undefined) {
             try {
               const resolved = await resolveRowId({

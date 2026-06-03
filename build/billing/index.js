@@ -249,7 +249,9 @@ class AetherBillingProvider {
         },
         ...params.quantity && { quantity: params.quantity },
         ...params.bundleSlug && { bundleSlug: params.bundleSlug },
-        ...params.trialPeriodDays !== undefined && { trialPeriodDays: params.trialPeriodDays }
+        ...params.trialPeriodDays !== undefined && {
+          trialPeriodDays: params.trialPeriodDays
+        }
       })
     });
     if (!response.ok) {

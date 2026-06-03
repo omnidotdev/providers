@@ -19767,7 +19767,7 @@ var require_dbcs_codec = __commonJS((exports) => {
           if (resCode !== undefined) {
             dbcsCode = resCode;
             nextChar = uCode;
-          } else {}
+          }
         }
         seqObj = undefined;
       } else if (uCode >= 0) {
@@ -19832,7 +19832,7 @@ var require_dbcs_codec = __commonJS((exports) => {
           newBuf[j++] = dbcsCode >> 8;
           newBuf[j++] = dbcsCode & 255;
         }
-      } else {}
+      }
       this.seqObj = undefined;
     }
     if (this.leadSurrogate !== -1) {
@@ -90468,197 +90468,6 @@ var OMNI_CLAIMS_NAMESPACE = "https://manifold.omni.dev/@omni/claims/organization
 var extractOrgClaims = (claims) => {
   return claims[OMNI_CLAIMS_NAMESPACE] ?? [];
 };
-// src/auth/token.ts
-async function ensureFreshAccessToken(config) {
-  const result = await config.getAccessToken();
-  if (result?.accessToken) {
-    return result;
-  }
-  try {
-    const refreshed = await config.refreshToken();
-    if (refreshed?.accessToken)
-      return refreshed;
-  } catch (err) {
-    if (isInvalidGrant(err))
-      throw err;
-  }
-  return result;
-}
-function isInvalidGrant(err) {
-  if (err == null || typeof err !== "object")
-    return false;
-  if (err instanceof Error && (err.message.includes("invalid_grant") || err.message.includes("invalid refresh token"))) {
-    return true;
-  }
-  if (err instanceof Error && "cause" in err && typeof err.cause === "object" && err.cause !== null && "error" in err.cause && err.cause.error === "invalid_grant") {
-    return true;
-  }
-  if ("body" in err && typeof err.body === "object" && err.body?.code === "FAILED_TO_GET_ACCESS_TOKEN") {
-    return true;
-  }
-  return false;
-}
-
-// src/auth/getAuth.ts
-function createGetAuth(config) {
-  const {
-    authApi,
-    oidc,
-    authCache,
-    setCookie,
-    providerId = "omni",
-    logPrefix = "[getAuth]",
-    resolveRowId
-  } = config;
-  return async function getAuth(request) {
-    try {
-      const session = await authApi.getSession({
-        headers: request.headers
-      });
-      if (!session)
-        return null;
-      let accessToken;
-      let organizations = [];
-      const customUser = session.user;
-      let identityProviderId = customUser.identityProviderId;
-      let rowId = customUser.rowId ?? undefined;
-      const cachedOrganizations = customUser.organizations;
-      const hasCachedData = identityProviderId && cachedOrganizations?.length;
-      if (hasCachedData) {
-        organizations = cachedOrganizations;
-      }
-      try {
-        const tokenResult = await ensureFreshAccessToken({
-          getAccessToken: async () => {
-            try {
-              const result = await authApi.getAccessToken({
-                body: { providerId },
-                headers: request.headers
-              });
-              if (!result?.accessToken) {
-                console.warn(`${logPrefix} getAccessToken returned no token`, {
-                  hasResult: !!result
-                });
-              }
-              return result;
-            } catch (err) {
-              const body = err && typeof err === "object" && "body" in err ? err.body : undefined;
-              console.error(`${logPrefix} getAccessToken failed:`, {
-                code: body && typeof body === "object" && "code" in body ? body.code : "unknown",
-                message: err instanceof Error ? err.message : String(err)
-              });
-              throw err;
-            }
-          },
-          refreshToken: async () => {
-            try {
-              return await authApi.refreshToken({
-                body: { providerId },
-                headers: request.headers
-              });
-            } catch (err) {
-              console.error(`${logPrefix} refreshToken failed:`, err instanceof Error ? err.message : String(err));
-              throw err;
-            }
-          }
-        });
-        accessToken = tokenResult?.accessToken;
-        if (!accessToken) {
-          console.warn(`${logPrefix} No access token after refresh attempt`);
-        }
-        if (tokenResult?.idToken) {
-          try {
-            const payload = await oidc.verifyIdToken(tokenResult.idToken);
-            if (!identityProviderId) {
-              identityProviderId = payload.sub ?? null;
-            }
-            if (!hasCachedData) {
-              organizations = extractOrgClaims(payload);
-            }
-          } catch (jwtError) {
-            console.error(`${logPrefix} JWT verification failed:`, jwtError);
-          }
-        }
-        if (!hasCachedData && identityProviderId && organizations.length) {
-          if (resolveRowId && accessToken && rowId === undefined) {
-            try {
-              const resolved = await resolveRowId({
-                identityProviderId,
-                accessToken,
-                user: session.user
-              });
-              if (resolved)
-                rowId = resolved;
-            } catch (resolveErr) {
-              console.error(`${logPrefix} resolveRowId failed:`, resolveErr instanceof Error ? resolveErr.message : String(resolveErr));
-            }
-          }
-          const encrypted = await authCache.encrypt({
-            ...rowId !== undefined ? { rowId } : {},
-            identityProviderId,
-            organizations
-          });
-          setCookie(authCache.cookieName, encrypted, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "lax",
-            path: "/",
-            maxAge: authCache.cookieTtlSeconds
-          });
-        }
-      } catch (err) {
-        console.error(`${logPrefix} Token fetch error:`, err);
-        if (isInvalidGrant(err)) {
-          console.warn(`${logPrefix} Stale OAuth tokens, clearing session for re-auth`);
-          try {
-            await authApi.signOut({ headers: request.headers });
-          } catch {}
-          setCookie(authCache.cookieName, "", { maxAge: 0, path: "/" });
-          return null;
-        }
-      }
-      return {
-        ...session,
-        accessToken,
-        organizations,
-        user: {
-          ...session.user,
-          ...rowId !== undefined ? { rowId } : {},
-          identityProviderId
-        }
-      };
-    } catch (error) {
-      console.error("Failed to get auth session:", error);
-      return null;
-    }
-  };
-}
-// src/auth/oauth.ts
-function createOmniOAuthConfig(config) {
-  return {
-    providerId: "omni",
-    clientId: config.clientId,
-    clientSecret: config.clientSecret,
-    authorizationUrl: `${config.authBaseUrl}/oauth2/authorize`,
-    tokenUrl: `${config.authInternalUrl}/oauth2/token`,
-    userInfoUrl: `${config.authInternalUrl}/userinfo`,
-    scopes: config.scopes ?? [
-      "openid",
-      "profile",
-      "email",
-      "offline_access",
-      "organization"
-    ],
-    accessType: "offline",
-    pkce: true,
-    mapProfileToUser: (profile) => ({
-      name: profile.name,
-      email: profile.email,
-      emailVerified: profile.email_verified,
-      image: profile.picture
-    })
-  };
-}
 // src/auth/gatekeeperOrg.ts
 class GatekeeperOrgError extends Error {
   status;
@@ -90810,10 +90619,201 @@ class GatekeeperOrgClient {
     }
   }
 }
+// src/auth/token.ts
+async function ensureFreshAccessToken(config) {
+  const result = await config.getAccessToken();
+  if (result?.accessToken) {
+    return result;
+  }
+  try {
+    const refreshed = await config.refreshToken();
+    if (refreshed?.accessToken)
+      return refreshed;
+  } catch (err) {
+    if (isInvalidGrant(err))
+      throw err;
+  }
+  return result;
+}
+function isInvalidGrant(err) {
+  if (err == null || typeof err !== "object")
+    return false;
+  if (err instanceof Error && (err.message.includes("invalid_grant") || err.message.includes("invalid refresh token"))) {
+    return true;
+  }
+  if (err instanceof Error && "cause" in err && typeof err.cause === "object" && err.cause !== null && "error" in err.cause && err.cause.error === "invalid_grant") {
+    return true;
+  }
+  if ("body" in err && typeof err.body === "object" && err.body?.code === "FAILED_TO_GET_ACCESS_TOKEN") {
+    return true;
+  }
+  return false;
+}
+
+// src/auth/getAuth.ts
+function createGetAuth(config) {
+  const {
+    authApi,
+    oidc,
+    authCache,
+    setCookie,
+    providerId = "omni",
+    logPrefix = "[getAuth]",
+    resolveRowId
+  } = config;
+  return async function getAuth(request) {
+    try {
+      const session = await authApi.getSession({
+        headers: request.headers
+      });
+      if (!session)
+        return null;
+      let accessToken;
+      let organizations = [];
+      const customUser = session.user;
+      let identityProviderId = customUser.identityProviderId;
+      let rowId = customUser.rowId ?? undefined;
+      const cachedOrganizations = customUser.organizations;
+      const hasCachedData = !!identityProviderId;
+      if (hasCachedData) {
+        organizations = cachedOrganizations ?? [];
+      }
+      try {
+        const tokenResult = await ensureFreshAccessToken({
+          getAccessToken: async () => {
+            try {
+              const result = await authApi.getAccessToken({
+                body: { providerId },
+                headers: request.headers
+              });
+              if (!result?.accessToken) {
+                console.warn(`${logPrefix} getAccessToken returned no token`, {
+                  hasResult: !!result
+                });
+              }
+              return result;
+            } catch (err) {
+              const body = err && typeof err === "object" && "body" in err ? err.body : undefined;
+              console.error(`${logPrefix} getAccessToken failed:`, {
+                code: body && typeof body === "object" && "code" in body ? body.code : "unknown",
+                message: err instanceof Error ? err.message : String(err)
+              });
+              throw err;
+            }
+          },
+          refreshToken: async () => {
+            try {
+              return await authApi.refreshToken({
+                body: { providerId },
+                headers: request.headers
+              });
+            } catch (err) {
+              console.error(`${logPrefix} refreshToken failed:`, err instanceof Error ? err.message : String(err));
+              throw err;
+            }
+          }
+        });
+        accessToken = tokenResult?.accessToken;
+        if (!accessToken) {
+          console.warn(`${logPrefix} No access token after refresh attempt`);
+        }
+        if (tokenResult?.idToken) {
+          try {
+            const payload = await oidc.verifyIdToken(tokenResult.idToken);
+            if (!identityProviderId) {
+              identityProviderId = payload.sub ?? null;
+            }
+            if (!hasCachedData) {
+              organizations = extractOrgClaims(payload);
+            }
+          } catch (jwtError) {
+            console.error(`${logPrefix} JWT verification failed:`, jwtError);
+          }
+        }
+        if (!hasCachedData && identityProviderId) {
+          if (resolveRowId && accessToken && rowId === undefined) {
+            try {
+              const resolved = await resolveRowId({
+                identityProviderId,
+                accessToken,
+                user: session.user
+              });
+              if (resolved)
+                rowId = resolved;
+            } catch (resolveErr) {
+              console.error(`${logPrefix} resolveRowId failed:`, resolveErr instanceof Error ? resolveErr.message : String(resolveErr));
+            }
+          }
+          const encrypted = await authCache.encrypt({
+            ...rowId !== undefined ? { rowId } : {},
+            identityProviderId,
+            organizations
+          });
+          setCookie(authCache.cookieName, encrypted, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "lax",
+            path: "/",
+            maxAge: authCache.cookieTtlSeconds
+          });
+        }
+      } catch (err) {
+        console.error(`${logPrefix} Token fetch error:`, err);
+        if (isInvalidGrant(err)) {
+          console.warn(`${logPrefix} Stale OAuth tokens, clearing session for re-auth`);
+          try {
+            await authApi.signOut({ headers: request.headers });
+          } catch {}
+          setCookie(authCache.cookieName, "", { maxAge: 0, path: "/" });
+          return null;
+        }
+      }
+      return {
+        ...session,
+        accessToken,
+        organizations,
+        user: {
+          ...session.user,
+          ...rowId !== undefined ? { rowId } : {},
+          identityProviderId
+        }
+      };
+    } catch (error) {
+      console.error("Failed to get auth session:", error);
+      return null;
+    }
+  };
+}
 
 // src/auth/index.ts
 init_jwt();
 
+// src/auth/oauth.ts
+function createOmniOAuthConfig(config) {
+  return {
+    providerId: "omni",
+    clientId: config.clientId,
+    clientSecret: config.clientSecret,
+    authorizationUrl: `${config.authBaseUrl}/oauth2/authorize`,
+    tokenUrl: `${config.authInternalUrl}/oauth2/token`,
+    userInfoUrl: `${config.authInternalUrl}/userinfo`,
+    scopes: config.scopes ?? [
+      "openid",
+      "profile",
+      "email",
+      "offline_access",
+      "organization"
+    ],
+    accessType: "offline",
+    pkce: true,
+    mapProfileToUser: (profile) => ({
+      name: profile.name,
+      email: profile.email,
+      emailVerified: profile.email_verified,
+      image: profile.picture
+    })
+  };
+}
 // src/auth/oidc.ts
 init_webapi();
 var DISCOVERY_TTL = 24 * 60 * 60 * 1000;
@@ -91300,7 +91300,9 @@ class AetherBillingProvider {
         },
         ...params.quantity && { quantity: params.quantity },
         ...params.bundleSlug && { bundleSlug: params.bundleSlug },
-        ...params.trialPeriodDays !== undefined && { trialPeriodDays: params.trialPeriodDays }
+        ...params.trialPeriodDays !== undefined && {
+          trialPeriodDays: params.trialPeriodDays
+        }
       })
     });
     if (!response.ok) {
@@ -92325,6 +92327,15 @@ var createNotificationProvider = (config) => {
   const _exhaustive = config;
   throw new Error(`Unknown notification provider: ${_exhaustive}`);
 };
+// src/server/headers.ts
+var SECURITY_HEADERS = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "X-XSS-Protection": "1; mode=block",
+  "Referrer-Policy": "strict-origin-when-cross-origin"
+};
+var headers_default = SECURITY_HEADERS;
 // src/storage/noop.ts
 var NOOP_BASE_URL = "https://noop.example.com";
 
@@ -92485,14 +92496,6 @@ var createStorageProvider = (config) => {
   const _exhaustive = config;
   throw new Error(`Unknown storage provider: ${_exhaustive}`);
 };
-// src/server/headers.ts
-var SECURITY_HEADERS = {
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "X-XSS-Protection": "1; mode=block",
-  "Referrer-Policy": "strict-origin-when-cross-origin"
-};
-var headers_default = SECURITY_HEADERS;
 export {
   verifyAccessToken,
   resolveAccessToken,
