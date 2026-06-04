@@ -1,6 +1,8 @@
+import { FractalFlagProvider } from "./fractal";
 import { NoopFlagProvider } from "./noop";
 import { UnleashFlagProvider } from "./unleash";
 
+import type { FractalFlagProviderConfig } from "./fractal";
 import type { FlagProvider } from "./interface";
 import type { NoopFlagProviderConfig } from "./noop";
 import type { UnleashFlagProviderConfig } from "./unleash";
@@ -11,6 +13,7 @@ import type { UnleashFlagProviderConfig } from "./unleash";
  */
 type FlagProviderConfig =
   | ({ provider: "unleash" } & UnleashFlagProviderConfig)
+  | ({ provider: "fractal" } & FractalFlagProviderConfig)
   | ({ provider: "noop" } & NoopFlagProviderConfig)
   | NoopFlagProviderConfig;
 
@@ -45,6 +48,24 @@ const createFlagProvider = (config: FlagProviderConfig): FlagProvider => {
     });
   }
 
+  if (config.provider === "fractal") {
+    if (!config.url || !config.project) {
+      const missing = [
+        !config.url && "url",
+        !config.project && "project",
+      ].filter(Boolean);
+      console.warn(
+        `FractalFlagProvider missing ${missing.join(", ")}, falling back to noop`,
+      );
+      return new NoopFlagProvider({});
+    }
+    return new FractalFlagProvider({
+      ...config,
+      url: config.url,
+      project: config.project,
+    });
+  }
+
   // Exhaustive check
   const _exhaustive: never = config;
   throw new Error(`Unknown flag provider: ${_exhaustive}`);
@@ -52,11 +73,13 @@ const createFlagProvider = (config: FlagProviderConfig): FlagProvider => {
 
 export { createFlagProvider };
 
+export { FractalFlagProvider } from "./fractal";
 export { NoopFlagProvider } from "./noop";
 export { UnleashFlagProvider } from "./unleash";
 
 export type { FlagProviderConfig };
 
+export type { FractalFlagProviderConfig } from "./fractal";
 export type { FlagContext, FlagProvider } from "./interface";
 export type { NoopFlagProviderConfig } from "./noop";
 export type { UnleashFlagProviderConfig } from "./unleash";

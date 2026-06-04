@@ -1,3 +1,4 @@
+import type { FractalFlagProviderConfig } from "./fractal";
 import type { FlagProvider } from "./interface";
 import type { NoopFlagProviderConfig } from "./noop";
 import type { UnleashFlagProviderConfig } from "./unleash";
@@ -8,6 +9,8 @@ import type { UnleashFlagProviderConfig } from "./unleash";
 type FlagProviderConfig = ({
     provider: "unleash";
 } & UnleashFlagProviderConfig) | ({
+    provider: "fractal";
+} & FractalFlagProviderConfig) | ({
     provider: "noop";
 } & NoopFlagProviderConfig) | NoopFlagProviderConfig;
 /**
@@ -18,9 +21,11 @@ type FlagProviderConfig = ({
  */
 declare const createFlagProvider: (config: FlagProviderConfig) => FlagProvider;
 export { createFlagProvider };
+export { FractalFlagProvider } from "./fractal";
 export { NoopFlagProvider } from "./noop";
 export { UnleashFlagProvider } from "./unleash";
 export type { FlagProviderConfig };
+export type { FractalFlagProviderConfig } from "./fractal";
 export type { FlagContext, FlagProvider } from "./interface";
 export type { NoopFlagProviderConfig } from "./noop";
 export type { UnleashFlagProviderConfig } from "./unleash";

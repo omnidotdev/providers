@@ -30345,21 +30345,6 @@ var require_lib13 = __commonJS((exports) => {
   }
 });
 
-// src/flags/noop.ts
-class NoopFlagProvider {
-  defaults;
-  constructor(config = {}) {
-    this.defaults = config.defaults ?? {};
-  }
-  async isEnabled(flagKey, _context) {
-    return this.defaults[flagKey] ?? false;
-  }
-  async healthCheck() {
-    return { healthy: true, message: "noop" };
-  }
-  async close() {}
-}
-
 // src/util/log.ts
 function log(level, module, message, data) {
   const entry = {
@@ -30378,8 +30363,148 @@ function log(level, module, message, data) {
   }
 }
 
-// src/flags/unleash.ts
+// src/flags/fractal.ts
 var REQUEST_TIMEOUT_MS = 5000;
+var DEFAULT_CACHE_TTL_MS = 30000;
+var DEFAULT_ENVIRONMENT = "production";
+var EVALUATE_FLAGS_QUERY = `query EvaluateFlags($projectId: String!, $environment: String!, $context: FlagEvaluationContextInput) {
+  evaluateFlags(projectId: $projectId, environment: $environment, context: $context) {
+    key
+    value
+  }
+}`;
+function stableStringify(obj) {
+  const sorted = {};
+  for (const key of Object.keys(obj).sort())
+    sorted[key] = obj[key];
+  return JSON.stringify(sorted);
+}
+
+class FractalFlagProvider {
+  config;
+  defaults;
+  devMode;
+  cacheTtlMs;
+  fetchImpl;
+  cache = new Map;
+  constructor(config) {
+    this.config = config;
+    this.defaults = config.defaults ?? {};
+    this.devMode = config.devMode ?? false;
+    this.cacheTtlMs = config.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
+    this.fetchImpl = config.fetch ?? globalThis.fetch;
+  }
+  async isEnabled(flagKey, context) {
+    if (this.devMode) {
+      return this.defaults[flagKey] ?? false;
+    }
+    const flags = await this.#evaluate(context);
+    if (flags && flagKey in flags) {
+      return Boolean(flags[flagKey]);
+    }
+    return this.defaults[flagKey] ?? false;
+  }
+  async healthCheck() {
+    if (this.devMode) {
+      return { healthy: true, message: "dev mode" };
+    }
+    const flags = await this.#evaluate(undefined);
+    return flags ? { healthy: true, message: "OK" } : { healthy: true, message: "fallback defaults" };
+  }
+  async close() {
+    this.cache.clear();
+  }
+  #attributes(context) {
+    const attributes = {};
+    if (context?.userId)
+      attributes.userId = context.userId;
+    if (context?.organizationId) {
+      attributes.organizationId = context.organizationId;
+    }
+    if (context?.properties)
+      Object.assign(attributes, context.properties);
+    return attributes;
+  }
+  #cacheKey(environment, context) {
+    const targetingKey = context?.userId ?? context?.organizationId ?? "";
+    return `${environment}\x00${targetingKey}\x00${stableStringify(this.#attributes(context))}`;
+  }
+  async#evaluate(context) {
+    const environment = context?.environment ?? this.config.environment ?? DEFAULT_ENVIRONMENT;
+    const key = this.#cacheKey(environment, context);
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.evaluatedAt < this.cacheTtlMs) {
+      return cached.flags;
+    }
+    const targetingKey = context?.userId ?? context?.organizationId;
+    const attributes = this.#attributes(context);
+    const variables = {
+      projectId: this.config.project,
+      environment,
+      context: {
+        ...targetingKey ? { targetingKey } : {},
+        ...Object.keys(attributes).length > 0 ? { attributes } : {}
+      }
+    };
+    try {
+      const flags = await this.#requestEvaluation(variables);
+      this.cache.set(key, { evaluatedAt: Date.now(), flags });
+      return flags;
+    } catch (error) {
+      log("warn", "flags", "Fractal evaluation failed, using defaults", {
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+      return null;
+    }
+  }
+  async#requestEvaluation(variables) {
+    const controller = new AbortController;
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const response = await this.fetchImpl(this.config.url, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...this.config.token ? { authorization: `Bearer ${this.config.token}` } : {}
+        },
+        body: JSON.stringify({ query: EVALUATE_FLAGS_QUERY, variables }),
+        signal: controller.signal
+      });
+      if (!response.ok) {
+        throw new Error(`fractal-api returned ${response.status}`);
+      }
+      const json = await response.json();
+      if (json.errors && json.errors.length > 0) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(json.errors)}`);
+      }
+      const flags = {};
+      for (const evaluation of json.data?.evaluateFlags ?? []) {
+        flags[evaluation.key] = evaluation.value;
+      }
+      return flags;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+}
+
+// src/flags/noop.ts
+class NoopFlagProvider {
+  defaults;
+  constructor(config = {}) {
+    this.defaults = config.defaults ?? {};
+  }
+  async isEnabled(flagKey, _context) {
+    return this.defaults[flagKey] ?? false;
+  }
+  async healthCheck() {
+    return { healthy: true, message: "noop" };
+  }
+  async close() {}
+}
+
+// src/flags/unleash.ts
+var REQUEST_TIMEOUT_MS2 = 5000;
 
 class UnleashFlagProvider {
   config;
@@ -30454,7 +30579,7 @@ class UnleashFlagProvider {
       }
       this.client = await Promise.race([
         startUnleash(unleashConfig),
-        new Promise((_resolve, reject) => setTimeout(() => reject(new Error("Unleash init timed out")), REQUEST_TIMEOUT_MS))
+        new Promise((_resolve, reject) => setTimeout(() => reject(new Error("Unleash init timed out")), REQUEST_TIMEOUT_MS2))
       ]);
       this.initialized = true;
       log("info", "flags", "Unleash client connected", {
@@ -30494,11 +30619,27 @@ var createFlagProvider = (config) => {
       appName: config.appName
     });
   }
+  if (config.provider === "fractal") {
+    if (!config.url || !config.project) {
+      const missing = [
+        !config.url && "url",
+        !config.project && "project"
+      ].filter(Boolean);
+      console.warn(`FractalFlagProvider missing ${missing.join(", ")}, falling back to noop`);
+      return new NoopFlagProvider({});
+    }
+    return new FractalFlagProvider({
+      ...config,
+      url: config.url,
+      project: config.project
+    });
+  }
   const _exhaustive = config;
   throw new Error(`Unknown flag provider: ${_exhaustive}`);
 };
 export {
   createFlagProvider,
   UnleashFlagProvider,
-  NoopFlagProvider
+  NoopFlagProvider,
+  FractalFlagProvider
 };
