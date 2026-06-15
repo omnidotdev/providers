@@ -1,6 +1,8 @@
+import { HeraldNotificationProvider } from "./herald";
 import { NoopNotificationProvider } from "./noop";
 import { ResendNotificationProvider } from "./resend";
 
+import type { HeraldNotificationProviderConfig } from "./herald";
 import type { NotificationProvider } from "./interface";
 import type { NoopNotificationProviderConfig } from "./noop";
 import type { ResendNotificationProviderConfig } from "./resend";
@@ -10,6 +12,7 @@ import type { ResendNotificationProviderConfig } from "./resend";
  * Defaults to noop when `provider` is omitted.
  */
 type NotificationProviderConfig =
+  | ({ provider: "herald" } & HeraldNotificationProviderConfig)
   | ({ provider: "resend" } & ResendNotificationProviderConfig)
   | ({ provider: "noop" } & NoopNotificationProviderConfig)
   | NoopNotificationProviderConfig;
@@ -25,6 +28,26 @@ const createNotificationProvider = (
 ): NotificationProvider => {
   if (!("provider" in config) || config.provider === "noop") {
     return new NoopNotificationProvider();
+  }
+
+  if (config.provider === "herald") {
+    if (!config.apiKey) {
+      throw new Error("HeraldNotificationProvider requires apiKey in config");
+    }
+    if (!config.apiUrl) {
+      throw new Error("HeraldNotificationProvider requires apiUrl in config");
+    }
+    if (!config.defaultFrom) {
+      throw new Error(
+        "HeraldNotificationProvider requires defaultFrom in config",
+      );
+    }
+    return new HeraldNotificationProvider({
+      ...config,
+      apiKey: config.apiKey,
+      apiUrl: config.apiUrl,
+      defaultFrom: config.defaultFrom,
+    });
   }
 
   if (config.provider === "resend") {
@@ -50,11 +73,13 @@ const createNotificationProvider = (
 
 export { createNotificationProvider };
 
+export { HeraldNotificationProvider } from "./herald";
 export { NoopNotificationProvider } from "./noop";
 export { ResendNotificationProvider } from "./resend";
 
 export type { NotificationProviderConfig };
 
+export type { HeraldNotificationProviderConfig } from "./herald";
 export type {
   EmailParams,
   EmailResult,
