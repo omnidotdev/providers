@@ -36,6 +36,16 @@ type HeraldMessageBody = {
 };
 
 /**
+ * Extract a bare email address from an RFC 5322 address. Herald validates
+ * `to`/`from` as bare emails and rejects the `Name <email>` display form, so
+ * strip any display name down to the address inside the angle brackets.
+ */
+const toBareEmail = (address: string): string => {
+  const match = address.match(/<([^>]+)>/);
+  return (match ? match[1] : address).trim();
+};
+
+/**
  * Herald notification provider.
  * Sends transactional emails via the self-hosted Herald API.
  *
@@ -65,8 +75,8 @@ class HeraldNotificationProvider implements NotificationProvider {
 
       for (const recipient of recipients) {
         const body: HeraldMessageBody = {
-          to: recipient,
-          from: params.from ?? this.config.defaultFrom,
+          to: toBareEmail(recipient),
+          from: toBareEmail(params.from ?? this.config.defaultFrom),
           subject: params.subject,
           // Herald requires a non-empty html part; for plain-text bodies we set
           // both html and text so the text part is preserved

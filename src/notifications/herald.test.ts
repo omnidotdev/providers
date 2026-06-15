@@ -143,6 +143,30 @@ describe("HeraldNotificationProvider.sendEmail", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeTruthy();
   });
+
+  it("strips display names so Herald receives bare from/to addresses", async () => {
+    const { calls } = stubFetch(200, { id: "m_5", status: "queued" });
+    const provider = new HeraldNotificationProvider({
+      apiKey: API_KEY,
+      apiUrl: API_URL,
+      defaultFrom: "Omni Orders <orders@send.omni.dev>",
+    });
+
+    const result = await provider.sendEmail({
+      to: "Buyer Name <buyer@example.com>",
+      subject: "Hello",
+      body: "<p>Hi</p>",
+      html: true,
+    });
+
+    expect(result.success).toBe(true);
+    const body = JSON.parse(String(calls[0]?.init?.body)) as {
+      from: string;
+      to: string;
+    };
+    expect(body.from).toBe("orders@send.omni.dev");
+    expect(body.to).toBe("buyer@example.com");
+  });
 });
 
 describe("HeraldNotificationProvider.sendEmailBatch", () => {
