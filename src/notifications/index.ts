@@ -1,11 +1,9 @@
 import { HeraldNotificationProvider } from "./herald";
 import { NoopNotificationProvider } from "./noop";
-import { ResendNotificationProvider } from "./resend";
 
 import type { HeraldNotificationProviderConfig } from "./herald";
 import type { NotificationProvider } from "./interface";
 import type { NoopNotificationProviderConfig } from "./noop";
-import type { ResendNotificationProviderConfig } from "./resend";
 
 /**
  * Discriminated union config for `createNotificationProvider`.
@@ -13,7 +11,6 @@ import type { ResendNotificationProviderConfig } from "./resend";
  */
 type NotificationProviderConfig =
   | ({ provider: "herald" } & HeraldNotificationProviderConfig)
-  | ({ provider: "resend" } & ResendNotificationProviderConfig)
   | ({ provider: "noop" } & NoopNotificationProviderConfig)
   | NoopNotificationProviderConfig;
 
@@ -50,22 +47,6 @@ const createNotificationProvider = (
     });
   }
 
-  if (config.provider === "resend") {
-    if (!config.apiKey) {
-      throw new Error("ResendNotificationProvider requires apiKey in config");
-    }
-    if (!config.defaultFrom) {
-      throw new Error(
-        "ResendNotificationProvider requires defaultFrom in config",
-      );
-    }
-    return new ResendNotificationProvider({
-      ...config,
-      apiKey: config.apiKey,
-      defaultFrom: config.defaultFrom,
-    });
-  }
-
   // Exhaustive check
   const _exhaustive: never = config;
   throw new Error(`Unknown notification provider: ${_exhaustive}`);
@@ -75,7 +56,6 @@ export { createNotificationProvider };
 
 export { HeraldNotificationProvider } from "./herald";
 export { NoopNotificationProvider } from "./noop";
-export { ResendNotificationProvider } from "./resend";
 
 export type { NotificationProviderConfig };
 
@@ -86,4 +66,3 @@ export type {
   NotificationProvider,
 } from "./interface";
 export type { NoopNotificationProviderConfig } from "./noop";
-export type { ResendNotificationProviderConfig } from "./resend";

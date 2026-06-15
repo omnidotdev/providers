@@ -50,7 +50,6 @@ export {
 // Notifications
 export {
   NoopNotificationProvider,
-  ResendNotificationProvider,
   createNotificationProvider,
 } from "./notifications";
 // Server
@@ -150,7 +149,6 @@ export type {
   NoopNotificationProviderConfig,
   NotificationProvider,
   NotificationProviderConfig,
-  ResendNotificationProviderConfig,
 } from "./notifications";
 export type {
   NoopStorageProviderConfig,
