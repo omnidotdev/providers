@@ -1,3 +1,4 @@
+import type { HeraldNotificationProviderConfig } from "./herald";
 import type { NotificationProvider } from "./interface";
 import type { NoopNotificationProviderConfig } from "./noop";
 import type { ResendNotificationProviderConfig } from "./resend";
@@ -6,6 +7,8 @@ import type { ResendNotificationProviderConfig } from "./resend";
  * Defaults to noop when `provider` is omitted.
  */
 type NotificationProviderConfig = ({
+    provider: "herald";
+} & HeraldNotificationProviderConfig) | ({
     provider: "resend";
 } & ResendNotificationProviderConfig) | ({
     provider: "noop";
@@ -18,9 +21,11 @@ type NotificationProviderConfig = ({
  */
 declare const createNotificationProvider: (config: NotificationProviderConfig) => NotificationProvider;
 export { createNotificationProvider };
+export { HeraldNotificationProvider } from "./herald";
 export { NoopNotificationProvider } from "./noop";
 export { ResendNotificationProvider } from "./resend";
 export type { NotificationProviderConfig };
+export type { HeraldNotificationProviderConfig } from "./herald";
 export type { EmailParams, EmailResult, NotificationProvider, } from "./interface";
 export type { NoopNotificationProviderConfig } from "./noop";
 export type { ResendNotificationProviderConfig } from "./resend";

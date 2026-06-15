@@ -12858,23 +12858,6 @@ var init_dist = __esm(() => {
   userAgent = typeof process !== "undefined" && process.env ? process.env.RESEND_USER_AGENT || defaultUserAgent : defaultUserAgent;
 });
 
-// src/notifications/noop.ts
-class NoopNotificationProvider {
-  async sendEmail(_params) {
-    return { success: true, messageId: crypto.randomUUID() };
-  }
-  async sendEmailBatch(params) {
-    return params.map(() => ({
-      success: true,
-      messageId: crypto.randomUUID()
-    }));
-  }
-  async healthCheck() {
-    return { healthy: true, message: "noop" };
-  }
-  async close() {}
-}
-
 // src/util/log.ts
 function log(level, module, message, data) {
   const entry = {
@@ -12951,6 +12934,91 @@ class CircuitBreaker {
       log("error", this.label, `circuit opened after ${this.failures} consecutive failures`);
     }
   }
+}
+
+// src/notifications/herald.ts
+class HeraldNotificationProvider {
+  config;
+  circuitBreaker;
+  constructor(config) {
+    this.config = config;
+    this.circuitBreaker = new CircuitBreaker({
+      threshold: config.circuitBreakerThreshold,
+      cooldownMs: config.circuitBreakerCooldownMs,
+      label: "herald-notifications"
+    });
+  }
+  async sendEmail(params) {
+    try {
+      const recipients = Array.isArray(params.to) ? params.to : [params.to];
+      let lastMessageId;
+      for (const recipient of recipients) {
+        const body = {
+          to: recipient,
+          from: params.from ?? this.config.defaultFrom,
+          subject: params.subject,
+          html: params.body,
+          ...params.html ? {} : { text: params.body }
+        };
+        lastMessageId = await this.circuitBreaker.execute(async () => this.#postMessage(body));
+      }
+      log("info", "notifications", "email sent", {
+        messageId: lastMessageId,
+        to: recipients
+      });
+      return { success: true, messageId: lastMessageId };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      log("error", "notifications", "email send failed", {
+        error: message
+      });
+      return { success: false, error: message };
+    }
+  }
+  async sendEmailBatch(params) {
+    return Promise.all(params.map((p) => this.sendEmail(p)));
+  }
+  async healthCheck() {
+    return {
+      healthy: !this.circuitBreaker.isOpen(),
+      message: this.circuitBreaker.isOpen() ? "circuit open" : "OK"
+    };
+  }
+  async#postMessage(body) {
+    const response = await fetch(`${this.config.apiUrl}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.config.apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) {
+      const detail = await response.json().then((data2) => data2.error).catch(() => {
+        return;
+      });
+      throw new Error(`Herald responded ${response.status}${detail ? `: ${detail}` : ""}`);
+    }
+    const data = await response.json();
+    return data.id;
+  }
+}
+
+// src/notifications/noop.ts
+class NoopNotificationProvider {
+  async sendEmail(_params) {
+    return { success: true, messageId: crypto.randomUUID() };
+  }
+  async sendEmailBatch(params) {
+    return params.map(() => ({
+      success: true,
+      messageId: crypto.randomUUID()
+    }));
+  }
+  async healthCheck() {
+    return { healthy: true, message: "noop" };
+  }
+  async close() {}
 }
 
 // src/notifications/resend.ts
@@ -13057,6 +13125,23 @@ var createNotificationProvider = (config) => {
   if (!("provider" in config) || config.provider === "noop") {
     return new NoopNotificationProvider;
   }
+  if (config.provider === "herald") {
+    if (!config.apiKey) {
+      throw new Error("HeraldNotificationProvider requires apiKey in config");
+    }
+    if (!config.apiUrl) {
+      throw new Error("HeraldNotificationProvider requires apiUrl in config");
+    }
+    if (!config.defaultFrom) {
+      throw new Error("HeraldNotificationProvider requires defaultFrom in config");
+    }
+    return new HeraldNotificationProvider({
+      ...config,
+      apiKey: config.apiKey,
+      apiUrl: config.apiUrl,
+      defaultFrom: config.defaultFrom
+    });
+  }
   if (config.provider === "resend") {
     if (!config.apiKey) {
       throw new Error("ResendNotificationProvider requires apiKey in config");
@@ -13076,5 +13161,6 @@ var createNotificationProvider = (config) => {
 export {
   createNotificationProvider,
   ResendNotificationProvider,
-  NoopNotificationProvider
+  NoopNotificationProvider,
+  HeraldNotificationProvider
 };
