@@ -92332,6 +92332,11 @@ var createFlagProvider = (config) => {
   throw new Error(`Unknown flag provider: ${_exhaustive}`);
 };
 // src/notifications/herald.ts
+var toBareEmail = (address) => {
+  const match = address.match(/<([^>]+)>/);
+  return (match ? match[1] : address).trim();
+};
+
 class HeraldNotificationProvider {
   config;
   circuitBreaker;
@@ -92349,8 +92354,8 @@ class HeraldNotificationProvider {
       let lastMessageId;
       for (const recipient of recipients) {
         const body = {
-          to: recipient,
-          from: params.from ?? this.config.defaultFrom,
+          to: toBareEmail(recipient),
+          from: toBareEmail(params.from ?? this.config.defaultFrom),
           subject: params.subject,
           html: params.body,
           ...params.html ? {} : { text: params.body }
