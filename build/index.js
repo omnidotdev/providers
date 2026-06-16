@@ -19767,7 +19767,7 @@ var require_dbcs_codec = __commonJS((exports) => {
           if (resCode !== undefined) {
             dbcsCode = resCode;
             nextChar = uCode;
-          }
+          } else {}
         }
         seqObj = undefined;
       } else if (uCode >= 0) {
@@ -19832,7 +19832,7 @@ var require_dbcs_codec = __commonJS((exports) => {
           newBuf[j++] = dbcsCode >> 8;
           newBuf[j++] = dbcsCode & 255;
         }
-      }
+      } else {}
       this.seqObj = undefined;
     }
     if (this.leadSurrogate !== -1) {
@@ -78367,6 +78367,18 @@ function buildCacheKey(userId, resourceType, resourceId, permission) {
   return `${userId}:${resourceType}:${resourceId}:${permission}`;
 }
 
+// src/authz/relations.ts
+var WARDEN_RELATIONS = {
+  organization: ["owner", "admin", "member"],
+  workspace: ["owner", "admin", "member"],
+  project: ["owner", "admin", "editor", "member", "viewer"],
+  resource: ["owner", "editor", "viewer"],
+  vortex_workflow: ["owner", "editor", "viewer"],
+  vortex_integration: ["owner", "editor", "viewer"],
+  vortex_plugin: ["owner", "editor", "viewer"],
+  vortex_mcp_server: ["owner", "editor", "viewer"]
+};
+
 // src/authz/index.ts
 var createAuthzProvider = (config) => {
   if (!config?.apiUrl) {
@@ -79824,6 +79836,7 @@ export {
   createAuthCache,
   createApiKeyProvider,
   WardenAuthzProvider,
+  WARDEN_RELATIONS,
   UnleashFlagProvider,
   TtlCache,
   headers_default as SECURITY_HEADERS,

@@ -1,4 +1,5 @@
 import type { AuthzProvider, AuthzTuple, PermissionCheck, PermissionCheckResult, TupleSyncResult } from "./interface";
+import type { WardenRelation, WardenResourceType } from "./relations";
 type WardenAuthzProviderConfig = {
     /** Warden PDP API URL */
     apiUrl?: string;
@@ -35,7 +36,7 @@ declare class WardenAuthzProvider implements AuthzProvider {
     constructor(config: WardenAuthzProviderConfig & {
         apiUrl: string;
     });
-    checkPermission(userId: string, resourceType: string, resourceId: string, permission: string, requestCache?: Map<string, boolean>): Promise<boolean>;
+    checkPermission<T extends WardenResourceType>(userId: string, resourceType: T, resourceId: string, permission: WardenRelation<T>, requestCache?: Map<string, boolean>): Promise<boolean>;
     checkPermissionsBatch(checks: PermissionCheck[], requestCache?: Map<string, boolean>): Promise<PermissionCheckResult[]>;
     writeTuples(tuples: AuthzTuple[], accessToken?: string): Promise<TupleSyncResult>;
     deleteTuples(tuples: AuthzTuple[], accessToken?: string): Promise<TupleSyncResult>;

@@ -6335,7 +6335,7 @@ var require_dbcs_codec = __commonJS((exports) => {
           if (resCode !== undefined) {
             dbcsCode = resCode;
             nextChar = uCode;
-          }
+          } else {}
         }
         seqObj = undefined;
       } else if (uCode >= 0) {
@@ -6400,7 +6400,7 @@ var require_dbcs_codec = __commonJS((exports) => {
           newBuf[j++] = dbcsCode >> 8;
           newBuf[j++] = dbcsCode & 255;
         }
-      }
+      } else {}
       this.seqObj = undefined;
     }
     if (this.leadSurrogate !== -1) {
