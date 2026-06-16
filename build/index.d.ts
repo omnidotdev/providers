@@ -4,7 +4,7 @@ export { WardenAuthzProvider, createAuthzProvider, } from "./authz";
 export { AetherBillingProvider, NoopBillingProvider, createBillingProvider, isWithinLimit, } from "./billing";
 export { HttpEventsProvider, IggyEventsProvider, NoopEventsProvider, createEventsProvider, registerSchemas, } from "./events";
 export { NoopFlagProvider, UnleashFlagProvider, createFlagProvider, } from "./flags";
-export { NoopNotificationProvider, ResendNotificationProvider, createNotificationProvider, } from "./notifications";
+export { NoopNotificationProvider, createNotificationProvider, } from "./notifications";
 export { SECURITY_HEADERS } from "./server";
 export { NoopStorageProvider, S3StorageProvider, createStorageProvider, } from "./storage";
 export { TtlCache } from "./util/cache";
@@ -15,7 +15,7 @@ export type { AuthzProvider, AuthzProviderConfig, AuthzTuple, PermissionCheck, P
 export type { AetherBillingProviderConfig, BillingProvider, BillingProviderConfig, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, NoopBillingProviderConfig, Price, Product, Recurring, Subscription, } from "./billing";
 export type { EmitResult, EventInput, EventsProvider, EventsProviderConfig, EventsProviderStatus, HttpEventsProviderConfig, IggyEventsProviderConfig, NoopEventsProviderConfig, RegisteredSchema, SchemaRegistration, SubscriptionCreated, SubscriptionInput, } from "./events";
 export type { FlagContext, FlagProvider, FlagProviderConfig, NoopFlagProviderConfig, UnleashFlagProviderConfig, } from "./flags";
-export type { EmailParams, EmailResult, NoopNotificationProviderConfig, NotificationProvider, NotificationProviderConfig, ResendNotificationProviderConfig, } from "./notifications";
+export type { EmailParams, EmailResult, NoopNotificationProviderConfig, NotificationProvider, NotificationProviderConfig, } from "./notifications";
 export type { NoopStorageProviderConfig, PresignedParams, PresignedResult, S3StorageProviderConfig, StorageProvider, StorageProviderConfig, UploadParams, UploadResult, } from "./storage";
 export type { TtlCacheConfig } from "./util/cache";
 export type { CircuitBreakerConfig } from "./util/circuitBreaker";

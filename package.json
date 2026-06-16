@@ -87,7 +87,6 @@
     "postgraphile": ">=5.0.0-rc.0",
     "react": ">=19.0.0",
     "unleash-client": ">=6.0.0",
-    "resend": ">=4.0.0",
     "@aws-sdk/client-s3": ">=3.0.0",
     "@aws-sdk/s3-request-presigner": ">=3.0.0",
     "ajv": ">=8.0.0"
@@ -115,9 +114,6 @@
       "optional": true
     },
     "unleash-client": {
-      "optional": true
-    },
-    "resend": {
       "optional": true
     },
     "@aws-sdk/client-s3": {
@@ -148,7 +144,6 @@
     "postgraphile": "^5.0.0-rc.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "resend": "^6.9.2",
     "typescript": "^5.8.3",
     "unleash-client": "^6.9.6"
   }

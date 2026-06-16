@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test";
 
 import { createNotificationProvider } from "../../src/notifications";
+import { HeraldNotificationProvider } from "../../src/notifications/herald";
 import { NoopNotificationProvider } from "../../src/notifications/noop";
-import { ResendNotificationProvider } from "../../src/notifications/resend";
 
 describe("createNotificationProvider", () => {
   it("should create noop provider by default", () => {
@@ -17,31 +17,34 @@ describe("createNotificationProvider", () => {
     expect(provider).toBeInstanceOf(NoopNotificationProvider);
   });
 
-  it("should create resend provider with valid config", () => {
+  it("should create herald provider with valid config", () => {
     const provider = createNotificationProvider({
-      provider: "resend",
-      apiKey: "re_test_123",
+      provider: "herald",
+      apiKey: "hk_test_123",
+      apiUrl: "https://herald.example.com",
       defaultFrom: "noreply@example.com",
     });
 
-    expect(provider).toBeInstanceOf(ResendNotificationProvider);
+    expect(provider).toBeInstanceOf(HeraldNotificationProvider);
   });
 
-  it("should throw on missing apiKey for resend", () => {
+  it("should throw on missing apiKey for herald", () => {
     expect(() =>
       createNotificationProvider({
-        provider: "resend",
+        provider: "herald",
+        apiUrl: "https://herald.example.com",
         defaultFrom: "noreply@example.com",
       }),
-    ).toThrow("ResendNotificationProvider requires apiKey in config");
+    ).toThrow("HeraldNotificationProvider requires apiKey in config");
   });
 
-  it("should throw on missing defaultFrom for resend", () => {
+  it("should throw on missing defaultFrom for herald", () => {
     expect(() =>
       createNotificationProvider({
-        provider: "resend",
-        apiKey: "re_test_123",
+        provider: "herald",
+        apiKey: "hk_test_123",
+        apiUrl: "https://herald.example.com",
       }),
-    ).toThrow("ResendNotificationProvider requires defaultFrom in config");
+    ).toThrow("HeraldNotificationProvider requires defaultFrom in config");
   });
 });
