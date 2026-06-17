@@ -9,6 +9,8 @@ type OrganizationClaim = {
   id: string;
   name: string;
   slug: string;
+  /** Organization logo URL, if set */
+  logo?: string | null;
   type: "personal" | "team";
   roles: string[];
   teams: Array<{ id: string; name: string }>;

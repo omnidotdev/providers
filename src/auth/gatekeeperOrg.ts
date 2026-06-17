@@ -3,6 +3,8 @@ type GatekeeperOrganization = {
   id: string;
   name: string;
   slug: string;
+  /** Organization logo URL, if set */
+  logo?: string | null;
   type: "personal" | "team";
   createdAt: string;
 };
