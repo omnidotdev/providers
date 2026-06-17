@@ -3,6 +3,7 @@ export default {
   ignore: ["build/**"],
   ignoreDependencies: [
     "happy-dom",
+    "@openfeature/server-sdk",
     "@envelop/types",
     "@escape.tech/graphql-armor",
     "@iggy.rs/sdk",

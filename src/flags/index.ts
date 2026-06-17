@@ -75,6 +75,7 @@ export { createFlagProvider };
 
 export { FractalFlagProvider } from "./fractal";
 export { NoopFlagProvider } from "./noop";
+export { FractalOpenFeatureProvider } from "./openfeature";
 export { UnleashFlagProvider } from "./unleash";
 
 export type { FlagProviderConfig };
@@ -82,4 +83,5 @@ export type { FlagProviderConfig };
 export type { FractalFlagProviderConfig } from "./fractal";
 export type { FlagContext, FlagProvider } from "./interface";
 export type { NoopFlagProviderConfig } from "./noop";
+export type { FractalOpenFeatureProviderConfig } from "./openfeature";
 export type { UnleashFlagProviderConfig } from "./unleash";
