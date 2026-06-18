@@ -33,6 +33,10 @@ type HeraldMessageBody = {
   subject: string;
   html: string;
   text?: string;
+  cc?: string[];
+  bcc?: string[];
+  replyTo?: string;
+  headers?: Record<string, string>;
 };
 
 /**
@@ -73,7 +77,7 @@ class HeraldNotificationProvider implements NotificationProvider {
 
       let lastMessageId: string | undefined;
 
-      for (const recipient of recipients) {
+      for (const [index, recipient] of recipients.entries()) {
         const body: HeraldMessageBody = {
           to: toBareEmail(recipient),
           from: toBareEmail(params.from ?? this.config.defaultFrom),
@@ -82,6 +86,16 @@ class HeraldNotificationProvider implements NotificationProvider {
           // both html and text so the text part is preserved
           html: params.body,
           ...(params.html ? {} : { text: params.body }),
+          ...(params.replyTo ? { replyTo: toBareEmail(params.replyTo) } : {}),
+          ...(params.headers ? { headers: params.headers } : {}),
+          // cc/bcc attach to the first message only, so a multi-recipient
+          // fan-out does not send the same copy to each cc/bcc address
+          ...(index === 0 && params.cc?.length
+            ? { cc: params.cc.map(toBareEmail) }
+            : {}),
+          ...(index === 0 && params.bcc?.length
+            ? { bcc: params.bcc.map(toBareEmail) }
+            : {}),
         };
 
         lastMessageId = await this.circuitBreaker.execute(async () =>

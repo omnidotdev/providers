@@ -14,6 +14,8 @@ type EmailParams = {
   cc?: string[];
   /** BCC recipients */
   bcc?: string[];
+  /** Additional headers (e.g. List-Unsubscribe); reserved headers cannot be overridden */
+  headers?: Record<string, string>;
   /** Whether `body` contains HTML (default false, plain text) */
   html?: boolean;
 };

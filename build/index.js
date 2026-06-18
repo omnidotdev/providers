@@ -79478,6 +79478,151 @@ class UnleashFlagProvider {
     }
   }
 }
+// src/flags/openfeature.ts
+var REQUEST_TIMEOUT_MS8 = 5000;
+var DEFAULT_CACHE_TTL_MS5 = 30000;
+var DEFAULT_ENVIRONMENT2 = "production";
+var EVALUATE_FLAGS_QUERY2 = `query EvaluateFlags($projectId: String!, $environment: String!, $context: FlagEvaluationContextInput) {
+  evaluateFlags(projectId: $projectId, environment: $environment, context: $context) {
+    key
+    value
+  }
+}`;
+var MISMATCH = Symbol("type-mismatch");
+function stableStringify2(obj) {
+  const sorted = {};
+  for (const key of Object.keys(obj).sort())
+    sorted[key] = obj[key];
+  return JSON.stringify(sorted);
+}
+
+class FractalOpenFeatureProvider {
+  metadata = { name: "fractal" };
+  #config;
+  #devMode;
+  #cacheTtlMs;
+  #fetchImpl;
+  #cache = new Map;
+  constructor(config) {
+    this.#config = config;
+    this.#devMode = config.devMode ?? false;
+    this.#cacheTtlMs = config.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS5;
+    this.#fetchImpl = config.fetch ?? globalThis.fetch;
+  }
+  resolveBooleanEvaluation(flagKey, defaultValue, context) {
+    return this.#resolve(flagKey, defaultValue, context, (v) => typeof v === "boolean" ? v : MISMATCH);
+  }
+  resolveStringEvaluation(flagKey, defaultValue, context) {
+    return this.#resolve(flagKey, defaultValue, context, (v) => typeof v === "string" ? v : MISMATCH);
+  }
+  resolveNumberEvaluation(flagKey, defaultValue, context) {
+    return this.#resolve(flagKey, defaultValue, context, (v) => typeof v === "number" && !Number.isNaN(v) ? v : MISMATCH);
+  }
+  resolveObjectEvaluation(flagKey, defaultValue, context) {
+    return this.#resolve(flagKey, defaultValue, context, (v) => typeof v === "object" && v !== null ? v : MISMATCH);
+  }
+  async onClose() {
+    this.#cache.clear();
+  }
+  async#resolve(flagKey, defaultValue, context, coerce) {
+    if (this.#devMode) {
+      return { value: defaultValue, reason: "DEFAULT" };
+    }
+    const flags = await this.#evaluate(context);
+    if (flags === null) {
+      return {
+        value: defaultValue,
+        reason: "ERROR",
+        errorCode: "GENERAL",
+        errorMessage: "fractal evaluation failed"
+      };
+    }
+    if (!(flagKey in flags)) {
+      return { value: defaultValue, reason: "DEFAULT" };
+    }
+    const coerced = coerce(flags[flagKey]);
+    if (coerced === MISMATCH) {
+      return {
+        value: defaultValue,
+        reason: "ERROR",
+        errorCode: "TYPE_MISMATCH"
+      };
+    }
+    return {
+      value: coerced,
+      reason: "TARGETING_MATCH"
+    };
+  }
+  #attributes(context) {
+    const attributes = {};
+    for (const [key, value] of Object.entries(context)) {
+      if (key === "targetingKey" || value === undefined || value === null) {
+        continue;
+      }
+      attributes[key] = typeof value === "string" ? value : String(value);
+    }
+    return attributes;
+  }
+  #cacheKey(environment, context) {
+    return `${environment} ${context.targetingKey ?? ""} ${stableStringify2(this.#attributes(context))}`;
+  }
+  async#evaluate(context) {
+    const environment = typeof context.environment === "string" ? context.environment : this.#config.environment ?? DEFAULT_ENVIRONMENT2;
+    const key = this.#cacheKey(environment, context);
+    const cached = this.#cache.get(key);
+    if (cached && Date.now() - cached.evaluatedAt < this.#cacheTtlMs) {
+      return cached.flags;
+    }
+    const attributes = this.#attributes(context);
+    const variables = {
+      projectId: this.#config.project,
+      environment,
+      context: {
+        ...context.targetingKey ? { targetingKey: context.targetingKey } : {},
+        ...Object.keys(attributes).length > 0 ? { attributes } : {}
+      }
+    };
+    try {
+      const flags = await this.#requestEvaluation(variables);
+      this.#cache.set(key, { evaluatedAt: Date.now(), flags });
+      return flags;
+    } catch (error) {
+      log("warn", "flags", "Fractal evaluation failed, using defaults", {
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+      return null;
+    }
+  }
+  async#requestEvaluation(variables) {
+    const controller = new AbortController;
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS8);
+    try {
+      const response = await this.#fetchImpl(this.#config.url, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...this.#config.token ? { authorization: `Bearer ${this.#config.token}` } : {}
+        },
+        body: JSON.stringify({ query: EVALUATE_FLAGS_QUERY2, variables }),
+        signal: controller.signal
+      });
+      if (!response.ok) {
+        throw new Error(`fractal-api returned ${response.status}`);
+      }
+      const json = await response.json();
+      if (json.errors && json.errors.length > 0) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(json.errors)}`);
+      }
+      const flags = {};
+      for (const evaluation of json.data?.evaluateFlags ?? []) {
+        flags[evaluation.key] = evaluation.value;
+      }
+      return flags;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+}
 
 // src/flags/index.ts
 var createFlagProvider = (config) => {
@@ -79540,13 +79685,17 @@ class HeraldNotificationProvider {
     try {
       const recipients = Array.isArray(params.to) ? params.to : [params.to];
       let lastMessageId;
-      for (const recipient of recipients) {
+      for (const [index, recipient] of recipients.entries()) {
         const body = {
           to: toBareEmail(recipient),
           from: toBareEmail(params.from ?? this.config.defaultFrom),
           subject: params.subject,
           html: params.body,
-          ...params.html ? {} : { text: params.body }
+          ...params.html ? {} : { text: params.body },
+          ...params.replyTo ? { replyTo: toBareEmail(params.replyTo) } : {},
+          ...params.headers ? { headers: params.headers } : {},
+          ...index === 0 && params.cc?.length ? { cc: params.cc.map(toBareEmail) } : {},
+          ...index === 0 && params.bcc?.length ? { bcc: params.bcc.map(toBareEmail) } : {}
         };
         lastMessageId = await this.circuitBreaker.execute(async () => this.#postMessage(body));
       }

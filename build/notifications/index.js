@@ -97,13 +97,17 @@ class HeraldNotificationProvider {
     try {
       const recipients = Array.isArray(params.to) ? params.to : [params.to];
       let lastMessageId;
-      for (const recipient of recipients) {
+      for (const [index, recipient] of recipients.entries()) {
         const body = {
           to: toBareEmail(recipient),
           from: toBareEmail(params.from ?? this.config.defaultFrom),
           subject: params.subject,
           html: params.body,
-          ...params.html ? {} : { text: params.body }
+          ...params.html ? {} : { text: params.body },
+          ...params.replyTo ? { replyTo: toBareEmail(params.replyTo) } : {},
+          ...params.headers ? { headers: params.headers } : {},
+          ...index === 0 && params.cc?.length ? { cc: params.cc.map(toBareEmail) } : {},
+          ...index === 0 && params.bcc?.length ? { bcc: params.bcc.map(toBareEmail) } : {}
         };
         lastMessageId = await this.circuitBreaker.execute(async () => this.#postMessage(body));
       }

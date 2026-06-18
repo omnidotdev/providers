@@ -118,6 +118,49 @@ describe("HeraldNotificationProvider.sendEmail", () => {
     expect(JSON.parse(calls[1]?.init?.body as string).to).toBe("b@example.com");
   });
 
+  it("forwards cc, bcc, reply-to, and headers (display names stripped)", async () => {
+    const { calls } = stubFetch(200, { id: "m_cc", status: "queued" });
+    const provider = makeProvider();
+
+    await provider.sendEmail({
+      to: "user@example.com",
+      subject: "Hi",
+      body: "<p>Hi</p>",
+      html: true,
+      cc: ["Cc Person <cc@example.com>"],
+      bcc: ["bcc@example.com"],
+      replyTo: "Support <reply@example.com>",
+      headers: { "List-Unsubscribe": "<https://example.com/unsub>" },
+    });
+
+    const sent = JSON.parse(calls[0]?.init?.body as string);
+    expect(sent.cc).toEqual(["cc@example.com"]);
+    expect(sent.bcc).toEqual(["bcc@example.com"]);
+    expect(sent.replyTo).toBe("reply@example.com");
+    expect(sent.headers).toEqual({
+      "List-Unsubscribe": "<https://example.com/unsub>",
+    });
+  });
+
+  it("attaches cc/bcc only to the first message of a multi-recipient send", async () => {
+    const { calls } = stubFetch(200, { id: "m_multi", status: "queued" });
+    const provider = makeProvider();
+
+    await provider.sendEmail({
+      to: ["a@example.com", "b@example.com"],
+      subject: "Multi",
+      body: "<p>Hi</p>",
+      html: true,
+      cc: ["cc@example.com"],
+    });
+
+    expect(JSON.parse(calls[0]?.init?.body as string).cc).toEqual([
+      "cc@example.com",
+    ]);
+    // the second recipient must not also receive the cc copy
+    expect(JSON.parse(calls[1]?.init?.body as string).cc).toBeUndefined();
+  });
+
   it("fails the whole send if any recipient fails", async () => {
     const calls: string[] = [];
     globalThis.fetch = mock(async (url: string | URL | Request) => {
