@@ -37,8 +37,7 @@ class HeraldHttpError extends Error {
 const DEFAULT_MAX_RETRIES = 2;
 const DEFAULT_RETRY_BASE_DELAY_MS = 200;
 
-const sleep = (ms: number) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 type ValidatedHeraldConfig = HeraldNotificationProviderConfig & {
   apiKey: string;
@@ -163,7 +162,8 @@ class HeraldNotificationProvider implements NotificationProvider {
    */
   async #postWithRetry(body: HeraldMessageBody): Promise<string | undefined> {
     const maxRetries = this.config.maxRetries ?? DEFAULT_MAX_RETRIES;
-    const baseDelay = this.config.retryBaseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS;
+    const baseDelay =
+      this.config.retryBaseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS;
 
     for (let attempt = 0; ; attempt++) {
       try {
