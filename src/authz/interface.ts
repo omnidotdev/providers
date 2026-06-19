@@ -1,3 +1,5 @@
+import type { WardenRelation, WardenResourceType } from "./relations";
+
 /**
  * Authorization tuple for relationship-based access control.
  */
@@ -14,13 +16,19 @@ type TupleSyncResult = { success: true } | { success: false; error: string };
 
 /**
  * Permission check request for batch operations.
+ *
+ * A distributive union over resource types: each member pairs a `resourceType`
+ * with the `permission` relations valid for that type, so an invalid pairing
+ * (e.g. `viewer` on `organization`) fails to type-check.
  */
 type PermissionCheck = {
-  userId: string;
-  resourceType: string;
-  resourceId: string;
-  permission: string;
-};
+  [T in WardenResourceType]: {
+    userId: string;
+    resourceType: T;
+    resourceId: string;
+    permission: WardenRelation<T>;
+  };
+}[WardenResourceType];
 
 /**
  * Permission check result from batch operations.
@@ -39,15 +47,16 @@ interface AuthzProvider {
    * @param userId - The user ID
    * @param resourceType - The type of resource (e.g., "organization", "project")
    * @param resourceId - The resource ID
-   * @param permission - The permission to check (e.g., "read", "write", "admin")
+   * @param permission - The relation to check, constrained to the relations
+   *   valid for `resourceType` in Warden's model (e.g. "admin" on "organization")
    * @param requestCache - Optional request-scoped cache to avoid N+1
    * @returns true if authorized, false otherwise
    */
-  checkPermission(
+  checkPermission<T extends WardenResourceType>(
     userId: string,
-    resourceType: string,
+    resourceType: T,
     resourceId: string,
-    permission: string,
+    permission: WardenRelation<T>,
     requestCache?: Map<string, boolean>,
   ): Promise<boolean>;
 

@@ -9,7 +9,9 @@ type AuthzProviderConfig = WardenAuthzProviderConfig;
  */
 declare const createAuthzProvider: (config: AuthzProviderConfig) => AuthzProvider;
 export { createAuthzProvider };
+export { WARDEN_RELATIONS } from "./relations";
 export { WardenAuthzProvider } from "./warden";
 export type { AuthzProviderConfig };
 export type { AuthzProvider, AuthzTuple, PermissionCheck, PermissionCheckResult, TupleSyncResult, } from "./interface";
+export type { WardenRelation, WardenResourceType } from "./relations";
 export type { WardenAuthzProviderConfig } from "./warden";

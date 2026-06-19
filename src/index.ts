@@ -23,6 +23,7 @@ export {
 } from "./auth";
 // AuthZ
 export {
+  WARDEN_RELATIONS,
   WardenAuthzProvider,
   createAuthzProvider,
 } from "./authz";
@@ -111,6 +112,8 @@ export type {
   PermissionCheckResult,
   TupleSyncResult,
   WardenAuthzProviderConfig,
+  WardenRelation,
+  WardenResourceType,
 } from "./authz";
 export type {
   AetherBillingProviderConfig,

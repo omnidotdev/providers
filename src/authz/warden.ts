@@ -9,6 +9,7 @@ import type {
   PermissionCheckResult,
   TupleSyncResult,
 } from "./interface";
+import type { WardenRelation, WardenResourceType } from "./relations";
 
 /** Request timeout in milliseconds */
 const REQUEST_TIMEOUT_MS = 5000;
@@ -69,11 +70,11 @@ class WardenAuthzProvider implements AuthzProvider {
     });
   }
 
-  async checkPermission(
+  async checkPermission<T extends WardenResourceType>(
     userId: string,
-    resourceType: string,
+    resourceType: T,
     resourceId: string,
-    permission: string,
+    permission: WardenRelation<T>,
     requestCache?: Map<string, boolean>,
   ): Promise<boolean> {
     const cacheKey = buildCacheKey(

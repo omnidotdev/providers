@@ -417,6 +417,18 @@ function buildCacheKey(userId, resourceType, resourceId, permission) {
   return `${userId}:${resourceType}:${resourceId}:${permission}`;
 }
 
+// src/authz/relations.ts
+var WARDEN_RELATIONS = {
+  organization: ["owner", "admin", "member"],
+  workspace: ["owner", "admin", "member"],
+  project: ["owner", "admin", "editor", "member", "viewer"],
+  resource: ["owner", "editor", "viewer"],
+  vortex_workflow: ["owner", "editor", "viewer"],
+  vortex_integration: ["owner", "editor", "viewer"],
+  vortex_plugin: ["owner", "editor", "viewer"],
+  vortex_mcp_server: ["owner", "editor", "viewer"]
+};
+
 // src/authz/index.ts
 var createAuthzProvider = (config) => {
   if (!config?.apiUrl) {
@@ -426,5 +438,6 @@ var createAuthzProvider = (config) => {
 };
 export {
   createAuthzProvider,
-  WardenAuthzProvider
+  WardenAuthzProvider,
+  WARDEN_RELATIONS
 };
