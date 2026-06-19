@@ -18,7 +18,27 @@ type HeraldNotificationProviderConfig = {
   circuitBreakerThreshold?: number;
   /** Circuit breaker cooldown in milliseconds */
   circuitBreakerCooldownMs?: number;
+  /** Max retries on a transient failure (network or 5xx). Defaults to 2. */
+  maxRetries?: number;
+  /** Base delay for exponential backoff between retries, ms. Defaults to 200. */
+  retryBaseDelayMs?: number;
 };
+
+/** HTTP error from Herald carrying the response status for retry decisions. */
+class HeraldHttpError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+const DEFAULT_MAX_RETRIES = 2;
+const DEFAULT_RETRY_BASE_DELAY_MS = 200;
+
+const sleep = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 type ValidatedHeraldConfig = HeraldNotificationProviderConfig & {
   apiKey: string;
@@ -99,7 +119,7 @@ class HeraldNotificationProvider implements NotificationProvider {
         };
 
         lastMessageId = await this.circuitBreaker.execute(async () =>
-          this.#postMessage(body),
+          this.#postWithRetry(body),
         );
       }
 
@@ -133,9 +153,38 @@ class HeraldNotificationProvider implements NotificationProvider {
   }
 
   /**
+   * POST a message, retrying transient failures with exponential backoff.
+   *
+   * Retries a network error or a 5xx (Herald briefly down / overloaded), but
+   * never a 4xx: a 422 (suppressed recipient, unverified sending domain) or a
+   * 400 (bad request) is permanent and retrying would only waste calls. The
+   * circuit breaker wraps this, so a fully-exhausted retry counts as one
+   * failure toward opening the circuit.
+   */
+  async #postWithRetry(body: HeraldMessageBody): Promise<string | undefined> {
+    const maxRetries = this.config.maxRetries ?? DEFAULT_MAX_RETRIES;
+    const baseDelay = this.config.retryBaseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS;
+
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await this.#postMessage(body);
+      } catch (error) {
+        const status =
+          error instanceof HeraldHttpError ? error.status : undefined;
+        // transient = network error (no status) or any 5xx
+        const transient = status === undefined || status >= 500;
+
+        if (!transient || attempt >= maxRetries) throw error;
+
+        await sleep(baseDelay * 2 ** attempt);
+      }
+    }
+  }
+
+  /**
    * POST a single message to Herald.
    * @returns The Herald-assigned message id
-   * @throws When Herald responds with a non-2xx status
+   * @throws {HeraldHttpError} When Herald responds with a non-2xx status
    */
   async #postMessage(body: HeraldMessageBody): Promise<string | undefined> {
     const response = await fetch(`${this.config.apiUrl}/messages`, {
@@ -153,8 +202,9 @@ class HeraldNotificationProvider implements NotificationProvider {
         .then((data: { error?: string }) => data.error)
         .catch(() => undefined);
 
-      throw new Error(
+      throw new HeraldHttpError(
         `Herald responded ${response.status}${detail ? `: ${detail}` : ""}`,
+        response.status,
       );
     }
 

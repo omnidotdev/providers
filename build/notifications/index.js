@@ -77,6 +77,16 @@ class CircuitBreaker {
 }
 
 // src/notifications/herald.ts
+class HeraldHttpError extends Error {
+  status;
+  constructor(message, status) {
+    super(message);
+    this.status = status;
+  }
+}
+var DEFAULT_MAX_RETRIES = 2;
+var DEFAULT_RETRY_BASE_DELAY_MS = 200;
+var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 var toBareEmail = (address) => {
   const match = address.match(/<([^>]+)>/);
   return (match ? match[1] : address).trim();
@@ -109,7 +119,7 @@ class HeraldNotificationProvider {
           ...index === 0 && params.cc?.length ? { cc: params.cc.map(toBareEmail) } : {},
           ...index === 0 && params.bcc?.length ? { bcc: params.bcc.map(toBareEmail) } : {}
         };
-        lastMessageId = await this.circuitBreaker.execute(async () => this.#postMessage(body));
+        lastMessageId = await this.circuitBreaker.execute(async () => this.#postWithRetry(body));
       }
       log("info", "notifications", "email sent", {
         messageId: lastMessageId,
@@ -133,6 +143,21 @@ class HeraldNotificationProvider {
       message: this.circuitBreaker.isOpen() ? "circuit open" : "OK"
     };
   }
+  async#postWithRetry(body) {
+    const maxRetries = this.config.maxRetries ?? DEFAULT_MAX_RETRIES;
+    const baseDelay = this.config.retryBaseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS;
+    for (let attempt = 0;; attempt++) {
+      try {
+        return await this.#postMessage(body);
+      } catch (error) {
+        const status = error instanceof HeraldHttpError ? error.status : undefined;
+        const transient = status === undefined || status >= 500;
+        if (!transient || attempt >= maxRetries)
+          throw error;
+        await sleep(baseDelay * 2 ** attempt);
+      }
+    }
+  }
   async#postMessage(body) {
     const response = await fetch(`${this.config.apiUrl}/messages`, {
       method: "POST",
@@ -146,7 +171,7 @@ class HeraldNotificationProvider {
       const detail = await response.json().then((data2) => data2.error).catch(() => {
         return;
       });
-      throw new Error(`Herald responded ${response.status}${detail ? `: ${detail}` : ""}`);
+      throw new HeraldHttpError(`Herald responded ${response.status}${detail ? `: ${detail}` : ""}`, response.status);
     }
     const data = await response.json();
     return data.id;

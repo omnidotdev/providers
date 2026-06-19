@@ -55,6 +55,13 @@ const entries = [
     external: [] as string[],
   },
   {
+    entrypoint: "./src/legal/index.ts",
+    outdir: "./build/legal",
+    // Plain string constants; safe in both browser and server consumers
+    target: "browser" as const,
+    external: [] as string[],
+  },
+  {
     entrypoint: "./src/notifications/index.ts",
     outdir: "./build/notifications",
     target: "node" as const,

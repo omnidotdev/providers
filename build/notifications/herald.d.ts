@@ -10,6 +10,10 @@ type HeraldNotificationProviderConfig = {
     circuitBreakerThreshold?: number;
     /** Circuit breaker cooldown in milliseconds */
     circuitBreakerCooldownMs?: number;
+    /** Max retries on a transient failure (network or 5xx). Defaults to 2. */
+    maxRetries?: number;
+    /** Base delay for exponential backoff between retries, ms. Defaults to 200. */
+    retryBaseDelayMs?: number;
 };
 type ValidatedHeraldConfig = HeraldNotificationProviderConfig & {
     apiKey: string;

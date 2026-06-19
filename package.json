@@ -41,6 +41,10 @@
       "import": "./build/graphql/index.js",
       "types": "./build/graphql/index.d.ts"
     },
+    "./legal": {
+      "import": "./build/legal/index.js",
+      "types": "./build/legal/index.d.ts"
+    },
     "./notifications": {
       "import": "./build/notifications/index.js",
       "types": "./build/notifications/index.d.ts"

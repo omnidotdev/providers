@@ -4,6 +4,7 @@ export { WardenAuthzProvider, createAuthzProvider, } from "./authz";
 export { AetherBillingProvider, NoopBillingProvider, createBillingProvider, isWithinLimit, } from "./billing";
 export { HttpEventsProvider, IggyEventsProvider, NoopEventsProvider, createEventsProvider, registerSchemas, } from "./events";
 export { NoopFlagProvider, UnleashFlagProvider, createFlagProvider, } from "./flags";
+export { LEGAL_BASE_URL, LEGAL_CONTACTS, LEGAL_FOOTER_LINKS, LEGAL_LINKS, LEGAL_URLS, } from "./legal";
 export { NoopNotificationProvider, createNotificationProvider, } from "./notifications";
 export { SECURITY_HEADERS } from "./server";
 export { NoopStorageProvider, S3StorageProvider, createStorageProvider, } from "./storage";

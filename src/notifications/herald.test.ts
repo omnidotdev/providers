@@ -227,6 +227,84 @@ describe("HeraldNotificationProvider.sendEmailBatch", () => {
   });
 });
 
+/**
+ * Stub fetch with a sequence of outcomes, one per call. A number is an HTTP
+ * status; "network" throws like a connection failure. Captures the call count.
+ */
+const stubFetchSequence = (
+  outcomes: Array<number | "network">,
+): { calls: () => number } => {
+  let i = 0;
+  globalThis.fetch = mock(async () => {
+    const outcome = outcomes[Math.min(i, outcomes.length - 1)];
+    i += 1;
+    if (outcome === "network") throw new Error("ECONNREFUSED");
+    return new Response(
+      JSON.stringify(
+        outcome >= 200 && outcome < 300
+          ? { id: "m_ok", status: "queued" }
+          : { error: "boom" },
+      ),
+      { status: outcome, headers: { "Content-Type": "application/json" } },
+    );
+  }) as unknown as typeof fetch;
+
+  return { calls: () => i };
+};
+
+// fast retries (no real backoff delay) for tests
+const makeRetryProvider = () =>
+  new HeraldNotificationProvider({
+    apiKey: API_KEY,
+    apiUrl: API_URL,
+    defaultFrom: DEFAULT_FROM,
+    maxRetries: 2,
+    retryBaseDelayMs: 0,
+  });
+
+const send = (provider: HeraldNotificationProvider) =>
+  provider.sendEmail({
+    to: "user@example.com",
+    subject: "Hi",
+    body: "<p>Hi</p>",
+    html: true,
+  });
+
+describe("HeraldNotificationProvider retries", () => {
+  it("retries a transient 5xx and then succeeds", async () => {
+    const seq = stubFetchSequence([503, 503, 200]);
+    const result = await send(makeRetryProvider());
+
+    expect(result.success).toBe(true);
+    expect(seq.calls()).toBe(3);
+  });
+
+  it("retries a network error and then succeeds", async () => {
+    const seq = stubFetchSequence(["network", 200]);
+    const result = await send(makeRetryProvider());
+
+    expect(result.success).toBe(true);
+    expect(seq.calls()).toBe(2);
+  });
+
+  it("does NOT retry a permanent 4xx (e.g. 422 suppressed/unverified)", async () => {
+    const seq = stubFetchSequence([422]);
+    const result = await send(makeRetryProvider());
+
+    expect(result.success).toBe(false);
+    expect(seq.calls()).toBe(1);
+  });
+
+  it("gives up after exhausting retries on persistent 5xx", async () => {
+    const seq = stubFetchSequence([500, 500, 500, 500, 500]);
+    const result = await send(makeRetryProvider());
+
+    expect(result.success).toBe(false);
+    // maxRetries 2 => 3 attempts total
+    expect(seq.calls()).toBe(3);
+  });
+});
+
 describe("createNotificationProvider herald branch", () => {
   it("returns a HeraldNotificationProvider when fully configured", () => {
     const provider = createNotificationProvider({

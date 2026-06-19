@@ -47,6 +47,14 @@ export {
   UnleashFlagProvider,
   createFlagProvider,
 } from "./flags";
+// Legal
+export {
+  LEGAL_BASE_URL,
+  LEGAL_CONTACTS,
+  LEGAL_FOOTER_LINKS,
+  LEGAL_LINKS,
+  LEGAL_URLS,
+} from "./legal";
 // Notifications
 export {
   NoopNotificationProvider,

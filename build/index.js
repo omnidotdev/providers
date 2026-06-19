@@ -66180,8 +66180,8 @@ var require_dist_cjs52 = __commonJS((exports) => {
     ...creds.AccountId && { accountId: creds.AccountId }
   });
   var DEFAULT_TIMEOUT = 1000;
-  var DEFAULT_MAX_RETRIES2 = 0;
-  var providerConfigFromInit = ({ maxRetries = DEFAULT_MAX_RETRIES2, timeout = DEFAULT_TIMEOUT }) => ({ maxRetries, timeout });
+  var DEFAULT_MAX_RETRIES3 = 0;
+  var providerConfigFromInit = ({ maxRetries = DEFAULT_MAX_RETRIES3, timeout = DEFAULT_TIMEOUT }) => ({ maxRetries, timeout });
   var retry = (toRetry, maxRetries) => {
     let promise = toRetry();
     for (let i = 0;i < maxRetries; i++) {
@@ -66462,7 +66462,7 @@ For more information, please visit: ` + STATIC_STABILITY_DOC_URL);
     }
     return fromImdsCredentials(credentialsResponse);
   };
-  exports.DEFAULT_MAX_RETRIES = DEFAULT_MAX_RETRIES2;
+  exports.DEFAULT_MAX_RETRIES = DEFAULT_MAX_RETRIES3;
   exports.DEFAULT_TIMEOUT = DEFAULT_TIMEOUT;
   exports.ENV_CMDS_AUTH_TOKEN = ENV_CMDS_AUTH_TOKEN;
   exports.ENV_CMDS_FULL_URI = ENV_CMDS_FULL_URI;
@@ -74715,7 +74715,7 @@ var require_dist_cjs73 = __commonJS((exports) => {
       return value;
     };
   };
-  var sleep = (seconds) => {
+  var sleep2 = (seconds) => {
     return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
   };
   var waiterServiceDefaults = {
@@ -74782,7 +74782,7 @@ var require_dist_cjs73 = __commonJS((exports) => {
       if (Date.now() + delay * 1000 > waitUntil) {
         return { state: exports.WaiterState.TIMEOUT, observedResponses };
       }
-      await sleep(delay);
+      await sleep2(delay);
       const { state: state2, reason: reason2 } = await acceptorChecks(client3, input);
       if (reason2) {
         const message3 = createMessageFromResponse(reason2);
@@ -79664,7 +79664,43 @@ var createFlagProvider = (config) => {
   const _exhaustive = config;
   throw new Error(`Unknown flag provider: ${_exhaustive}`);
 };
+// src/legal/index.ts
+var LEGAL_BASE_URL = "https://omni.dev/legal";
+var LEGAL_URLS = {
+  hub: LEGAL_BASE_URL,
+  privacy: `${LEGAL_BASE_URL}/privacy`,
+  terms: `${LEGAL_BASE_URL}/terms`,
+  dpa: `${LEGAL_BASE_URL}/dpa`,
+  subprocessors: `${LEGAL_BASE_URL}/subprocessors`,
+  acceptableUse: `${LEGAL_BASE_URL}/acceptable-use`
+};
+var LEGAL_CONTACTS = {
+  privacy: "privacy@omni.dev",
+  support: "support@omni.dev",
+  abuse: "abuse@omni.dev"
+};
+var LEGAL_FOOTER_LINKS = [
+  { label: "Privacy Policy", href: LEGAL_URLS.privacy },
+  { label: "Terms of Service", href: LEGAL_URLS.terms }
+];
+var LEGAL_LINKS = [
+  { label: "Privacy Policy", href: LEGAL_URLS.privacy },
+  { label: "Terms of Service", href: LEGAL_URLS.terms },
+  { label: "Data Processing Agreement", href: LEGAL_URLS.dpa },
+  { label: "Sub-processors", href: LEGAL_URLS.subprocessors },
+  { label: "Acceptable Use Policy", href: LEGAL_URLS.acceptableUse }
+];
 // src/notifications/herald.ts
+class HeraldHttpError extends Error {
+  status;
+  constructor(message3, status) {
+    super(message3);
+    this.status = status;
+  }
+}
+var DEFAULT_MAX_RETRIES2 = 2;
+var DEFAULT_RETRY_BASE_DELAY_MS = 200;
+var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 var toBareEmail = (address) => {
   const match = address.match(/<([^>]+)>/);
   return (match ? match[1] : address).trim();
@@ -79697,7 +79733,7 @@ class HeraldNotificationProvider {
           ...index === 0 && params.cc?.length ? { cc: params.cc.map(toBareEmail) } : {},
           ...index === 0 && params.bcc?.length ? { bcc: params.bcc.map(toBareEmail) } : {}
         };
-        lastMessageId = await this.circuitBreaker.execute(async () => this.#postMessage(body));
+        lastMessageId = await this.circuitBreaker.execute(async () => this.#postWithRetry(body));
       }
       log("info", "notifications", "email sent", {
         messageId: lastMessageId,
@@ -79721,6 +79757,21 @@ class HeraldNotificationProvider {
       message: this.circuitBreaker.isOpen() ? "circuit open" : "OK"
     };
   }
+  async#postWithRetry(body) {
+    const maxRetries = this.config.maxRetries ?? DEFAULT_MAX_RETRIES2;
+    const baseDelay = this.config.retryBaseDelayMs ?? DEFAULT_RETRY_BASE_DELAY_MS;
+    for (let attempt = 0;; attempt++) {
+      try {
+        return await this.#postMessage(body);
+      } catch (error) {
+        const status = error instanceof HeraldHttpError ? error.status : undefined;
+        const transient = status === undefined || status >= 500;
+        if (!transient || attempt >= maxRetries)
+          throw error;
+        await sleep(baseDelay * 2 ** attempt);
+      }
+    }
+  }
   async#postMessage(body) {
     const response = await fetch(`${this.config.apiUrl}/messages`, {
       method: "POST",
@@ -79734,7 +79785,7 @@ class HeraldNotificationProvider {
       const detail = await response.json().then((data2) => data2.error).catch(() => {
         return;
       });
-      throw new Error(`Herald responded ${response.status}${detail ? `: ${detail}` : ""}`);
+      throw new HeraldHttpError(`Herald responded ${response.status}${detail ? `: ${detail}` : ""}`, response.status);
     }
     const data = await response.json();
     return data.id;
@@ -79984,6 +80035,11 @@ export {
   NoopEventsProvider,
   NoopBillingProvider,
   NoopApiKeyProvider,
+  LEGAL_URLS,
+  LEGAL_LINKS,
+  LEGAL_FOOTER_LINKS,
+  LEGAL_CONTACTS,
+  LEGAL_BASE_URL,
   IggyEventsProvider,
   HttpEventsProvider,
   GatekeeperOrgError,
