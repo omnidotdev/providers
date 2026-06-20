@@ -62,6 +62,13 @@ const entries = [
     external: [] as string[],
   },
   {
+    entrypoint: "./src/media/index.ts",
+    outdir: "./build/media",
+    // Pure TS constants and validation; safe in both browser and server
+    target: "browser" as const,
+    external: [] as string[],
+  },
+  {
     entrypoint: "./src/notifications/index.ts",
     outdir: "./build/notifications",
     target: "node" as const,

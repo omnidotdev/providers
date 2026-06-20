@@ -45,6 +45,10 @@
       "import": "./build/legal/index.js",
       "types": "./build/legal/index.d.ts"
     },
+    "./media": {
+      "import": "./build/media/index.js",
+      "types": "./build/media/index.d.ts"
+    },
     "./notifications": {
       "import": "./build/notifications/index.js",
       "types": "./build/notifications/index.d.ts"
