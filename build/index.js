@@ -19767,7 +19767,7 @@ var require_dbcs_codec = __commonJS((exports) => {
           if (resCode !== undefined) {
             dbcsCode = resCode;
             nextChar = uCode;
-          } else {}
+          }
         }
         seqObj = undefined;
       } else if (uCode >= 0) {
@@ -19832,7 +19832,7 @@ var require_dbcs_codec = __commonJS((exports) => {
           newBuf[j++] = dbcsCode >> 8;
           newBuf[j++] = dbcsCode & 255;
         }
-      } else {}
+      }
       this.seqObj = undefined;
     }
     if (this.leadSurrogate !== -1) {
@@ -77653,9 +77653,8 @@ function createAuthCache(config) {
 var OMNI_CLAIMS_NAMESPACE = "https://manifold.omni.dev/@omni/claims/organizations";
 
 // src/auth/claims.ts
-var extractOrgClaims = (claims) => {
-  return claims[OMNI_CLAIMS_NAMESPACE] ?? [];
-};
+var readOrgClaims = (claims) => claims[OMNI_CLAIMS_NAMESPACE];
+var extractOrgClaims = (claims) => readOrgClaims(claims) ?? [];
 // src/auth/gatekeeperOrg.ts
 class GatekeeperOrgError extends Error {
   status;
@@ -77858,6 +77857,7 @@ function createGetAuth(config) {
         return null;
       let accessToken;
       let organizations = [];
+      let refreshedFromToken = false;
       const customUser = session.user;
       let identityProviderId = customUser.identityProviderId;
       let rowId = customUser.rowId ?? undefined;
@@ -77911,15 +77911,17 @@ function createGetAuth(config) {
             if (!identityProviderId) {
               identityProviderId = payload.sub ?? null;
             }
-            if (!hasCachedData) {
-              organizations = extractOrgClaims(payload);
+            const tokenOrgs = readOrgClaims(payload);
+            if (tokenOrgs !== undefined) {
+              organizations = tokenOrgs;
+              refreshedFromToken = true;
             }
           } catch (jwtError) {
             console.error(`${logPrefix} JWT verification failed:`, jwtError);
           }
         }
         const needsRowId = !!resolveRowId && rowId === undefined && !!accessToken;
-        if (identityProviderId && (!hasCachedData || needsRowId)) {
+        if (identityProviderId && (!hasCachedData || needsRowId || refreshedFromToken)) {
           if (resolveRowId && accessToken && rowId === undefined) {
             try {
               const resolved = await resolveRowId({

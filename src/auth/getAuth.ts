@@ -1,4 +1,4 @@
-import { extractOrgClaims } from "./claims";
+import { readOrgClaims } from "./claims";
 import { ensureFreshAccessToken, isInvalidGrant } from "./token";
 
 import type { AuthCache } from "./cache";
@@ -155,6 +155,9 @@ function createGetAuth(config: GetAuthConfig) {
 
       let accessToken: string | undefined;
       let organizations: OrganizationClaim[] = [];
+      // set when a freshly verified ID token supplied org claims this request,
+      // so the (now-refreshed) cache cookie gets rewritten below
+      let refreshedFromToken = false;
 
       // Access custom session properties added by customSession plugin
       const customUser = session.user as typeof session.user & {
@@ -239,8 +242,16 @@ function createGetAuth(config: GetAuthConfig) {
               identityProviderId = payload.sub ?? null;
             }
 
-            if (!hasCachedData) {
-              organizations = extractOrgClaims(payload);
+            // Prefer the freshly verified token's org claims over the cache so
+            // claim changes (org logo, membership) propagate on the next token
+            // refresh instead of waiting out the cache TTL. Fall back to the
+            // cache only when this token doesn't carry the claim at all (e.g. a
+            // token issued without the `organization` scope), so we never wipe
+            // orgs to an empty array.
+            const tokenOrgs = readOrgClaims(payload);
+            if (tokenOrgs !== undefined) {
+              organizations = tokenOrgs;
+              refreshedFromToken = true;
             }
           } catch (jwtError) {
             console.error(`${logPrefix} JWT verification failed:`, jwtError);
@@ -261,7 +272,10 @@ function createGetAuth(config: GetAuthConfig) {
         // when retrying rowId resolution for an already-cached session.
         // Gate on identity only: an authenticated user with no organizations
         // must still be cached so rowId resolves and we stop re-verifying.
-        if (identityProviderId && (!hasCachedData || needsRowId)) {
+        if (
+          identityProviderId &&
+          (!hasCachedData || needsRowId || refreshedFromToken)
+        ) {
           if (resolveRowId && accessToken && rowId === undefined) {
             try {
               const resolved = await resolveRowId({
