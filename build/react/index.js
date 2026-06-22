@@ -14,9 +14,28 @@ var EventsProvider = ({
 var useEvents = () => {
   return use(EventsContext);
 };
+// src/react/ManageTeamLink.tsx
+import { jsx as jsx2 } from "react/jsx-runtime";
+var gatekeeperOrgManageUrl = (identityBaseUrl, orgSlug) => `${identityBaseUrl.replace(/\/+$/, "")}/dashboard/organizations/${orgSlug}`;
+var ManageTeamLink = ({
+  identityBaseUrl,
+  orgSlug,
+  className,
+  children
+}) => {
+  if (!identityBaseUrl || !orgSlug)
+    return null;
+  return /* @__PURE__ */ jsx2("a", {
+    href: gatekeeperOrgManageUrl(identityBaseUrl, orgSlug),
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className,
+    children: children ?? "Manage team in Omni"
+  });
+};
 // src/react/OrganizationProvider.tsx
 import { createContext as createContext2, use as use2, useMemo, useState } from "react";
-import { jsx as jsx2 } from "react/jsx-runtime";
+import { jsx as jsx3 } from "react/jsx-runtime";
 var OrganizationContext = createContext2(null);
 function getDefaultOrganization(organizations) {
   const personalOrg = organizations.find((org) => org.type === "personal");
@@ -40,7 +59,7 @@ var OrganizationProvider = ({
     return organizations.find((o) => o.id === orgId);
   };
   const hasMultipleOrgs = organizations.length > 1;
-  return /* @__PURE__ */ jsx2(OrganizationContext, {
+  return /* @__PURE__ */ jsx3(OrganizationContext, {
     value: {
       organizations,
       currentOrganization,
@@ -84,6 +103,8 @@ export {
   useSessionRefresh,
   useOrganization,
   useEvents,
+  gatekeeperOrgManageUrl,
   OrganizationProvider,
+  ManageTeamLink,
   EventsProvider
 };
