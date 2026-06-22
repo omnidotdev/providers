@@ -7,16 +7,6 @@ import type { CachedAuthData } from "../../src/auth/cache";
 const MOCK_DATA: CachedAuthData = {
   rowId: "550e8400-e29b-41d4-a716-446655440000",
   identityProviderId: "660e8400-e29b-41d4-a716-446655440001",
-  organizations: [
-    {
-      id: "org-1",
-      name: "Acme Corp",
-      slug: "acme",
-      type: "team",
-      roles: ["admin"],
-      teams: [{ id: "team-1", name: "Engineering" }],
-    },
-  ],
 };
 
 describe("createAuthCache", () => {
@@ -63,6 +53,39 @@ describe("createAuthCache", () => {
     expect(decrypted).toEqual(MOCK_DATA);
   });
 
+  it("never persists organizations in the cookie (unbounded data stays out of headers)", async () => {
+    const cache = createAuthCache({ appName: "test" });
+
+    // Even if a caller smuggles an organizations array in, it must not survive
+    // the round-trip: org membership is unbounded and would bloat the cookie
+    const withOrgs = {
+      ...MOCK_DATA,
+      organizations: Array.from({ length: 50 }, (_, i) => ({
+        id: `org-${i}`,
+        name: `Organization ${i}`,
+        slug: `org-${i}`,
+        type: "team",
+        roles: ["admin"],
+        teams: [{ id: `team-${i}`, name: "Engineering" }],
+      })),
+    } as unknown as CachedAuthData;
+
+    const encrypted = await cache.encrypt(withOrgs);
+    const decrypted = (await cache.decrypt(encrypted)) as Record<
+      string,
+      unknown
+    >;
+
+    expect(decrypted.organizations).toBeUndefined();
+  });
+
+  it("keeps the cookie small and bounded regardless of org membership", async () => {
+    const cache = createAuthCache({ appName: "test" });
+    const encrypted = await cache.encrypt(MOCK_DATA);
+    // Two UUIDs + JWE overhead; comfortably under any header limit
+    expect(encrypted.length).toBeLessThan(600);
+  });
+
   it("should return null for invalid encrypted data", async () => {
     const cache = createAuthCache({ appName: "test" });
 
@@ -70,15 +93,11 @@ describe("createAuthCache", () => {
     expect(result).toBeNull();
   });
 
-  it("should return null for data missing rowId", async () => {
+  it("should fail to decrypt across different app names (different salt)", async () => {
     const cache = createAuthCache({ appName: "test" });
-
-    // Encrypt valid data, then try with a different app name
-    // which uses a different key derivation salt
     const otherCache = createAuthCache({ appName: "other" });
     const encrypted = await cache.encrypt(MOCK_DATA);
 
-    // Different salt = different key = decrypt fails
     const result = await otherCache.decrypt(encrypted);
     expect(result).toBeNull();
   });
@@ -86,14 +105,11 @@ describe("createAuthCache", () => {
   it("should fall back to AUTH_SECRET_PREVIOUS for rotation", async () => {
     const cache = createAuthCache({ appName: "test" });
 
-    // Encrypt with current secret
     const encrypted = await cache.encrypt(MOCK_DATA);
 
-    // Rotate: move current to previous, set new current
     process.env.AUTH_SECRET_PREVIOUS = process.env.AUTH_SECRET;
     process.env.AUTH_SECRET = "new-secret-key-after-rotation-5678";
 
-    // Should still decrypt using previous key
     const decrypted = await cache.decrypt(encrypted);
     expect(decrypted).toEqual(MOCK_DATA);
   });
@@ -101,10 +117,8 @@ describe("createAuthCache", () => {
   it("should return null when both secrets fail", async () => {
     const cache = createAuthCache({ appName: "test" });
 
-    // Encrypt with current secret
     const encrypted = await cache.encrypt(MOCK_DATA);
 
-    // Change both secrets
     process.env.AUTH_SECRET = "completely-different-secret-aaaa";
     process.env.AUTH_SECRET_PREVIOUS = "also-different-secret-bbbb";
 
@@ -121,25 +135,11 @@ describe("createAuthCache", () => {
     );
   });
 
-  it("should handle empty organizations array", async () => {
-    const cache = createAuthCache({ appName: "test" });
-
-    const data: CachedAuthData = {
-      ...MOCK_DATA,
-      organizations: [],
-    };
-
-    const encrypted = await cache.encrypt(data);
-    const decrypted = await cache.decrypt(encrypted);
-    expect(decrypted?.organizations).toEqual([]);
-  });
-
   it("should round-trip without rowId when resolver is absent", async () => {
     const cache = createAuthCache({ appName: "test" });
 
     const data: CachedAuthData = {
       identityProviderId: MOCK_DATA.identityProviderId,
-      organizations: MOCK_DATA.organizations,
     };
 
     const encrypted = await cache.encrypt(data);
@@ -148,6 +148,5 @@ describe("createAuthCache", () => {
     expect(decrypted).not.toBeNull();
     expect(decrypted?.rowId).toBeUndefined();
     expect(decrypted?.identityProviderId).toBe(MOCK_DATA.identityProviderId);
-    expect(decrypted?.organizations).toEqual(MOCK_DATA.organizations);
   });
 });

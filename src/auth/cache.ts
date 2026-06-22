@@ -1,9 +1,16 @@
 import { EncryptJWT, jwtDecrypt } from "jose";
 
 import type { JWTDecryptResult } from "jose";
-import type { OrganizationClaim } from "./types";
 
-/** Cached auth data stored in an encrypted cookie */
+/**
+ * Cached auth data stored in an encrypted cookie.
+ *
+ * Deliberately holds ONLY bounded identity fields. Organization membership is
+ * unbounded (it grows with every org a user joins) and must never live in a
+ * cookie: it is re-derived from the verified ID token on each request in
+ * `createGetAuth`. Persisting it here previously bloated request headers past
+ * the server's limit, hard-failing login for users in many orgs (HTTP 431).
+ */
 type CachedAuthData = {
   /**
    * Consuming app's user-row UUID. Populated by `createGetAuth`'s
@@ -12,7 +19,6 @@ type CachedAuthData = {
    */
   rowId?: string;
   identityProviderId: string;
-  organizations: OrganizationClaim[];
 };
 
 type AuthCacheConfig = {
@@ -75,9 +81,6 @@ function parseCachePayload(
   return {
     ...(typeof payload.rowId === "string" ? { rowId: payload.rowId } : {}),
     identityProviderId: payload.identityProviderId,
-    organizations: Array.isArray(payload.organizations)
-      ? (payload.organizations as OrganizationClaim[])
-      : [],
   };
 }
 
@@ -105,7 +108,6 @@ function createAuthCache(config: AuthCacheConfig): AuthCache {
     return new EncryptJWT({
       ...(data.rowId !== undefined ? { rowId: data.rowId } : {}),
       identityProviderId: data.identityProviderId,
-      organizations: data.organizations,
     })
       .setProtectedHeader({ alg: "dir", enc: "A256GCM" })
       .setIssuedAt()

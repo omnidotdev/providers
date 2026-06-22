@@ -154,31 +154,23 @@ function createGetAuth(config: GetAuthConfig) {
       if (!session) return null;
 
       let accessToken: string | undefined;
+      // Organizations are unbounded and must never be cached in a cookie (that
+      // bloated request headers past the server limit -> HTTP 431 for multi-org
+      // users). They are re-derived from the verified ID token on every request
       let organizations: OrganizationClaim[] = [];
-      // set when a freshly verified ID token supplied org claims this request,
-      // so the (now-refreshed) cache cookie gets rewritten below
-      let refreshedFromToken = false;
 
       // Access custom session properties added by customSession plugin
       const customUser = session.user as typeof session.user & {
         rowId?: string | null;
         identityProviderId?: string | null;
-        organizations?: OrganizationClaim[];
       };
       let identityProviderId = customUser.identityProviderId;
       let rowId: string | undefined = customUser.rowId ?? undefined;
-      const cachedOrganizations = customUser.organizations;
 
       // A cached identityProviderId is the marker that getAuth previously wrote
-      // the cache for this session, so trust it to skip OIDC verify on every
-      // request. Do NOT also require cached organizations: a user with zero org
-      // claims is a valid, fully-cached state, and gating on org count left such
-      // users uncached forever (rowId never resolved).
+      // the cache for this session, so trust it to skip a redundant rowId
+      // resolve. Organizations are intentionally not part of the cache.
       const hasCachedData = !!identityProviderId;
-
-      if (hasCachedData) {
-        organizations = cachedOrganizations ?? [];
-      }
 
       // Get tokens from Gatekeeper via Better Auth
       try {
@@ -242,16 +234,14 @@ function createGetAuth(config: GetAuthConfig) {
               identityProviderId = payload.sub ?? null;
             }
 
-            // Prefer the freshly verified token's org claims over the cache so
+            // Organizations come straight from the freshly verified token, so
             // claim changes (org logo, membership) propagate on the next token
-            // refresh instead of waiting out the cache TTL. Fall back to the
-            // cache only when this token doesn't carry the claim at all (e.g. a
-            // token issued without the `organization` scope), so we never wipe
-            // orgs to an empty array.
+            // refresh. A token issued without the `organization` scope omits the
+            // claim entirely (readOrgClaims -> undefined); leave orgs as-is in
+            // that case rather than wiping them to an empty array.
             const tokenOrgs = readOrgClaims(payload);
             if (tokenOrgs !== undefined) {
               organizations = tokenOrgs;
-              refreshedFromToken = true;
             }
           } catch (jwtError) {
             console.error(`${logPrefix} JWT verification failed:`, jwtError);
@@ -272,10 +262,7 @@ function createGetAuth(config: GetAuthConfig) {
         // when retrying rowId resolution for an already-cached session.
         // Gate on identity only: an authenticated user with no organizations
         // must still be cached so rowId resolves and we stop re-verifying.
-        if (
-          identityProviderId &&
-          (!hasCachedData || needsRowId || refreshedFromToken)
-        ) {
+        if (identityProviderId && (!hasCachedData || needsRowId)) {
           if (resolveRowId && accessToken && rowId === undefined) {
             try {
               const resolved = await resolveRowId({
@@ -297,7 +284,6 @@ function createGetAuth(config: GetAuthConfig) {
           const encrypted = await authCache.encrypt({
             ...(rowId !== undefined ? { rowId } : {}),
             identityProviderId,
-            organizations,
           });
           setCookie(authCache.cookieName, encrypted, {
             httpOnly: true,

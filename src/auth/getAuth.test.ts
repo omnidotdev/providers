@@ -1,10 +1,12 @@
 import { describe, expect, it, mock } from "bun:test";
 
 import { createGetAuth } from "./getAuth";
+import { OMNI_CLAIMS_NAMESPACE } from "./types";
 
-import type { AuthCache } from "./cache";
+import type { AuthCache, CachedAuthData } from "./cache";
 import type { BetterAuthApi, SetCookieFn } from "./getAuth";
 import type { OidcClient } from "./oidc";
+import type { OrganizationClaim } from "./types";
 
 /** Build a session whose customSession fields can be overridden per test. */
 const makeSession = (
@@ -22,8 +24,11 @@ const makeConfig = (overrides: {
     accessToken: string;
     user: { id: string; email: string };
   }) => Promise<string | null>;
+  /** Claims returned by the mocked OIDC ID-token verification */
+  idTokenClaims?: Record<string, unknown>;
 }) => {
   const setCookieCalls: Array<{ name: string; value: string }> = [];
+  const encryptCalls: CachedAuthData[] = [];
 
   const authApi = {
     getSession: mock(async () => overrides.session),
@@ -36,13 +41,18 @@ const makeConfig = (overrides: {
   } as unknown as BetterAuthApi;
 
   const oidc = {
-    verifyIdToken: mock(async () => ({ sub: "idp-sub-123" })),
+    verifyIdToken: mock(
+      async () => overrides.idTokenClaims ?? { sub: "idp-sub-123" },
+    ),
   } as unknown as OidcClient;
 
   const authCache = {
     cookieName: "test-cache",
     cookieTtlSeconds: 3600,
-    encrypt: mock(async () => "encrypted-blob"),
+    encrypt: mock(async (data: CachedAuthData) => {
+      encryptCalls.push(data);
+      return "encrypted-blob";
+    }),
     decrypt: mock(async () => null),
   } as unknown as AuthCache;
 
@@ -50,7 +60,7 @@ const makeConfig = (overrides: {
     setCookieCalls.push({ name, value });
   };
 
-  return { authApi, oidc, authCache, setCookie, setCookieCalls };
+  return { authApi, oidc, authCache, setCookie, setCookieCalls, encryptCalls };
 };
 
 const request = new Request("https://app.example.com");
@@ -121,5 +131,49 @@ describe("createGetAuth rowId resolution", () => {
     const result = await getAuth(request);
 
     expect(result?.user.rowId).toBeUndefined();
+  });
+});
+
+describe("createGetAuth organization handling", () => {
+  const ORGS: OrganizationClaim[] = [
+    {
+      id: "org-1",
+      name: "Acme",
+      slug: "acme",
+      type: "team",
+      roles: ["admin"],
+      teams: [],
+    },
+  ];
+
+  it("derives organizations from the verified ID token", async () => {
+    const cfg = makeConfig({
+      session: makeSession({}),
+      idTokenClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: ORGS },
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const result = await getAuth(request);
+
+    expect(result?.organizations).toEqual(ORGS);
+  });
+
+  it("never writes organizations into the cache cookie (keeps headers bounded)", async () => {
+    const cfg = makeConfig({
+      session: makeSession({}),
+      idTokenClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: ORGS },
+      resolveRowId: async () => "row-uuid",
+    });
+
+    const getAuth = createGetAuth({
+      ...cfg,
+      resolveRowId: async () => "row-uuid",
+    });
+    await getAuth(request);
+
+    expect(cfg.encryptCalls.length).toBeGreaterThan(0);
+    for (const call of cfg.encryptCalls) {
+      expect((call as Record<string, unknown>).organizations).toBeUndefined();
+    }
   });
 });
