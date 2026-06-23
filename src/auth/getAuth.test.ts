@@ -220,3 +220,58 @@ describe("createGetAuth organization handling", () => {
     }
   });
 });
+
+describe("createGetAuth userinfo org cache", () => {
+  const ORGS: OrganizationClaim[] = [
+    {
+      id: "org-1",
+      name: "Acme",
+      slug: "acme",
+      type: "team",
+      roles: [],
+      teams: [],
+    },
+  ];
+  const SLIM = [{ id: "org-1" }];
+
+  const fetchSpy = (cfg: ReturnType<typeof makeConfig>) =>
+    (cfg.oidc as unknown as { fetchUserInfo: ReturnType<typeof mock> })
+      .fetchUserInfo;
+
+  it("caches userinfo hydration across requests within the TTL (one fetch)", async () => {
+    const cfg = makeConfig({
+      session: makeSession({}),
+      idTokenClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: SLIM },
+      userInfoClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: ORGS },
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const a = await getAuth(request);
+    const b = await getAuth(request);
+
+    expect(a?.organizations).toEqual(ORGS);
+    expect(b?.organizations).toEqual(ORGS);
+    // Second request must be served from cache, not a second userinfo round-trip
+    expect(fetchSpy(cfg)).toHaveBeenCalledTimes(1);
+  });
+
+  it("refetches userinfo after the cache TTL expires", async () => {
+    let clock = 1_000;
+    const cfg = makeConfig({
+      session: makeSession({}),
+      idTokenClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: SLIM },
+      userInfoClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: ORGS },
+    });
+
+    const getAuth = createGetAuth({
+      ...cfg,
+      orgCacheTtlMs: 60_000,
+      now: () => clock,
+    });
+    await getAuth(request);
+    clock += 60_001;
+    await getAuth(request);
+
+    expect(fetchSpy(cfg)).toHaveBeenCalledTimes(2);
+  });
+});

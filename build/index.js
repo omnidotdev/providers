@@ -77844,8 +77844,11 @@ function createGetAuth(config) {
     setCookie,
     providerId = "omni",
     logPrefix = "[getAuth]",
-    resolveRowId
+    resolveRowId,
+    orgCacheTtlMs = 60000,
+    now = Date.now
   } = config;
+  const orgCache = new Map;
   return async function getAuth(request) {
     try {
       const session = await authApi.getSession({
@@ -77910,14 +77913,26 @@ function createGetAuth(config) {
             }
             const needsHydration = organizations.length > 0 && organizations.some((org) => org.name === undefined);
             if (needsHydration && accessToken && typeof oidc.fetchUserInfo === "function") {
-              try {
-                const info = await oidc.fetchUserInfo(accessToken);
-                const infoOrgs = readOrgClaims(info);
-                if (infoOrgs !== undefined) {
-                  organizations = infoOrgs;
+              const cacheKey = identityProviderId ?? payload.sub ?? null;
+              const cached = cacheKey && orgCacheTtlMs > 0 ? orgCache.get(cacheKey) : undefined;
+              if (cached && cached.expiry > now()) {
+                organizations = cached.organizations;
+              } else {
+                try {
+                  const info = await oidc.fetchUserInfo(accessToken);
+                  const infoOrgs = readOrgClaims(info);
+                  if (infoOrgs !== undefined) {
+                    organizations = infoOrgs;
+                    if (cacheKey && orgCacheTtlMs > 0) {
+                      orgCache.set(cacheKey, {
+                        organizations: infoOrgs,
+                        expiry: now() + orgCacheTtlMs
+                      });
+                    }
+                  }
+                } catch (infoError) {
+                  console.error(`${logPrefix} userinfo org hydration failed:`, infoError);
                 }
-              } catch (infoError) {
-                console.error(`${logPrefix} userinfo org hydration failed:`, infoError);
               }
             }
           } catch (jwtError) {

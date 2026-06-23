@@ -88,6 +88,16 @@ type GetAuthConfig = {
      * succeeds.
      */
     resolveRowId?: ResolveRowIdFn;
+    /**
+     * TTL (ms) for the in-memory per-user cache of userinfo-hydrated
+     * organizations. Once tokens carry org ids only, organizations are hydrated
+     * from the userinfo endpoint; without this cache that would be a userinfo
+     * round-trip on every request. Short TTL keeps it fresh enough for display
+     * data while sparing the IDP. Default 60s; set 0 to disable.
+     */
+    orgCacheTtlMs?: number;
+    /** Clock for the org cache, injectable for tests. Default `Date.now`. */
+    now?: () => number;
 };
 type GetAuthSession = {
     accessToken?: string;
