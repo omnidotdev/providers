@@ -77604,8 +77604,7 @@ function parseCachePayload(payload) {
     return null;
   return {
     ...typeof payload.rowId === "string" ? { rowId: payload.rowId } : {},
-    identityProviderId: payload.identityProviderId,
-    organizations: Array.isArray(payload.organizations) ? payload.organizations : []
+    identityProviderId: payload.identityProviderId
   };
 }
 function createAuthCache(config) {
@@ -77621,8 +77620,7 @@ function createAuthCache(config) {
     const key = await getKey();
     return new EncryptJWT({
       ...data.rowId !== undefined ? { rowId: data.rowId } : {},
-      identityProviderId: data.identityProviderId,
-      organizations: data.organizations
+      identityProviderId: data.identityProviderId
     }).setProtectedHeader({ alg: "dir", enc: "A256GCM" }).setIssuedAt().setExpirationTime(`${COOKIE_TTL_SECONDS}s`).encrypt(key);
   }
   async function decrypt3(encrypted) {
@@ -77857,15 +77855,10 @@ function createGetAuth(config) {
         return null;
       let accessToken;
       let organizations = [];
-      let refreshedFromToken = false;
       const customUser = session.user;
       let identityProviderId = customUser.identityProviderId;
       let rowId = customUser.rowId ?? undefined;
-      const cachedOrganizations = customUser.organizations;
       const hasCachedData = !!identityProviderId;
-      if (hasCachedData) {
-        organizations = cachedOrganizations ?? [];
-      }
       try {
         const tokenResult = await ensureFreshAccessToken({
           getAccessToken: async () => {
@@ -77914,14 +77907,25 @@ function createGetAuth(config) {
             const tokenOrgs = readOrgClaims(payload);
             if (tokenOrgs !== undefined) {
               organizations = tokenOrgs;
-              refreshedFromToken = true;
+            }
+            const needsHydration = organizations.length > 0 && organizations.some((org) => org.name === undefined);
+            if (needsHydration && accessToken && typeof oidc.fetchUserInfo === "function") {
+              try {
+                const info = await oidc.fetchUserInfo(accessToken);
+                const infoOrgs = readOrgClaims(info);
+                if (infoOrgs !== undefined) {
+                  organizations = infoOrgs;
+                }
+              } catch (infoError) {
+                console.error(`${logPrefix} userinfo org hydration failed:`, infoError);
+              }
             }
           } catch (jwtError) {
             console.error(`${logPrefix} JWT verification failed:`, jwtError);
           }
         }
         const needsRowId = !!resolveRowId && rowId === undefined && !!accessToken;
-        if (identityProviderId && (!hasCachedData || needsRowId || refreshedFromToken)) {
+        if (identityProviderId && (!hasCachedData || needsRowId)) {
           if (resolveRowId && accessToken && rowId === undefined) {
             try {
               const resolved = await resolveRowId({
@@ -77937,8 +77941,7 @@ function createGetAuth(config) {
           }
           const encrypted = await authCache.encrypt({
             ...rowId !== undefined ? { rowId } : {},
-            identityProviderId,
-            organizations
+            identityProviderId
           });
           setCookie(authCache.cookieName, encrypted, {
             httpOnly: true,
@@ -78059,13 +78062,28 @@ function createOidcClient(config) {
     }
     return payload;
   }
+  async function fetchUserInfo(accessToken) {
+    const discovery = await getDiscovery();
+    const endpoint = new URL(discovery.userinfo_endpoint ?? "/oauth2/userinfo", config.authBaseUrl);
+    const baseUrl = new URL(config.authBaseUrl);
+    endpoint.protocol = baseUrl.protocol;
+    endpoint.host = baseUrl.host;
+    const response = await fetch(endpoint, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(15000)
+    });
+    if (!response.ok) {
+      throw new Error(`OIDC userinfo failed: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  }
   function clearCache() {
     discoveryCache = null;
     discoveryExpiry = 0;
     jwksCache3 = null;
     jwksExpiry = 0;
   }
-  return { verifyIdToken, getDiscovery, getJwks, clearCache };
+  return { verifyIdToken, fetchUserInfo, getDiscovery, getJwks, clearCache };
 }
 // src/auth/resolve.ts
 async function fetchUserInfo(token, userinfoUrl) {

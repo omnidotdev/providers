@@ -7,6 +7,8 @@ import type { UserInfoClaims } from "./types";
 type OidcDiscovery = {
   issuer: string;
   jwks_uri: string;
+  /** Userinfo endpoint, used to fetch claims (e.g. org details) by access token */
+  userinfo_endpoint?: string;
 };
 
 type OidcClientConfig = {
@@ -17,6 +19,8 @@ type OidcClientConfig = {
 type OidcClient = {
   /** Verify an ID token JWT using OIDC discovery + JWKS */
   verifyIdToken: (token: string) => Promise<UserInfoClaims>;
+  /** Fetch userinfo claims (e.g. org details) for an access token */
+  fetchUserInfo: (accessToken: string) => Promise<UserInfoClaims>;
   /** Get cached OIDC discovery document (24h TTL) */
   getDiscovery: () => Promise<OidcDiscovery>;
   /** Get cached JWKS key set (1h TTL) */
@@ -109,6 +113,41 @@ function createOidcClient(config: OidcClientConfig): OidcClient {
     return payload as UserInfoClaims;
   }
 
+  /**
+   * Fetch userinfo claims for an access token. Used to hydrate rich org details
+   * (name/slug/logo/roles/teams) when the token's organizations claim carries
+   * only ids — so tokens stay small (no unbounded org list inflating request
+   * headers) while UIs still get the full org shape. Returns the same
+   * `UserInfoClaims` shape as the ID token, including the namespaced org claim
+   */
+  async function fetchUserInfo(accessToken: string): Promise<UserInfoClaims> {
+    const discovery = await getDiscovery();
+
+    // Discovery may return an external host (e.g. localhost:3001) unreachable
+    // from inside a container; rewrite to the configured internal base URL,
+    // mirroring the jwks_uri handling above
+    const endpoint = new URL(
+      discovery.userinfo_endpoint ?? "/oauth2/userinfo",
+      config.authBaseUrl,
+    );
+    const baseUrl = new URL(config.authBaseUrl);
+    endpoint.protocol = baseUrl.protocol;
+    endpoint.host = baseUrl.host;
+
+    const response = await fetch(endpoint, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `OIDC userinfo failed: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    return (await response.json()) as UserInfoClaims;
+  }
+
   function clearCache(): void {
     discoveryCache = null;
     discoveryExpiry = 0;
@@ -116,7 +155,7 @@ function createOidcClient(config: OidcClientConfig): OidcClient {
     jwksExpiry = 0;
   }
 
-  return { verifyIdToken, getDiscovery, getJwks, clearCache };
+  return { verifyIdToken, fetchUserInfo, getDiscovery, getJwks, clearCache };
 }
 
 export { createOidcClient };

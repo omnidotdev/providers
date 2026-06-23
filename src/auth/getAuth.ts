@@ -243,6 +243,38 @@ function createGetAuth(config: GetAuthConfig) {
             if (tokenOrgs !== undefined) {
               organizations = tokenOrgs;
             }
+
+            // Slim-token hydration: once the issuer drops the rich org list from
+            // tokens (carrying only `{ id }` to keep request headers bounded),
+            // the claim lacks display fields. Hydrate the full shape from
+            // userinfo so UIs keep names/logos/roles/teams. Rich tokens are used
+            // as-is (no extra round-trip), so this is a no-op until the issuer
+            // slims the claim. A token without the org scope (undefined) is left
+            // alone — userinfo would not carry it either.
+            const needsHydration =
+              organizations.length > 0 &&
+              organizations.some(
+                (org) => (org as Partial<OrganizationClaim>).name === undefined,
+              );
+
+            if (
+              needsHydration &&
+              accessToken &&
+              typeof oidc.fetchUserInfo === "function"
+            ) {
+              try {
+                const info = await oidc.fetchUserInfo(accessToken);
+                const infoOrgs = readOrgClaims(info);
+                if (infoOrgs !== undefined) {
+                  organizations = infoOrgs;
+                }
+              } catch (infoError) {
+                console.error(
+                  `${logPrefix} userinfo org hydration failed:`,
+                  infoError,
+                );
+              }
+            }
           } catch (jwtError) {
             console.error(`${logPrefix} JWT verification failed:`, jwtError);
           }
