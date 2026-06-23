@@ -88,6 +88,16 @@ type GetAuthConfig = {
    * succeeds.
    */
   resolveRowId?: ResolveRowIdFn;
+  /**
+   * TTL (ms) for the in-memory per-user cache of userinfo-hydrated
+   * organizations. Once tokens carry org ids only, organizations are hydrated
+   * from the userinfo endpoint; without this cache that would be a userinfo
+   * round-trip on every request. Short TTL keeps it fresh enough for display
+   * data while sparing the IDP. Default 60s; set 0 to disable.
+   */
+  orgCacheTtlMs?: number;
+  /** Clock for the org cache, injectable for tests. Default `Date.now`. */
+  now?: () => number;
 };
 
 type GetAuthSession = {
@@ -141,7 +151,19 @@ function createGetAuth(config: GetAuthConfig) {
     providerId = "omni",
     logPrefix = "[getAuth]",
     resolveRowId,
+    orgCacheTtlMs = 60_000,
+    now = Date.now,
   } = config;
+
+  // Per-process cache of userinfo-hydrated organizations, keyed by the OIDC
+  // subject. Spares the IDP a userinfo round-trip on every request once tokens
+  // carry org ids only. Not a cookie (org lists are unbounded -> HTTP 431), so
+  // this lives in memory with a short TTL; staleness is bounded and only
+  // affects display fields (authz still flows through the token's org ids).
+  const orgCache = new Map<
+    string,
+    { organizations: OrganizationClaim[]; expiry: number }
+  >();
 
   return async function getAuth(
     request: Request,
@@ -262,17 +284,33 @@ function createGetAuth(config: GetAuthConfig) {
               accessToken &&
               typeof oidc.fetchUserInfo === "function"
             ) {
-              try {
-                const info = await oidc.fetchUserInfo(accessToken);
-                const infoOrgs = readOrgClaims(info);
-                if (infoOrgs !== undefined) {
-                  organizations = infoOrgs;
+              const cacheKey = identityProviderId ?? payload.sub ?? null;
+              const cached =
+                cacheKey && orgCacheTtlMs > 0
+                  ? orgCache.get(cacheKey)
+                  : undefined;
+
+              if (cached && cached.expiry > now()) {
+                organizations = cached.organizations;
+              } else {
+                try {
+                  const info = await oidc.fetchUserInfo(accessToken);
+                  const infoOrgs = readOrgClaims(info);
+                  if (infoOrgs !== undefined) {
+                    organizations = infoOrgs;
+                    if (cacheKey && orgCacheTtlMs > 0) {
+                      orgCache.set(cacheKey, {
+                        organizations: infoOrgs,
+                        expiry: now() + orgCacheTtlMs,
+                      });
+                    }
+                  }
+                } catch (infoError) {
+                  console.error(
+                    `${logPrefix} userinfo org hydration failed:`,
+                    infoError,
+                  );
                 }
-              } catch (infoError) {
-                console.error(
-                  `${logPrefix} userinfo org hydration failed:`,
-                  infoError,
-                );
               }
             }
           } catch (jwtError) {
