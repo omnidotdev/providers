@@ -4,6 +4,8 @@ import type { UserInfoClaims } from "./types";
 type OidcDiscovery = {
     issuer: string;
     jwks_uri: string;
+    /** Userinfo endpoint, used to fetch claims (e.g. org details) by access token */
+    userinfo_endpoint?: string;
 };
 type OidcClientConfig = {
     /** Base URL of the auth service (e.g. https://auth.omni.dev) */
@@ -12,6 +14,8 @@ type OidcClientConfig = {
 type OidcClient = {
     /** Verify an ID token JWT using OIDC discovery + JWKS */
     verifyIdToken: (token: string) => Promise<UserInfoClaims>;
+    /** Fetch userinfo claims (e.g. org details) for an access token */
+    fetchUserInfo: (accessToken: string) => Promise<UserInfoClaims>;
     /** Get cached OIDC discovery document (24h TTL) */
     getDiscovery: () => Promise<OidcDiscovery>;
     /** Get cached JWKS key set (1h TTL) */

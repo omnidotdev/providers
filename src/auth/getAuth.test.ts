@@ -26,6 +26,8 @@ const makeConfig = (overrides: {
   }) => Promise<string | null>;
   /** Claims returned by the mocked OIDC ID-token verification */
   idTokenClaims?: Record<string, unknown>;
+  /** Claims returned by the mocked OIDC userinfo fetch */
+  userInfoClaims?: Record<string, unknown>;
 }) => {
   const setCookieCalls: Array<{ name: string; value: string }> = [];
   const encryptCalls: CachedAuthData[] = [];
@@ -43,6 +45,9 @@ const makeConfig = (overrides: {
   const oidc = {
     verifyIdToken: mock(
       async () => overrides.idTokenClaims ?? { sub: "idp-sub-123" },
+    ),
+    fetchUserInfo: mock(
+      async () => overrides.userInfoClaims ?? { sub: "idp-sub-123" },
     ),
   } as unknown as OidcClient;
 
@@ -156,6 +161,44 @@ describe("createGetAuth organization handling", () => {
     const result = await getAuth(request);
 
     expect(result?.organizations).toEqual(ORGS);
+  });
+
+  it("hydrates rich organizations from userinfo when the token claim is slim (ids only)", async () => {
+    // Post-slim token shape: the org claim carries only ids. createGetAuth must
+    // hydrate the rich details (name/slug/logo/roles/teams) from userinfo so UIs
+    // keep working.
+    const SLIM = [{ id: "org-1" }];
+    const cfg = makeConfig({
+      session: makeSession({}),
+      idTokenClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: SLIM },
+      userInfoClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: ORGS },
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const result = await getAuth(request);
+
+    expect(result?.organizations).toEqual(ORGS);
+    expect(
+      (cfg.oidc as unknown as { fetchUserInfo: ReturnType<typeof mock> })
+        .fetchUserInfo,
+    ).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses rich token organizations directly without a userinfo round-trip", async () => {
+    const cfg = makeConfig({
+      session: makeSession({}),
+      idTokenClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: ORGS },
+      userInfoClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: ORGS },
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const result = await getAuth(request);
+
+    expect(result?.organizations).toEqual(ORGS);
+    expect(
+      (cfg.oidc as unknown as { fetchUserInfo: ReturnType<typeof mock> })
+        .fetchUserInfo,
+    ).not.toHaveBeenCalled();
   });
 
   it("never writes organizations into the cache cookie (keeps headers bounded)", async () => {
