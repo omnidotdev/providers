@@ -2,7 +2,7 @@ export { GatekeeperApiKeyProvider, NoopApiKeyProvider, createApiKeyProvider, } f
 export { GatekeeperOrgClient, GatekeeperOrgError, OMNI_CLAIMS_NAMESPACE, createAuthCache, createGetAuth, createOidcClient, createOmniOAuthConfig, ensureFreshAccessToken, extractOrgClaims, fetchUserInfo, isInvalidGrant, resolveAccessToken, verifyAccessToken, } from "./auth";
 export { WARDEN_RELATIONS, WardenAuthzProvider, createAuthzProvider, } from "./authz";
 export { AetherBillingProvider, NoopBillingProvider, createBillingProvider, isWithinLimit, } from "./billing";
-export { HttpEventsProvider, IggyEventsProvider, NoopEventsProvider, createEventsProvider, registerSchemas, } from "./events";
+export { HttpEventsProvider, IggyEventsProvider, NoopEventsProvider, createEventsProvider, eventMeta, registerSchemas, } from "./events";
 export { NoopFlagProvider, UnleashFlagProvider, createFlagProvider, } from "./flags";
 export { LEGAL_BASE_URL, LEGAL_CONTACTS, LEGAL_FOOTER_LINKS, LEGAL_LINKS, LEGAL_URLS, } from "./legal";
 export { NoopNotificationProvider, createNotificationProvider, } from "./notifications";
@@ -14,7 +14,7 @@ export type { ApiKeyInfo, ApiKeyProvider, ApiKeyProviderConfig, GatekeeperApiKey
 export type { AuthCache, AuthCacheConfig, BetterAuthApi, CachedAuthData, EnsureFreshTokenConfig, GatekeeperInvitation, GatekeeperMember, GatekeeperMemberRole, GatekeeperOrganization, GetAuthConfig, GetAuthSession, OidcClient, OidcClientConfig, OidcDiscovery, OmniOAuthConfig, OrganizationClaim, ResolveAccessTokenConfig, SetCookieFn, TokenPayload, TokenResult, UserInfoClaims, VerifyAccessTokenConfig, } from "./auth";
 export type { AuthzProvider, AuthzProviderConfig, AuthzTuple, PermissionCheck, PermissionCheckResult, TupleSyncResult, WardenAuthzProviderConfig, WardenRelation, WardenResourceType, } from "./authz";
 export type { AetherBillingProviderConfig, BillingProvider, BillingProviderConfig, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, NoopBillingProviderConfig, Price, Product, Recurring, Subscription, } from "./billing";
-export type { EmitResult, EventInput, EventsProvider, EventsProviderConfig, EventsProviderStatus, HttpEventsProviderConfig, IggyEventsProviderConfig, NoopEventsProviderConfig, RegisteredSchema, SchemaRegistration, SubscriptionCreated, SubscriptionInput, } from "./events";
+export type { EmitResult, EventActor, EventInput, EventsProvider, EventsProviderConfig, EventsProviderStatus, HttpEventsProviderConfig, IggyEventsProviderConfig, NoopEventsProviderConfig, RegisteredSchema, SchemaRegistration, SubscriptionCreated, SubscriptionInput, } from "./events";
 export type { FlagContext, FlagProvider, FlagProviderConfig, NoopFlagProviderConfig, UnleashFlagProviderConfig, } from "./flags";
 export type { EmailParams, EmailResult, NoopNotificationProviderConfig, NotificationProvider, NotificationProviderConfig, } from "./notifications";
 export type { NoopStorageProviderConfig, PresignedParams, PresignedResult, S3StorageProviderConfig, StorageProvider, StorageProviderConfig, UploadParams, UploadResult, } from "./storage";

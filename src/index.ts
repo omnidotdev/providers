@@ -40,6 +40,7 @@ export {
   IggyEventsProvider,
   NoopEventsProvider,
   createEventsProvider,
+  eventMeta,
   registerSchemas,
 } from "./events";
 // Flags
@@ -133,6 +134,7 @@ export type {
 } from "./billing";
 export type {
   EmitResult,
+  EventActor,
   EventInput,
   EventsProvider,
   EventsProviderConfig,

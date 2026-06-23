@@ -79188,6 +79188,17 @@ class NoopEventsProvider {
   }
   async close() {}
 }
+// src/events/enrich.ts
+var eventMeta = (observer, resourceType, resourceName) => ({
+  resourceType,
+  ...resourceName != null ? { resourceName } : {},
+  ...observer ? {
+    actorId: observer.id,
+    actorIdpId: observer.identityProviderId,
+    actorName: observer.name,
+    actorEmail: observer.email
+  } : {}
+});
 // src/events/helpers.ts
 var REQUEST_TIMEOUT_MS5 = 5000;
 var registerSchemas = async (baseUrl, apiKey, schemas, schemaCache) => {
@@ -80043,6 +80054,7 @@ export {
   isInvalidGrant,
   fetchUserInfo,
   extractOrgClaims,
+  eventMeta,
   ensureFreshAccessToken,
   createStorageProvider,
   createOmniOAuthConfig,
