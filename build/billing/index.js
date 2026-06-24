@@ -402,6 +402,70 @@ var isWithinLimit = (entitlements, featureKey, currentCount, defaultLimits) => {
   }
   return true;
 };
+// src/billing/safePaymentWrite.ts
+var BILLING_WRITE_FAILED_EVENT = "billing.write.failed";
+async function safePaymentWrite(fn, opts) {
+  if (!opts.idempotencyKey) {
+    throw new Error(`safePaymentWrite(${opts.operation}) requires a non-empty idempotencyKey`);
+  }
+  try {
+    return await fn();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log("error", "billing", "payment write failed", {
+      operation: opts.operation,
+      idempotencyKey: opts.idempotencyKey,
+      error: message,
+      permission: isPermissionError(err),
+      ...opts.context
+    });
+    if (opts.events) {
+      await opts.events.emit({
+        type: BILLING_WRITE_FAILED_EVENT,
+        data: {
+          operation: opts.operation,
+          error: message,
+          permission: isPermissionError(err),
+          ...opts.context
+        }
+      }).catch((emitErr) => log("error", "billing", "failed to emit billing.write.failed alert", {
+        operation: opts.operation,
+        error: emitErr instanceof Error ? emitErr.message : String(emitErr)
+      }));
+    }
+    if (opts.onError) {
+      await opts.onError(err);
+    }
+    throw err;
+  }
+}
+function isPermissionError(err) {
+  const e = err;
+  if (e?.type === "StripePermissionError")
+    return true;
+  if (typeof e?.name === "string" && e.name.includes("PermissionError")) {
+    return true;
+  }
+  return e?.statusCode === 403 || e?.status === 403 || e?.httpStatusCode === 403;
+}
+async function probeWriteScope(probe, opts) {
+  try {
+    await probe();
+    return { ok: true };
+  } catch (err) {
+    if (isPermissionError(err)) {
+      log("error", "billing", "key-scope probe: write scope MISSING", {
+        operation: opts?.operation
+      });
+      return { ok: false, permission: true };
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    const e = err;
+    if (e?.statusCode === 400 || e?.status === 400)
+      return { ok: true };
+    return { ok: false, permission: false, error: message };
+  }
+}
 
 // src/billing/index.ts
 var createBillingProvider = (config) => {
@@ -425,8 +489,12 @@ var createBillingProvider = (config) => {
   throw new Error(`Unknown billing provider: ${_exhaustive}`);
 };
 export {
+  safePaymentWrite,
+  probeWriteScope,
   isWithinLimit,
+  isPermissionError,
   createBillingProvider,
   NoopBillingProvider,
+  BILLING_WRITE_FAILED_EVENT,
   AetherBillingProvider
 };
