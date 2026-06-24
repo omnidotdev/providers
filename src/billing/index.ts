@@ -51,6 +51,12 @@ export { createBillingProvider };
 export { AetherBillingProvider } from "./aether";
 export { isWithinLimit } from "./helpers";
 export { NoopBillingProvider } from "./noop";
+export {
+  BILLING_WRITE_FAILED_EVENT,
+  isPermissionError,
+  probeWriteScope,
+  safePaymentWrite,
+} from "./safePaymentWrite";
 
 export type { AetherBillingProviderConfig, BillingProviderConfig };
 
@@ -68,3 +74,8 @@ export type {
   Subscription,
 } from "./interface";
 export type { NoopBillingProviderConfig } from "./noop";
+export type {
+  AlertEventsProvider,
+  SafePaymentWriteOptions,
+  ScopeProbeResult,
+} from "./safePaymentWrite";

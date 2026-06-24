@@ -30,9 +30,13 @@ export {
 // Billing
 export {
   AetherBillingProvider,
+  BILLING_WRITE_FAILED_EVENT,
   NoopBillingProvider,
   createBillingProvider,
+  isPermissionError,
   isWithinLimit,
+  probeWriteScope,
+  safePaymentWrite,
 } from "./billing";
 // Events
 export {
@@ -118,6 +122,7 @@ export type {
 } from "./authz";
 export type {
   AetherBillingProviderConfig,
+  AlertEventsProvider,
   BillingProvider,
   BillingProviderConfig,
   CheckoutParams,
@@ -130,6 +135,8 @@ export type {
   Price,
   Product,
   Recurring,
+  SafePaymentWriteOptions,
+  ScopeProbeResult,
   Subscription,
 } from "./billing";
 export type {
