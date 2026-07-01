@@ -43,6 +43,17 @@ declare class GatekeeperOrgError extends Error {
  * Typed client for Better Auth organization plugin endpoints on Gatekeeper.
  * GET endpoints pass query params directly (not as serialized JSON).
  * POST endpoints use JSON body.
+ *
+ * Member reads and mutations use Better Auth's permission-checked organization
+ * endpoints (`/organization/*`): the caller's OAuth access token is resolved to
+ * a session by Gatekeeper's oidc-access-token plugin, and Better Auth enforces
+ * that the caller is an appropriately-privileged member of the target org. These
+ * must run server-side, since the client sets an `Origin` header (which browsers
+ * forbid overriding) and Gatekeeper only trusts the IdP origin.
+ *
+ * `listMembersViaService` is the exception: it hits the service-only
+ * `/api/organization/members` route (gated on `ORG_SYNC_SERVICE_TOKEN`) for
+ * trusted server-to-server callers that act without a user session.
  */
 declare class GatekeeperOrgClient {
     private baseUrl;
@@ -70,17 +81,45 @@ declare class GatekeeperOrgClient {
     getOrganizationBySlug(slug: string, accessToken: string): Promise<GatekeeperOrganization | null>;
     /** Fetch organization by slug via public API (no auth required) */
     fetchOrganizationBySlug(slug: string): Promise<GatekeeperOrganization | null>;
-    /** List members of an organization */
+    /**
+     * List members of an organization (user context).
+     *
+     * Hits Better Auth's permission-checked `list-members` endpoint; Gatekeeper
+     * resolves the OAuth access token to a session and enforces that the caller is
+     * a member of the org. Must run server-side (see class docs re: Origin).
+     */
     listMembers(organizationId: string, accessToken: string): Promise<{
         data: GatekeeperMember[];
     }>;
-    /** Update a member's role */
+    /**
+     * List members using the org-sync service token (server-to-server).
+     *
+     * Hits Gatekeeper's service-only `/api/organization/members` route, gated on
+     * `ORG_SYNC_SERVICE_TOKEN`, for trusted backend callers that act without a user
+     * session (e.g. org sync). Prefer `listMembers` for user-context reads.
+     */
+    listMembersViaService(organizationId: string, serviceToken: string): Promise<{
+        data: GatekeeperMember[];
+    }>;
+    /**
+     * Update a member's role (user context).
+     *
+     * Uses Better Auth's `update-member-role` endpoint, which enforces caller
+     * privileges and syncs the change to the authz plane via Gatekeeper's org
+     * hooks. Must run server-side.
+     */
     updateMemberRole(params: {
         organizationId: string;
         memberId: string;
         role: GatekeeperMemberRole;
     }, accessToken: string): Promise<GatekeeperMember>;
-    /** Remove a member from an organization */
+    /**
+     * Remove a member from an organization (user context).
+     *
+     * Uses Better Auth's `remove-member` endpoint, which enforces caller
+     * privileges and syncs the removal to the authz plane via Gatekeeper's org
+     * hooks. Must run server-side.
+     */
     removeMember(params: {
         organizationId: string;
         memberId: string;

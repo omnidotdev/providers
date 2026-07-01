@@ -68,6 +68,17 @@ const slugify = (name: string): string =>
  * Typed client for Better Auth organization plugin endpoints on Gatekeeper.
  * GET endpoints pass query params directly (not as serialized JSON).
  * POST endpoints use JSON body.
+ *
+ * Member reads and mutations use Better Auth's permission-checked organization
+ * endpoints (`/organization/*`): the caller's OAuth access token is resolved to
+ * a session by Gatekeeper's oidc-access-token plugin, and Better Auth enforces
+ * that the caller is an appropriately-privileged member of the target org. These
+ * must run server-side, since the client sets an `Origin` header (which browsers
+ * forbid overriding) and Gatekeeper only trusts the IdP origin.
+ *
+ * `listMembersViaService` is the exception: it hits the service-only
+ * `/api/organization/members` route (gated on `ORG_SYNC_SERVICE_TOKEN`) for
+ * trusted server-to-server callers that act without a user session.
  */
 class GatekeeperOrgClient {
   private baseUrl: string;
@@ -237,13 +248,19 @@ class GatekeeperOrgClient {
     return response.json() as Promise<GatekeeperOrganization>;
   }
 
-  /** List members of an organization */
+  /**
+   * List members of an organization (user context).
+   *
+   * Hits Better Auth's permission-checked `list-members` endpoint; Gatekeeper
+   * resolves the OAuth access token to a session and enforces that the caller is
+   * a member of the org. Must run server-side (see class docs re: Origin).
+   */
   async listMembers(
     organizationId: string,
     accessToken: string,
   ): Promise<{ data: GatekeeperMember[] }> {
-    const url = new URL(`${this.baseUrl}/api/organization/members`);
-    url.searchParams.set("orgId", organizationId);
+    const url = new URL(`${this.baseUrl}/organization/list-members`);
+    url.searchParams.set("organizationId", organizationId);
 
     const response = await fetch(url.toString(), {
       headers: this.authHeaders(accessToken),
@@ -253,10 +270,46 @@ class GatekeeperOrgClient {
       throw await this.parseError(response, "Failed to list members");
     }
 
+    const body = (await response.json()) as {
+      members: GatekeeperMember[];
+      total: number;
+    };
+
+    return { data: body.members };
+  }
+
+  /**
+   * List members using the org-sync service token (server-to-server).
+   *
+   * Hits Gatekeeper's service-only `/api/organization/members` route, gated on
+   * `ORG_SYNC_SERVICE_TOKEN`, for trusted backend callers that act without a user
+   * session (e.g. org sync). Prefer `listMembers` for user-context reads.
+   */
+  async listMembersViaService(
+    organizationId: string,
+    serviceToken: string,
+  ): Promise<{ data: GatekeeperMember[] }> {
+    const url = new URL(`${this.baseUrl}/api/organization/members`);
+    url.searchParams.set("orgId", organizationId);
+
+    const response = await fetch(url.toString(), {
+      headers: this.authHeaders(serviceToken),
+    });
+
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to list members");
+    }
+
     return response.json() as Promise<{ data: GatekeeperMember[] }>;
   }
 
-  /** Update a member's role */
+  /**
+   * Update a member's role (user context).
+   *
+   * Uses Better Auth's `update-member-role` endpoint, which enforces caller
+   * privileges and syncs the change to the authz plane via Gatekeeper's org
+   * hooks. Must run server-side.
+   */
   async updateMemberRole(
     params: {
       organizationId: string;
@@ -265,35 +318,46 @@ class GatekeeperOrgClient {
     },
     accessToken: string,
   ): Promise<GatekeeperMember> {
-    const url = new URL(`${this.baseUrl}/api/organization/members`);
-    url.searchParams.set("orgId", params.organizationId);
-    url.searchParams.set("memberId", params.memberId);
-
-    const response = await fetch(url.toString(), {
-      method: "PATCH",
-      headers: this.authHeaders(accessToken, true),
-      body: JSON.stringify({ role: params.role }),
-    });
+    const response = await fetch(
+      `${this.baseUrl}/organization/update-member-role`,
+      {
+        method: "POST",
+        headers: this.authHeaders(accessToken, true),
+        body: JSON.stringify({
+          organizationId: params.organizationId,
+          memberId: params.memberId,
+          role: params.role,
+        }),
+      },
+    );
 
     if (!response.ok) {
       throw await this.parseError(response, "Failed to update member role");
     }
 
-    return response.json() as Promise<GatekeeperMember>;
+    const body = (await response.json()) as { member: GatekeeperMember };
+
+    return body.member;
   }
 
-  /** Remove a member from an organization */
+  /**
+   * Remove a member from an organization (user context).
+   *
+   * Uses Better Auth's `remove-member` endpoint, which enforces caller
+   * privileges and syncs the removal to the authz plane via Gatekeeper's org
+   * hooks. Must run server-side.
+   */
   async removeMember(
     params: { organizationId: string; memberId: string },
     accessToken: string,
   ): Promise<void> {
-    const url = new URL(`${this.baseUrl}/api/organization/members`);
-    url.searchParams.set("orgId", params.organizationId);
-    url.searchParams.set("memberId", params.memberId);
-
-    const response = await fetch(url.toString(), {
-      method: "DELETE",
-      headers: this.authHeaders(accessToken),
+    const response = await fetch(`${this.baseUrl}/organization/remove-member`, {
+      method: "POST",
+      headers: this.authHeaders(accessToken, true),
+      body: JSON.stringify({
+        organizationId: params.organizationId,
+        memberIdOrEmail: params.memberId,
+      }),
     });
 
     if (!response.ok) {

@@ -77767,10 +77767,22 @@ class GatekeeperOrgClient {
     return response.json();
   }
   async listMembers(organizationId, accessToken) {
+    const url = new URL(`${this.baseUrl}/organization/list-members`);
+    url.searchParams.set("organizationId", organizationId);
+    const response = await fetch(url.toString(), {
+      headers: this.authHeaders(accessToken)
+    });
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to list members");
+    }
+    const body = await response.json();
+    return { data: body.members };
+  }
+  async listMembersViaService(organizationId, serviceToken) {
     const url = new URL(`${this.baseUrl}/api/organization/members`);
     url.searchParams.set("orgId", organizationId);
     const response = await fetch(url.toString(), {
-      headers: this.authHeaders(accessToken)
+      headers: this.authHeaders(serviceToken)
     });
     if (!response.ok) {
       throw await this.parseError(response, "Failed to list members");
@@ -77778,26 +77790,29 @@ class GatekeeperOrgClient {
     return response.json();
   }
   async updateMemberRole(params, accessToken) {
-    const url = new URL(`${this.baseUrl}/api/organization/members`);
-    url.searchParams.set("orgId", params.organizationId);
-    url.searchParams.set("memberId", params.memberId);
-    const response = await fetch(url.toString(), {
-      method: "PATCH",
+    const response = await fetch(`${this.baseUrl}/organization/update-member-role`, {
+      method: "POST",
       headers: this.authHeaders(accessToken, true),
-      body: JSON.stringify({ role: params.role })
+      body: JSON.stringify({
+        organizationId: params.organizationId,
+        memberId: params.memberId,
+        role: params.role
+      })
     });
     if (!response.ok) {
       throw await this.parseError(response, "Failed to update member role");
     }
-    return response.json();
+    const body = await response.json();
+    return body.member;
   }
   async removeMember(params, accessToken) {
-    const url = new URL(`${this.baseUrl}/api/organization/members`);
-    url.searchParams.set("orgId", params.organizationId);
-    url.searchParams.set("memberId", params.memberId);
-    const response = await fetch(url.toString(), {
-      method: "DELETE",
-      headers: this.authHeaders(accessToken)
+    const response = await fetch(`${this.baseUrl}/organization/remove-member`, {
+      method: "POST",
+      headers: this.authHeaders(accessToken, true),
+      body: JSON.stringify({
+        organizationId: params.organizationId,
+        memberIdOrEmail: params.memberId
+      })
     });
     if (!response.ok) {
       throw await this.parseError(response, "Failed to remove member");

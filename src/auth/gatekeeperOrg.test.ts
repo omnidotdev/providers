@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
 import {
   GatekeeperOrgClient,
@@ -83,6 +83,119 @@ describe("GatekeeperOrgClient", () => {
 
   it("should expose removeMember", () => {
     expect(typeof client.removeMember).toBe("function");
+  });
+
+  it("should expose listMembersViaService", () => {
+    expect(typeof client.listMembersViaService).toBe("function");
+  });
+});
+
+describe("GatekeeperOrgClient member endpoints", () => {
+  const baseUrl = "https://auth.example.com";
+  const client = new GatekeeperOrgClient(baseUrl);
+  const originalFetch = globalThis.fetch;
+
+  type Captured = { url: string; init?: RequestInit };
+
+  /** Stub global fetch, capturing the request and returning `body` as JSON. */
+  const stubFetch = (body: unknown, status = 200): (() => Captured) => {
+    let captured: Captured = { url: "" };
+    globalThis.fetch = ((url: string | URL, init?: RequestInit) => {
+      captured = { url: url.toString(), init };
+      return Promise.resolve(
+        new Response(JSON.stringify(body), {
+          status,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    }) as typeof fetch;
+    return () => captured;
+  };
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const member = {
+    id: "m1",
+    userId: "u1",
+    organizationId: "org1",
+    role: "owner" as const,
+    createdAt: new Date().toISOString(),
+    user: { id: "u1", name: "A", email: "a@b.com", image: null },
+  };
+
+  it("listMembers calls Better Auth list-members and unwraps { members } to { data }", async () => {
+    const get = stubFetch({ members: [member], total: 1 });
+
+    const result = await client.listMembers("org1", "user-token");
+
+    const { url, init } = get();
+    expect(url).toBe(
+      `${baseUrl}/organization/list-members?organizationId=org1`,
+    );
+    expect(init?.method ?? "GET").toBe("GET");
+    expect((init?.headers as Record<string, string>).Authorization).toBe(
+      "Bearer user-token",
+    );
+    expect(result).toEqual({ data: [member] });
+  });
+
+  it("listMembersViaService hits the service route with the service token", async () => {
+    const get = stubFetch({ data: [member] });
+
+    const result = await client.listMembersViaService("org1", "svc-token");
+
+    const { url, init } = get();
+    expect(url).toBe(`${baseUrl}/api/organization/members?orgId=org1`);
+    expect((init?.headers as Record<string, string>).Authorization).toBe(
+      "Bearer svc-token",
+    );
+    expect(result).toEqual({ data: [member] });
+  });
+
+  it("updateMemberRole POSTs to Better Auth update-member-role and unwraps { member }", async () => {
+    const get = stubFetch({ member });
+
+    const result = await client.updateMemberRole(
+      { organizationId: "org1", memberId: "m1", role: "admin" },
+      "user-token",
+    );
+
+    const { url, init } = get();
+    expect(url).toBe(`${baseUrl}/organization/update-member-role`);
+    expect(init?.method).toBe("POST");
+    expect(JSON.parse(init?.body as string)).toEqual({
+      organizationId: "org1",
+      memberId: "m1",
+      role: "admin",
+    });
+    expect(result).toEqual(member);
+  });
+
+  it("removeMember POSTs to Better Auth remove-member with memberIdOrEmail", async () => {
+    const get = stubFetch({ member });
+
+    await client.removeMember(
+      { organizationId: "org1", memberId: "m1" },
+      "user-token",
+    );
+
+    const { url, init } = get();
+    expect(url).toBe(`${baseUrl}/organization/remove-member`);
+    expect(init?.method).toBe("POST");
+    expect(JSON.parse(init?.body as string)).toEqual({
+      organizationId: "org1",
+      memberIdOrEmail: "m1",
+    });
+  });
+
+  it("listMembers throws GatekeeperOrgError on non-ok response", async () => {
+    stubFetch({ message: "nope" }, 403);
+
+    await expect(client.listMembers("org1", "user-token")).rejects.toThrow(
+      GatekeeperOrgError,
+    );
   });
 });
 
