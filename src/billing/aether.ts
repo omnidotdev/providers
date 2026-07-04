@@ -8,6 +8,7 @@ import type {
   CheckoutWithWorkspaceParams,
   CheckoutWithWorkspaceResponse,
   EntitlementsResponse,
+  PortalFlow,
   Price,
   Subscription,
 } from "./interface";
@@ -246,12 +247,38 @@ class AetherBillingProvider implements BillingProvider {
     }
   }
 
+  async listSubscriptions(
+    entityType: string,
+    entityId: string,
+    accessToken: string,
+  ): Promise<Subscription[]> {
+    try {
+      const response = await fetch(
+        `${this.config.baseUrl}/billing-portal/subscriptions/${this.config.appId}/${entityType}/${entityId}`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        },
+      );
+
+      if (!response.ok) return [];
+
+      const { subscriptions } = (await response.json()) as {
+        subscriptions: Subscription[];
+      };
+      return subscriptions;
+    } catch {
+      return [];
+    }
+  }
+
   async getBillingPortalUrl(
     entityType: string,
     entityId: string,
     productId: string,
     returnUrl: string,
     accessToken: string,
+    flow?: PortalFlow,
   ): Promise<string> {
     const response = await fetch(
       `${this.config.baseUrl}/billing-portal/${productId}/${entityType}/${entityId}`,
@@ -261,7 +288,7 @@ class AetherBillingProvider implements BillingProvider {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ productId, returnUrl }),
+        body: JSON.stringify({ productId, returnUrl, ...(flow && { flow }) }),
       },
     );
 

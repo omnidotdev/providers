@@ -68,6 +68,7 @@ export type {
   Entitlement,
   EntitlementsResponse,
   EntitlementsResult,
+  PortalFlow,
   Price,
   Product,
   Recurring,

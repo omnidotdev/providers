@@ -42,6 +42,15 @@ type Subscription = {
   } | null;
 };
 
+/**
+ * Optional billing portal deep-link flow.
+ * Opens the portal directly on an update or cancel flow for a subscription.
+ */
+type PortalFlow = {
+  type: "subscription_update" | "subscription_cancel";
+  subscriptionId: string;
+};
+
 /** Product information */
 type Product = {
   id: string;
@@ -163,13 +172,24 @@ interface BillingProvider {
     accessToken: string,
   ): Promise<Subscription | null>;
 
-  /** Get billing portal URL for an entity */
+  /** List active subscriptions for an entity */
+  listSubscriptions(
+    entityType: string,
+    entityId: string,
+    accessToken: string,
+  ): Promise<Subscription[]>;
+
+  /**
+   * Get billing portal URL for an entity.
+   * Pass `flow` to deep-link straight into an update/cancel flow.
+   */
   getBillingPortalUrl(
     entityType: string,
     entityId: string,
     productId: string,
     returnUrl: string,
     accessToken: string,
+    flow?: PortalFlow,
   ): Promise<string>;
 
   /** Cancel a subscription */
@@ -207,6 +227,7 @@ export type {
   Entitlement,
   EntitlementsResponse,
   EntitlementsResult,
+  PortalFlow,
   Price,
   Product,
   Recurring,

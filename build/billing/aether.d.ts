@@ -1,4 +1,4 @@
-import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, EntitlementsResponse, Price, Subscription } from "./interface";
+import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, EntitlementsResponse, PortalFlow, Price, Subscription } from "./interface";
 type AetherBillingProviderConfig = {
     /** Aether billing service base URL */
     baseUrl?: string;
@@ -38,7 +38,8 @@ declare class AetherBillingProvider implements BillingProvider {
     createCheckoutSession(params: CheckoutParams): Promise<string>;
     createCheckoutWithWorkspace(params: CheckoutWithWorkspaceParams): Promise<CheckoutWithWorkspaceResponse>;
     getSubscription(entityType: string, entityId: string, accessToken: string): Promise<Subscription | null>;
-    getBillingPortalUrl(entityType: string, entityId: string, productId: string, returnUrl: string, accessToken: string): Promise<string>;
+    listSubscriptions(entityType: string, entityId: string, accessToken: string): Promise<Subscription[]>;
+    getBillingPortalUrl(entityType: string, entityId: string, productId: string, returnUrl: string, accessToken: string, flow?: PortalFlow): Promise<string>;
     cancelSubscription(entityType: string, entityId: string, accessToken: string): Promise<string>;
     renewSubscription(entityType: string, entityId: string, accessToken: string): Promise<void>;
     invalidateCache(entityType: string, entityId: string): void;

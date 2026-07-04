@@ -274,14 +274,28 @@ class AetherBillingProvider {
       return null;
     }
   }
-  async getBillingPortalUrl(entityType, entityId, productId, returnUrl, accessToken) {
+  async listSubscriptions(entityType, entityId, accessToken) {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/billing-portal/subscriptions/${this.config.appId}/${entityType}/${entityId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+      });
+      if (!response.ok)
+        return [];
+      const { subscriptions } = await response.json();
+      return subscriptions;
+    } catch {
+      return [];
+    }
+  }
+  async getBillingPortalUrl(entityType, entityId, productId, returnUrl, accessToken, flow) {
     const response = await fetch(`${this.config.baseUrl}/billing-portal/${productId}/${entityType}/${entityId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`
       },
-      body: JSON.stringify({ productId, returnUrl })
+      body: JSON.stringify({ productId, returnUrl, ...flow && { flow } })
     });
     if (!response.ok) {
       const error = await response.json().catch(() => null);
@@ -363,7 +377,10 @@ class NoopBillingProvider {
   async getSubscription(_entityType, _entityId, _accessToken) {
     return null;
   }
-  async getBillingPortalUrl(_entityType, _entityId, _productId, _returnUrl, _accessToken) {
+  async listSubscriptions(_entityType, _entityId, _accessToken) {
+    return [];
+  }
+  async getBillingPortalUrl(_entityType, _entityId, _productId, _returnUrl, _accessToken, _flow) {
     throw new Error("Billing is not configured");
   }
   async cancelSubscription(_entityType, _entityId, _accessToken) {

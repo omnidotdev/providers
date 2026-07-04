@@ -45,6 +45,14 @@ type Subscription = {
         }>;
     } | null;
 };
+/**
+ * Optional billing portal deep-link flow.
+ * Opens the portal directly on an update or cancel flow for a subscription.
+ */
+type PortalFlow = {
+    type: "subscription_update" | "subscription_cancel";
+    subscriptionId: string;
+};
 /** Product information */
 type Product = {
     id: string;
@@ -139,8 +147,13 @@ interface BillingProvider {
     createCheckoutWithWorkspace(params: CheckoutWithWorkspaceParams): Promise<CheckoutWithWorkspaceResponse>;
     /** Get subscription details for an entity */
     getSubscription(entityType: string, entityId: string, accessToken: string): Promise<Subscription | null>;
-    /** Get billing portal URL for an entity */
-    getBillingPortalUrl(entityType: string, entityId: string, productId: string, returnUrl: string, accessToken: string): Promise<string>;
+    /** List active subscriptions for an entity */
+    listSubscriptions(entityType: string, entityId: string, accessToken: string): Promise<Subscription[]>;
+    /**
+     * Get billing portal URL for an entity.
+     * Pass `flow` to deep-link straight into an update/cancel flow.
+     */
+    getBillingPortalUrl(entityType: string, entityId: string, productId: string, returnUrl: string, accessToken: string, flow?: PortalFlow): Promise<string>;
     /** Cancel a subscription */
     cancelSubscription(entityType: string, entityId: string, accessToken: string): Promise<string>;
     /** Renew a subscription (remove scheduled cancellation) */
@@ -157,4 +170,4 @@ interface BillingProvider {
     /** Close the provider connection (if stateful) */
     close?(): Promise<void>;
 }
-export type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, Price, Product, Recurring, Subscription, };
+export type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, };
