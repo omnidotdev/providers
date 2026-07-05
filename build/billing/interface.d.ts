@@ -89,6 +89,8 @@ type CheckoutParams = {
     customerId?: string;
     metadata?: Record<string, string>;
     bundleSlug?: string;
+    /** Free trial duration in days (0 to disable, defaults to 14 in Aether) */
+    trialPeriodDays?: number;
 };
 /**
  * Checkout with workspace parameters.
