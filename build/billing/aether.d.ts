@@ -50,6 +50,14 @@ declare class AetherBillingProvider implements BillingProvider {
     }>;
     close(): Promise<void>;
     private serviceHeaders;
+    /**
+     * Fetch a read endpoint with a per-attempt timeout and retries on transient
+     * failures (timeout, network error, or 5xx). Definitive responses (2xx-4xx)
+     * return immediately so callers can handle 404/403 as they do today. Only use
+     * for idempotent reads; write operations must not be retried.
+     */
+    private resilientFetch;
+    private backoff;
 }
 export { AetherBillingProvider };
 export type { AetherBillingProviderConfig };
