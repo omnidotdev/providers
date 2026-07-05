@@ -1,4 +1,4 @@
-import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, EntitlementsResponse, Price, Subscription } from "./interface";
+import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, EntitlementsResponse, PortalFlow, Price, Subscription } from "./interface";
 type NoopBillingProviderConfig = {};
 /**
  * No-op billing provider for self-hosted, dev, and testing.
@@ -12,7 +12,8 @@ declare class NoopBillingProvider implements BillingProvider {
     createCheckoutSession(_params: CheckoutParams): Promise<string>;
     createCheckoutWithWorkspace(_params: CheckoutWithWorkspaceParams): Promise<CheckoutWithWorkspaceResponse>;
     getSubscription(_entityType: string, _entityId: string, _accessToken: string): Promise<Subscription | null>;
-    getBillingPortalUrl(_entityType: string, _entityId: string, _productId: string, _returnUrl: string, _accessToken: string): Promise<string>;
+    listSubscriptions(_entityType: string, _entityId: string, _accessToken: string): Promise<Subscription[]>;
+    getBillingPortalUrl(_entityType: string, _entityId: string, _productId: string, _returnUrl: string, _accessToken: string, _flow?: PortalFlow): Promise<string>;
     cancelSubscription(_entityType: string, _entityId: string, _accessToken: string): Promise<string>;
     renewSubscription(_entityType: string, _entityId: string, _accessToken: string): Promise<void>;
     invalidateCache(_entityType: string, _entityId: string): void;

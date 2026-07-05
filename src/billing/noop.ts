@@ -4,6 +4,7 @@ import type {
   CheckoutWithWorkspaceParams,
   CheckoutWithWorkspaceResponse,
   EntitlementsResponse,
+  PortalFlow,
   Price,
   Subscription,
 } from "./interface";
@@ -58,12 +59,21 @@ class NoopBillingProvider implements BillingProvider {
     return null;
   }
 
+  async listSubscriptions(
+    _entityType: string,
+    _entityId: string,
+    _accessToken: string,
+  ): Promise<Subscription[]> {
+    return [];
+  }
+
   async getBillingPortalUrl(
     _entityType: string,
     _entityId: string,
     _productId: string,
     _returnUrl: string,
     _accessToken: string,
+    _flow?: PortalFlow,
   ): Promise<string> {
     throw new Error("Billing is not configured");
   }

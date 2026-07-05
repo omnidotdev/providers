@@ -23,6 +23,6 @@ export { isWithinLimit } from "./helpers";
 export { NoopBillingProvider } from "./noop";
 export { BILLING_WRITE_FAILED_EVENT, isPermissionError, probeWriteScope, safePaymentWrite, } from "./safePaymentWrite";
 export type { AetherBillingProviderConfig, BillingProviderConfig };
-export type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, Price, Product, Recurring, Subscription, } from "./interface";
+export type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, } from "./interface";
 export type { NoopBillingProviderConfig } from "./noop";
 export type { AlertEventsProvider, SafePaymentWriteOptions, ScopeProbeResult, } from "./safePaymentWrite";
