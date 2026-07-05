@@ -13,8 +13,18 @@ import type {
   Subscription,
 } from "./interface";
 
-/** Request timeout in milliseconds */
-const REQUEST_TIMEOUT_MS = 5000;
+/** Request timeout in milliseconds, per attempt */
+const REQUEST_TIMEOUT_MS = 10_000;
+
+/**
+ * Retries for transient read failures (timeout / network error / 5xx).
+ * Reads are idempotent, so retrying is safe. Prevents a single slow Aether
+ * response from surfacing as "no subscription" (a Free-tier false negative).
+ */
+const REQUEST_RETRIES = 2;
+
+/** Base backoff between retries in milliseconds (doubles each attempt) */
+const RETRY_BACKOFF_MS = 200;
 
 /** Default cache TTL: 5 minutes */
 const DEFAULT_CACHE_TTL_MS = 300_000;
@@ -100,10 +110,7 @@ class AetherBillingProvider implements BillingProvider {
         headers.Authorization = `Bearer ${accessToken}`;
       }
 
-      const response = await fetch(url.toString(), {
-        headers,
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      });
+      const response = await this.resilientFetch(url.toString(), { headers });
 
       if (response.status === 404) {
         return null;
@@ -152,10 +159,10 @@ class AetherBillingProvider implements BillingProvider {
   }
 
   async getPrices(appName: string): Promise<Price[]> {
-    const response = await fetch(`${this.config.baseUrl}/prices/${appName}`, {
-      headers: this.serviceHeaders(),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
+    const response = await this.resilientFetch(
+      `${this.config.baseUrl}/prices/${appName}`,
+      { headers: this.serviceHeaders() },
+    );
 
     if (!response.ok) return [];
 
@@ -228,11 +235,10 @@ class AetherBillingProvider implements BillingProvider {
     accessToken: string,
   ): Promise<Subscription | null> {
     try {
-      const response = await fetch(
+      const response = await this.resilientFetch(
         `${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         },
       );
 
@@ -253,11 +259,10 @@ class AetherBillingProvider implements BillingProvider {
     accessToken: string,
   ): Promise<Subscription[]> {
     try {
-      const response = await fetch(
+      const response = await this.resilientFetch(
         `${this.config.baseUrl}/billing-portal/subscriptions/${this.config.appId}/${entityType}/${entityId}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         },
       );
 
@@ -383,6 +388,54 @@ class AetherBillingProvider implements BillingProvider {
       return { "x-service-api-key": this.config.serviceApiKey };
     }
     return {};
+  }
+
+  /**
+   * Fetch a read endpoint with a per-attempt timeout and retries on transient
+   * failures (timeout, network error, or 5xx). Definitive responses (2xx-4xx)
+   * return immediately so callers can handle 404/403 as they do today. Only use
+   * for idempotent reads; write operations must not be retried.
+   */
+  private async resilientFetch(
+    url: string,
+    init: RequestInit = {},
+  ): Promise<Response> {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= REQUEST_RETRIES; attempt++) {
+      try {
+        const response = await fetch(url, {
+          ...init,
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        });
+
+        // Retry only transient server errors; 2xx-4xx are definitive
+        if (response.status >= 500 && attempt < REQUEST_RETRIES) {
+          lastError = new Error(`HTTP ${response.status}`);
+          await this.backoff(attempt);
+          continue;
+        }
+
+        return response;
+      } catch (error) {
+        // Timeout (AbortError) or network failure: retry if attempts remain
+        lastError = error;
+        if (attempt < REQUEST_RETRIES) {
+          await this.backoff(attempt);
+          continue;
+        }
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error("Request failed after retries");
+  }
+
+  private backoff(attempt: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(resolve, RETRY_BACKOFF_MS * 2 ** attempt);
+    });
   }
 }
 
