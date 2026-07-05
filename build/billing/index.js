@@ -135,7 +135,9 @@ class CircuitBreaker {
 }
 
 // src/billing/aether.ts
-var REQUEST_TIMEOUT_MS = 5000;
+var REQUEST_TIMEOUT_MS = 1e4;
+var REQUEST_RETRIES = 2;
+var RETRY_BACKOFF_MS = 200;
 var DEFAULT_CACHE_TTL_MS = 300000;
 
 class AetherBillingProvider {
@@ -175,10 +177,7 @@ class AetherBillingProvider {
       if (accessToken) {
         headers.Authorization = `Bearer ${accessToken}`;
       }
-      const response = await fetch(url.toString(), {
-        headers,
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-      });
+      const response = await this.resilientFetch(url.toString(), { headers });
       if (response.status === 404) {
         return null;
       }
@@ -206,10 +205,7 @@ class AetherBillingProvider {
     return entitlement?.value ?? null;
   }
   async getPrices(appName) {
-    const response = await fetch(`${this.config.baseUrl}/prices/${appName}`, {
-      headers: this.serviceHeaders(),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-    });
+    const response = await this.resilientFetch(`${this.config.baseUrl}/prices/${appName}`, { headers: this.serviceHeaders() });
     if (!response.ok)
       return [];
     const { prices } = await response.json();
@@ -262,9 +258,8 @@ class AetherBillingProvider {
   }
   async getSubscription(entityType, entityId, accessToken) {
     try {
-      const response = await fetch(`${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+      const response = await this.resilientFetch(`${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
       });
       if (!response.ok)
         return null;
@@ -276,9 +271,8 @@ class AetherBillingProvider {
   }
   async listSubscriptions(entityType, entityId, accessToken) {
     try {
-      const response = await fetch(`${this.config.baseUrl}/billing-portal/subscriptions/${this.config.appId}/${entityType}/${entityId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+      const response = await this.resilientFetch(`${this.config.baseUrl}/billing-portal/subscriptions/${this.config.appId}/${entityType}/${entityId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
       });
       if (!response.ok)
         return [];
@@ -354,6 +348,34 @@ class AetherBillingProvider {
       return { "x-service-api-key": this.config.serviceApiKey };
     }
     return {};
+  }
+  async resilientFetch(url, init = {}) {
+    let lastError;
+    for (let attempt = 0;attempt <= REQUEST_RETRIES; attempt++) {
+      try {
+        const response = await fetch(url, {
+          ...init,
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+        });
+        if (response.status >= 500 && attempt < REQUEST_RETRIES) {
+          lastError = new Error(`HTTP ${response.status}`);
+          await this.backoff(attempt);
+          continue;
+        }
+        return response;
+      } catch (error) {
+        lastError = error;
+        if (attempt < REQUEST_RETRIES) {
+          await this.backoff(attempt);
+        }
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error("Request failed after retries");
+  }
+  backoff(attempt) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, RETRY_BACKOFF_MS * 2 ** attempt);
+    });
   }
 }
 
