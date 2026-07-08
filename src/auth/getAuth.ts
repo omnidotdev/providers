@@ -3,6 +3,7 @@ import { ensureFreshAccessToken, isInvalidGrant } from "./token";
 
 import type { AuthCache } from "./cache";
 import type { OidcClient } from "./oidc";
+import type { TokenResult } from "./token";
 import type { OrganizationClaim } from "./types";
 
 /**
@@ -136,9 +137,12 @@ type GetAuthSession = {
  * via `ensureFreshAccessToken`, OIDC-verified ID token decoding,
  * organization claim extraction, and encrypted cookie caching.
  *
- * On `isInvalidGrant`, clears both the session and cache cookie to
- * force re-authentication. On other token errors, returns the session
- * with whatever organizations are cached (graceful degradation).
+ * The token refresh is single-flighted per session so a page-load request
+ * burst never races refresh-token rotation against itself. A refresh failure
+ * (including `isInvalidGrant`) never tears down the still-valid session: it
+ * degrades to a session without a fresh access token and lets the app's
+ * natural 401 -> re-auth path recover a genuinely dead session, rather than
+ * force-logging-out a user who merely lost a benign rotation race.
  * @param config - Auth configuration
  * @returns `getAuth(request)` function that resolves to session or null
  */
@@ -164,6 +168,15 @@ function createGetAuth(config: GetAuthConfig) {
     string,
     { organizations: OrganizationClaim[]; expiry: number }
   >();
+
+  // Single-flight the token refresh per session. An SSR page load fires many
+  // parallel requests carrying the SAME session cookie; without deduping, each
+  // one independently refreshes the single-use OAuth token, and all but the
+  // winner present a just-rotated token -> the IDP treats it as reuse and the
+  // user is logged out in a burst. Sharing one in-flight refresh per session
+  // collapses the burst to a single rotation. Keyed by the BA session token;
+  // entries are removed as soon as the refresh settles.
+  const refreshInFlight = new Map<string, Promise<TokenResult | null>>();
 
   return async function getAuth(
     request: Request,
@@ -194,53 +207,67 @@ function createGetAuth(config: GetAuthConfig) {
       // resolve. Organizations are intentionally not part of the cache.
       const hasCachedData = !!identityProviderId;
 
-      // Get tokens from Gatekeeper via Better Auth
+      // Get tokens from Gatekeeper via Better Auth. Concurrent requests for the
+      // same session share one refresh (single-flight) so a page-load burst
+      // never races refresh-token rotation against itself.
+      const sessionKey =
+        (session.session?.token as string | undefined) ?? session.user.id;
       try {
-        const tokenResult = await ensureFreshAccessToken({
-          getAccessToken: async () => {
-            try {
-              const result = await authApi.getAccessToken({
-                body: { providerId },
-                headers: request.headers,
-              });
-
-              if (!result?.accessToken) {
-                console.warn(`${logPrefix} getAccessToken returned no token`, {
-                  hasResult: !!result,
+        let inFlight = refreshInFlight.get(sessionKey);
+        if (!inFlight) {
+          inFlight = ensureFreshAccessToken({
+            getAccessToken: async () => {
+              try {
+                const result = await authApi.getAccessToken({
+                  body: { providerId },
+                  headers: request.headers,
                 });
-              }
 
-              return result;
-            } catch (err) {
-              const body =
-                err && typeof err === "object" && "body" in err
-                  ? (err as { body: unknown }).body
-                  : undefined;
-              console.error(`${logPrefix} getAccessToken failed:`, {
-                code:
-                  body && typeof body === "object" && "code" in body
-                    ? (body as { code: string }).code
-                    : "unknown",
-                message: err instanceof Error ? err.message : String(err),
-              });
-              throw err;
-            }
-          },
-          refreshToken: async () => {
-            try {
-              return await authApi.refreshToken({
-                body: { providerId },
-                headers: request.headers,
-              });
-            } catch (err) {
-              console.error(
-                `${logPrefix} refreshToken failed:`,
-                err instanceof Error ? err.message : String(err),
-              );
-              throw err;
-            }
-          },
-        });
+                if (!result?.accessToken) {
+                  console.warn(
+                    `${logPrefix} getAccessToken returned no token`,
+                    {
+                      hasResult: !!result,
+                    },
+                  );
+                }
+
+                return result;
+              } catch (err) {
+                const body =
+                  err && typeof err === "object" && "body" in err
+                    ? (err as { body: unknown }).body
+                    : undefined;
+                console.error(`${logPrefix} getAccessToken failed:`, {
+                  code:
+                    body && typeof body === "object" && "code" in body
+                      ? (body as { code: string }).code
+                      : "unknown",
+                  message: err instanceof Error ? err.message : String(err),
+                });
+                throw err;
+              }
+            },
+            refreshToken: async () => {
+              try {
+                return await authApi.refreshToken({
+                  body: { providerId },
+                  headers: request.headers,
+                });
+              } catch (err) {
+                console.error(
+                  `${logPrefix} refreshToken failed:`,
+                  err instanceof Error ? err.message : String(err),
+                );
+                throw err;
+              }
+            },
+          }).finally(() => {
+            refreshInFlight.delete(sessionKey);
+          });
+          refreshInFlight.set(sessionKey, inFlight);
+        }
+        const tokenResult = await inFlight;
         accessToken = tokenResult?.accessToken;
 
         if (!accessToken) {
@@ -364,19 +391,20 @@ function createGetAuth(config: GetAuthConfig) {
           });
         }
       } catch (err) {
-        console.error(`${logPrefix} Token fetch error:`, err);
-
+        // A failed token refresh must NOT tear down a still-valid session. The
+        // BA session (getSession above) is intact; the refresh most often fails
+        // only because a concurrent SSR request already rotated the single-use
+        // refresh token. Signing out here logged users out in bursts on every
+        // app re-open. Degrade instead: serve the session without a fresh
+        // access token. A genuinely dead session self-heals on the next request
+        // via the app's 401 -> re-auth redirect, without punishing the benign
+        // rotation race.
         if (isInvalidGrant(err)) {
           console.warn(
-            `${logPrefix} Stale OAuth tokens, clearing session for re-auth`,
+            `${logPrefix} Token refresh failed (likely a rotation race); serving session without a fresh access token`,
           );
-          try {
-            await authApi.signOut({ headers: request.headers });
-          } catch {
-            // Sign-out may fail if session is already corrupt
-          }
-          setCookie(authCache.cookieName, "", { maxAge: 0, path: "/" });
-          return null;
+        } else {
+          console.error(`${logPrefix} Token fetch error:`, err);
         }
       }
 

@@ -28,17 +28,30 @@ const makeConfig = (overrides: {
   idTokenClaims?: Record<string, unknown>;
   /** Claims returned by the mocked OIDC userinfo fetch */
   userInfoClaims?: Record<string, unknown>;
+  /** Override the mocked Better Auth getAccessToken behavior */
+  getAccessTokenImpl?: () => Promise<{
+    accessToken?: string;
+    idToken?: string | null;
+  } | null>;
+  /** Override the mocked Better Auth refreshToken behavior */
+  refreshTokenImpl?: () => Promise<{
+    accessToken?: string;
+    idToken?: string | null;
+  } | null>;
 }) => {
   const setCookieCalls: Array<{ name: string; value: string }> = [];
   const encryptCalls: CachedAuthData[] = [];
 
   const authApi = {
     getSession: mock(async () => overrides.session),
-    getAccessToken: mock(async () => ({
-      accessToken: "access-token",
-      idToken: "id-token",
-    })),
-    refreshToken: mock(async () => null),
+    getAccessToken: mock(
+      overrides.getAccessTokenImpl ??
+        (async () => ({
+          accessToken: "access-token",
+          idToken: "id-token",
+        })),
+    ),
+    refreshToken: mock(overrides.refreshTokenImpl ?? (async () => null)),
     signOut: mock(async () => undefined),
   } as unknown as BetterAuthApi;
 
@@ -273,5 +286,76 @@ describe("createGetAuth userinfo org cache", () => {
     await getAuth(request);
 
     expect(fetchSpy(cfg)).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("createGetAuth concurrent refresh handling", () => {
+  /** APIError wrapper Better Auth throws when a rotated refresh token races */
+  const failedTokenError = () =>
+    Object.assign(new Error("Failed to get a valid access token"), {
+      body: { code: "FAILED_TO_GET_ACCESS_TOKEN" },
+    });
+
+  it("single-flights the token fetch across a concurrent request burst", async () => {
+    // An SSR page fires many parallel requests for the SAME session. Each
+    // triggers getAuth, but only ONE token fetch may hit Better Auth/Gatekeeper.
+    // Firing N refreshes is exactly what races refresh-token rotation and logs
+    // users out, so concurrent getAuth calls for one session must share a fetch.
+    let resolveGate: () => void = () => {};
+    const gate = new Promise<void>((r) => {
+      resolveGate = r;
+    });
+
+    const cfg = makeConfig({
+      session: makeSession({ identityProviderId: "idp-sub-123" }),
+      getAccessTokenImpl: async () => {
+        await gate;
+        return { accessToken: "access-token", idToken: "id-token" };
+      },
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const inflight = [getAuth(request), getAuth(request), getAuth(request)];
+    // let all three reach the shared token fetch before it settles
+    await Promise.resolve();
+    resolveGate();
+    const results = await Promise.all(inflight);
+
+    expect(results.every((r) => r?.accessToken === "access-token")).toBe(true);
+    const getAccessToken = (
+      cfg.authApi as unknown as { getAccessToken: ReturnType<typeof mock> }
+    ).getAccessToken;
+    expect(getAccessToken).toHaveBeenCalledTimes(1);
+  });
+
+  it("degrades instead of signing out when a refresh loses the rotation race", async () => {
+    // The BA session itself is valid (getSession succeeded); only the OAuth
+    // token refresh failed because a sibling request already rotated it. This
+    // must NOT destroy the session: return it token-less and let the natural
+    // 401 -> re-auth path recover, rather than force-logging-out a live user.
+    const cfg = makeConfig({
+      session: makeSession({ identityProviderId: "idp-sub-123" }),
+      getAccessTokenImpl: async () => {
+        throw failedTokenError();
+      },
+      refreshTokenImpl: async () => {
+        throw failedTokenError();
+      },
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const result = await getAuth(request);
+
+    // session preserved, just without a fresh access token
+    expect(result).not.toBeNull();
+    expect(result?.accessToken).toBeUndefined();
+    expect(result?.user.identityProviderId).toBe("idp-sub-123");
+    // never tears the session down on a single transient failure
+    const signOut = (
+      cfg.authApi as unknown as { signOut: ReturnType<typeof mock> }
+    ).signOut;
+    expect(signOut).not.toHaveBeenCalled();
+    // and never clears the auth cache cookie
+    expect(cfg.setCookieCalls.some((c) => c.value === "")).toBe(false);
   });
 });
