@@ -5,6 +5,7 @@ var LEGAL_URLS = {
   privacy: `${LEGAL_BASE_URL}/privacy`,
   terms: `${LEGAL_BASE_URL}/terms`,
   dpa: `${LEGAL_BASE_URL}/dpa`,
+  ferpa: `${LEGAL_BASE_URL}/ferpa`,
   subprocessors: `${LEGAL_BASE_URL}/subprocessors`,
   acceptableUse: `${LEGAL_BASE_URL}/acceptable-use`
 };
@@ -21,6 +22,7 @@ var LEGAL_LINKS = [
   { label: "Privacy Policy", href: LEGAL_URLS.privacy },
   { label: "Terms of Service", href: LEGAL_URLS.terms },
   { label: "Data Processing Agreement", href: LEGAL_URLS.dpa },
+  { label: "FERPA Addendum", href: LEGAL_URLS.ferpa },
   { label: "Sub-processors", href: LEGAL_URLS.subprocessors },
   { label: "Acceptable Use Policy", href: LEGAL_URLS.acceptableUse }
 ];

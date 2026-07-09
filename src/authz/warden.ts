@@ -22,11 +22,15 @@ type WardenAuthzProviderConfig = {
   apiUrl?: string;
   /** Service key for service-to-service auth */
   serviceKey?: string;
-  /** Vortex workflow engine URL (optional fallback for tuple sync) */
+  /**
+   * @deprecated No longer used. Tuple writes go directly to the Warden PDP,
+   * which confirms application; a Vortex webhook 200 did not, so it could
+   * silently drop tuples. Accepted for backwards compatibility and ignored.
+   */
   vortexUrl?: string;
-  /** Vortex authz webhook secret */
+  /** @deprecated No longer used. See {@link vortexUrl}. */
   vortexWebhookSecret?: string;
-  /** Source identifier for Vortex events (e.g., "runa", "backfeed") */
+  /** @deprecated No longer used. See {@link vortexUrl}. */
   source?: string;
   /** Permission cache TTL in milliseconds */
   cacheTtlMs?: number;
@@ -43,7 +47,7 @@ type WardenAuthzProviderConfig = {
  * Features:
  * - Two-layer caching (request-scoped + TTL cache)
  * - Circuit breaker (fail-closed for security)
- * - Vortex fallback for tuple writes/deletes
+ * - Direct, confirmed tuple writes/deletes to the PDP
  * - Batch permission checks
  * - Structured JSON logging
  */
@@ -256,13 +260,6 @@ class WardenAuthzProvider implements AuthzProvider {
   ): Promise<TupleSyncResult> {
     if (tuples.length === 0) return { success: true };
 
-    // Try Vortex first if configured
-    if (this.config.vortexUrl && this.config.vortexWebhookSecret) {
-      const result = await this.syncViaVortex("write", tuples);
-      if (result.success) return result;
-      // Fall through to direct API
-    }
-
     return this.syncDirect("POST", tuples, accessToken);
   }
 
@@ -271,12 +268,6 @@ class WardenAuthzProvider implements AuthzProvider {
     accessToken?: string,
   ): Promise<TupleSyncResult> {
     if (tuples.length === 0) return { success: true };
-
-    // Try Vortex first if configured
-    if (this.config.vortexUrl && this.config.vortexWebhookSecret) {
-      const result = await this.syncViaVortex("delete", tuples);
-      if (result.success) return result;
-    }
 
     return this.syncDirect("DELETE", tuples, accessToken);
   }
@@ -313,55 +304,6 @@ class WardenAuthzProvider implements AuthzProvider {
       return { "X-Service-Key": this.config.serviceKey };
     }
     return {};
-  }
-
-  private async syncViaVortex(
-    operation: "write" | "delete",
-    tuples: AuthzTuple[],
-  ): Promise<TupleSyncResult> {
-    try {
-      const response = await fetch(
-        `${this.config.vortexUrl}/webhooks/authz/${this.config.vortexWebhookSecret}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Event-Type": `authz.tuples.${operation}`,
-          },
-          body: JSON.stringify({
-            tuples,
-            timestamp: new Date().toISOString(),
-            source: this.config.source ?? "unknown",
-          }),
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-        },
-      );
-
-      if (response.ok) {
-        log("info", "authz", `tuple ${operation} via Vortex`, {
-          tupleCount: tuples.length,
-        });
-        return { success: true };
-      }
-
-      log("warn", "authz", `Vortex ${operation} failed, falling back`, {
-        status: response.status,
-        tupleCount: tuples.length,
-      });
-      return {
-        success: false,
-        error: `Vortex returned ${response.status}`,
-      };
-    } catch (error) {
-      log("warn", "authz", `Vortex ${operation} error, falling back`, {
-        error: error instanceof Error ? error.message : String(error),
-        tupleCount: tuples.length,
-      });
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
   }
 
   private async syncDirect(

@@ -5,11 +5,15 @@ type WardenAuthzProviderConfig = {
     apiUrl?: string;
     /** Service key for service-to-service auth */
     serviceKey?: string;
-    /** Vortex workflow engine URL (optional fallback for tuple sync) */
+    /**
+     * @deprecated No longer used. Tuple writes go directly to the Warden PDP,
+     * which confirms application; a Vortex webhook 200 did not, so it could
+     * silently drop tuples. Accepted for backwards compatibility and ignored.
+     */
     vortexUrl?: string;
-    /** Vortex authz webhook secret */
+    /** @deprecated No longer used. See {@link vortexUrl}. */
     vortexWebhookSecret?: string;
-    /** Source identifier for Vortex events (e.g., "runa", "backfeed") */
+    /** @deprecated No longer used. See {@link vortexUrl}. */
     source?: string;
     /** Permission cache TTL in milliseconds */
     cacheTtlMs?: number;
@@ -25,7 +29,7 @@ type WardenAuthzProviderConfig = {
  * Features:
  * - Two-layer caching (request-scoped + TTL cache)
  * - Circuit breaker (fail-closed for security)
- * - Vortex fallback for tuple writes/deletes
+ * - Direct, confirmed tuple writes/deletes to the PDP
  * - Batch permission checks
  * - Structured JSON logging
  */
@@ -48,7 +52,6 @@ declare class WardenAuthzProvider implements AuthzProvider {
     }>;
     close(): Promise<void>;
     private authHeaders;
-    private syncViaVortex;
     private syncDirect;
 }
 export { WardenAuthzProvider };

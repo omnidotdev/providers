@@ -131,9 +131,12 @@ type GetAuthSession = {
  * via `ensureFreshAccessToken`, OIDC-verified ID token decoding,
  * organization claim extraction, and encrypted cookie caching.
  *
- * On `isInvalidGrant`, clears both the session and cache cookie to
- * force re-authentication. On other token errors, returns the session
- * with whatever organizations are cached (graceful degradation).
+ * The token refresh is single-flighted per session so a page-load request
+ * burst never races refresh-token rotation against itself. A refresh failure
+ * (including `isInvalidGrant`) never tears down the still-valid session: it
+ * degrades to a session without a fresh access token and lets the app's
+ * natural 401 -> re-auth path recover a genuinely dead session, rather than
+ * force-logging-out a user who merely lost a benign rotation race.
  * @param config - Auth configuration
  * @returns `getAuth(request)` function that resolves to session or null
  */

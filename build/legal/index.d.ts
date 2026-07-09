@@ -8,6 +8,7 @@ export declare const LEGAL_URLS: {
     readonly privacy: "https://omni.dev/legal/privacy";
     readonly terms: "https://omni.dev/legal/terms";
     readonly dpa: "https://omni.dev/legal/dpa";
+    readonly ferpa: "https://omni.dev/legal/ferpa";
     readonly subprocessors: "https://omni.dev/legal/subprocessors";
     readonly acceptableUse: "https://omni.dev/legal/acceptable-use";
 };
@@ -35,6 +36,9 @@ export declare const LEGAL_LINKS: readonly [{
 }, {
     readonly label: "Data Processing Agreement";
     readonly href: "https://omni.dev/legal/dpa";
+}, {
+    readonly label: "FERPA Addendum";
+    readonly href: "https://omni.dev/legal/ferpa";
 }, {
     readonly label: "Sub-processors";
     readonly href: "https://omni.dev/legal/subprocessors";

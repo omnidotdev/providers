@@ -280,21 +280,11 @@ class WardenAuthzProvider {
   async writeTuples(tuples, accessToken) {
     if (tuples.length === 0)
       return { success: true };
-    if (this.config.vortexUrl && this.config.vortexWebhookSecret) {
-      const result = await this.syncViaVortex("write", tuples);
-      if (result.success)
-        return result;
-    }
     return this.syncDirect("POST", tuples, accessToken);
   }
   async deleteTuples(tuples, accessToken) {
     if (tuples.length === 0)
       return { success: true };
-    if (this.config.vortexUrl && this.config.vortexWebhookSecret) {
-      const result = await this.syncViaVortex("delete", tuples);
-      if (result.success)
-        return result;
-    }
     return this.syncDirect("DELETE", tuples, accessToken);
   }
   invalidateCache(pattern) {
@@ -325,46 +315,6 @@ class WardenAuthzProvider {
       return { "X-Service-Key": this.config.serviceKey };
     }
     return {};
-  }
-  async syncViaVortex(operation, tuples) {
-    try {
-      const response = await fetch(`${this.config.vortexUrl}/webhooks/authz/${this.config.vortexWebhookSecret}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Event-Type": `authz.tuples.${operation}`
-        },
-        body: JSON.stringify({
-          tuples,
-          timestamp: new Date().toISOString(),
-          source: this.config.source ?? "unknown"
-        }),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-      });
-      if (response.ok) {
-        log("info", "authz", `tuple ${operation} via Vortex`, {
-          tupleCount: tuples.length
-        });
-        return { success: true };
-      }
-      log("warn", "authz", `Vortex ${operation} failed, falling back`, {
-        status: response.status,
-        tupleCount: tuples.length
-      });
-      return {
-        success: false,
-        error: `Vortex returned ${response.status}`
-      };
-    } catch (error) {
-      log("warn", "authz", `Vortex ${operation} error, falling back`, {
-        error: error instanceof Error ? error.message : String(error),
-        tupleCount: tuples.length
-      });
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error)
-      };
-    }
   }
   async syncDirect(method, tuples, accessToken) {
     const operation = method === "POST" ? "write" : "delete";

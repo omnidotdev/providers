@@ -3251,6 +3251,7 @@ function createGetAuth(config) {
     now = Date.now
   } = config;
   const orgCache = new Map;
+  const refreshInFlight = new Map;
   return async function getAuth(request) {
     try {
       const session = await authApi.getSession({
@@ -3264,41 +3265,49 @@ function createGetAuth(config) {
       let identityProviderId = customUser.identityProviderId;
       let rowId = customUser.rowId ?? undefined;
       const hasCachedData = !!identityProviderId;
+      const sessionKey = session.session?.token ?? session.user.id;
       try {
-        const tokenResult = await ensureFreshAccessToken({
-          getAccessToken: async () => {
-            try {
-              const result = await authApi.getAccessToken({
-                body: { providerId },
-                headers: request.headers
-              });
-              if (!result?.accessToken) {
-                console.warn(`${logPrefix} getAccessToken returned no token`, {
-                  hasResult: !!result
+        let inFlight = refreshInFlight.get(sessionKey);
+        if (!inFlight) {
+          inFlight = ensureFreshAccessToken({
+            getAccessToken: async () => {
+              try {
+                const result = await authApi.getAccessToken({
+                  body: { providerId },
+                  headers: request.headers
                 });
+                if (!result?.accessToken) {
+                  console.warn(`${logPrefix} getAccessToken returned no token`, {
+                    hasResult: !!result
+                  });
+                }
+                return result;
+              } catch (err) {
+                const body = err && typeof err === "object" && "body" in err ? err.body : undefined;
+                console.error(`${logPrefix} getAccessToken failed:`, {
+                  code: body && typeof body === "object" && "code" in body ? body.code : "unknown",
+                  message: err instanceof Error ? err.message : String(err)
+                });
+                throw err;
               }
-              return result;
-            } catch (err) {
-              const body = err && typeof err === "object" && "body" in err ? err.body : undefined;
-              console.error(`${logPrefix} getAccessToken failed:`, {
-                code: body && typeof body === "object" && "code" in body ? body.code : "unknown",
-                message: err instanceof Error ? err.message : String(err)
-              });
-              throw err;
+            },
+            refreshToken: async () => {
+              try {
+                return await authApi.refreshToken({
+                  body: { providerId },
+                  headers: request.headers
+                });
+              } catch (err) {
+                console.error(`${logPrefix} refreshToken failed:`, err instanceof Error ? err.message : String(err));
+                throw err;
+              }
             }
-          },
-          refreshToken: async () => {
-            try {
-              return await authApi.refreshToken({
-                body: { providerId },
-                headers: request.headers
-              });
-            } catch (err) {
-              console.error(`${logPrefix} refreshToken failed:`, err instanceof Error ? err.message : String(err));
-              throw err;
-            }
-          }
-        });
+          }).finally(() => {
+            refreshInFlight.delete(sessionKey);
+          });
+          refreshInFlight.set(sessionKey, inFlight);
+        }
+        const tokenResult = await inFlight;
         accessToken = tokenResult?.accessToken;
         if (!accessToken) {
           console.warn(`${logPrefix} No access token after refresh attempt`);
@@ -3369,14 +3378,10 @@ function createGetAuth(config) {
           });
         }
       } catch (err) {
-        console.error(`${logPrefix} Token fetch error:`, err);
         if (isInvalidGrant(err)) {
-          console.warn(`${logPrefix} Stale OAuth tokens, clearing session for re-auth`);
-          try {
-            await authApi.signOut({ headers: request.headers });
-          } catch {}
-          setCookie(authCache.cookieName, "", { maxAge: 0, path: "/" });
-          return null;
+          console.warn(`${logPrefix} Token refresh failed (likely a rotation race); serving session without a fresh access token`);
+        } else {
+          console.error(`${logPrefix} Token fetch error:`, err);
         }
       }
       return {
