@@ -43,6 +43,18 @@ function createOmniOAuthConfig(config: OmniOAuthConfig) {
     ],
     accessType: "offline" as const,
     pkce: true,
+    // Promote a sign-up request to the OIDC `prompt=create` so the provider
+    // opens its sign-up page instead of the sign-in form. A consumer flags a
+    // sign-up by calling `signIn.oauth2({ ..., additionalData: { screen_hint:
+    // "signup" } })`; Better Auth keeps `additionalData` in OAuth state but never
+    // puts it on the authorization URL, so it must be promoted to a real param
+    // here.
+    authorizationUrlParams: (ctx: {
+      body?: { additionalData?: { screen_hint?: string } };
+    }): Record<string, string> =>
+      ctx.body?.additionalData?.screen_hint === "signup"
+        ? { prompt: "create" }
+        : {},
     mapProfileToUser: (profile: Record<string, unknown>) => ({
       name: profile.name as string,
       email: profile.email as string,
