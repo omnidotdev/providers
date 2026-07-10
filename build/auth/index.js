@@ -3400,6 +3400,21 @@ function createGetAuth(config) {
     }
   };
 }
+// src/auth/idpLogout.ts
+var buildIdpLogoutUrl = ({
+  authBaseUrl,
+  clientId,
+  redirectUri,
+  idTokenHint
+}) => {
+  if (!authBaseUrl || !clientId || !redirectUri || !idTokenHint)
+    return null;
+  const url = new URL(`${authBaseUrl}/oauth2/end-session`);
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("post_logout_redirect_uri", redirectUri);
+  url.searchParams.set("id_token_hint", idTokenHint);
+  return url.toString();
+};
 
 // src/auth/index.ts
 init_jwt();
@@ -3422,6 +3437,7 @@ function createOmniOAuthConfig(config) {
     ],
     accessType: "offline",
     pkce: true,
+    authorizationUrlParams: (ctx) => ctx.body?.additionalData?.screen_hint === "signup" ? { prompt: "create" } : {},
     mapProfileToUser: (profile) => ({
       name: profile.name,
       email: profile.email,
@@ -3542,6 +3558,7 @@ export {
   createOidcClient,
   createGetAuth,
   createAuthCache,
+  buildIdpLogoutUrl,
   OMNI_CLAIMS_NAMESPACE,
   GatekeeperOrgError,
   GatekeeperOrgClient
