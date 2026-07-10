@@ -78035,6 +78035,7 @@ function createOmniOAuthConfig(config) {
     ],
     accessType: "offline",
     pkce: true,
+    authorizationUrlParams: (ctx) => ctx.body?.additionalData?.screen_hint === "signup" ? { prompt: "create" } : {},
     mapProfileToUser: (profile) => ({
       name: profile.name,
       email: profile.email,

@@ -9,6 +9,7 @@ export {
   validateInvitation,
 } from "./gatekeeperOrg";
 export { createGetAuth } from "./getAuth";
+export { buildIdpLogoutUrl } from "./idpLogout";
 export { verifyAccessToken } from "./jwt";
 export { createOmniOAuthConfig } from "./oauth";
 export { createOidcClient } from "./oidc";
@@ -38,6 +39,7 @@ export type {
   ResolveRowIdParams,
   SetCookieFn,
 } from "./getAuth";
+export type { IdpLogoutConfig } from "./idpLogout";
 export type { VerifyAccessTokenConfig } from "./jwt";
 export type { OmniOAuthConfig } from "./oauth";
 export type {

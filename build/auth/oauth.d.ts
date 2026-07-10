@@ -35,6 +35,13 @@ declare function createOmniOAuthConfig(config: OmniOAuthConfig): {
     scopes: string[];
     accessType: "offline";
     pkce: boolean;
+    authorizationUrlParams: (ctx: {
+        body?: {
+            additionalData?: {
+                screen_hint?: string;
+            };
+        };
+    }) => Record<string, string>;
     mapProfileToUser: (profile: Record<string, unknown>) => {
         name: string;
         email: string;
