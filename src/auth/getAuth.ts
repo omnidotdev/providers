@@ -274,6 +274,57 @@ function createGetAuth(config: GetAuthConfig) {
           console.warn(`${logPrefix} No access token after refresh attempt`);
         }
 
+        // Hydrate organizations from the OIDC UserInfo endpoint using the
+        // access token. Per OIDC Core 5.3.2 the userinfo `sub` MUST match the
+        // session subject before its claims are trusted, so a mismatch is
+        // rejected. Cached per subject (TTL) to avoid a round-trip on every
+        // request. Used both to enrich slim tokens and to recover orgs when a
+        // refresh returns no id token.
+        const orgsFromUserInfo = async (
+          expectedSub: string | null | undefined,
+        ): Promise<OrganizationClaim[] | undefined> => {
+          if (!accessToken || typeof oidc.fetchUserInfo !== "function")
+            return undefined;
+
+          const cacheKey = expectedSub ?? null;
+          const cached =
+            cacheKey && orgCacheTtlMs > 0 ? orgCache.get(cacheKey) : undefined;
+          if (cached && cached.expiry > now()) return cached.organizations;
+
+          try {
+            const info = await oidc.fetchUserInfo(accessToken);
+
+            // OIDC Core 5.3.2: never trust a userinfo response whose subject
+            // does not match the session subject.
+            const infoSub = (info as { sub?: unknown })?.sub;
+            if (
+              expectedSub &&
+              typeof infoSub === "string" &&
+              infoSub !== expectedSub
+            ) {
+              console.error(
+                `${logPrefix} userinfo sub mismatch; ignoring org claims`,
+              );
+              return undefined;
+            }
+
+            const infoOrgs = readOrgClaims(info);
+            if (infoOrgs !== undefined && cacheKey && orgCacheTtlMs > 0) {
+              orgCache.set(cacheKey, {
+                organizations: infoOrgs,
+                expiry: now() + orgCacheTtlMs,
+              });
+            }
+            return infoOrgs;
+          } catch (infoError) {
+            console.error(
+              `${logPrefix} userinfo org hydration failed:`,
+              infoError,
+            );
+            return undefined;
+          }
+        };
+
         // Extract claims from ID token (verified via OIDC discovery + JWKS)
         if (tokenResult?.idToken) {
           try {
@@ -306,43 +357,24 @@ function createGetAuth(config: GetAuthConfig) {
                 (org) => (org as Partial<OrganizationClaim>).name === undefined,
               );
 
-            if (
-              needsHydration &&
-              accessToken &&
-              typeof oidc.fetchUserInfo === "function"
-            ) {
-              const cacheKey = identityProviderId ?? payload.sub ?? null;
-              const cached =
-                cacheKey && orgCacheTtlMs > 0
-                  ? orgCache.get(cacheKey)
-                  : undefined;
-
-              if (cached && cached.expiry > now()) {
-                organizations = cached.organizations;
-              } else {
-                try {
-                  const info = await oidc.fetchUserInfo(accessToken);
-                  const infoOrgs = readOrgClaims(info);
-                  if (infoOrgs !== undefined) {
-                    organizations = infoOrgs;
-                    if (cacheKey && orgCacheTtlMs > 0) {
-                      orgCache.set(cacheKey, {
-                        organizations: infoOrgs,
-                        expiry: now() + orgCacheTtlMs,
-                      });
-                    }
-                  }
-                } catch (infoError) {
-                  console.error(
-                    `${logPrefix} userinfo org hydration failed:`,
-                    infoError,
-                  );
-                }
-              }
+            if (needsHydration) {
+              const hydrated = await orgsFromUserInfo(
+                identityProviderId ?? payload.sub,
+              );
+              if (hydrated !== undefined) organizations = hydrated;
             }
           } catch (jwtError) {
             console.error(`${logPrefix} JWT verification failed:`, jwtError);
           }
+        }
+
+        // No id token (e.g. a refresh that did not re-issue one), or a token
+        // that carried no org claim: recover organizations from userinfo so the
+        // dashboard does not lose every workspace after a token refresh (the id
+        // token is only issued at login, not on the refresh-token grant).
+        if (organizations.length === 0) {
+          const recovered = await orgsFromUserInfo(identityProviderId);
+          if (recovered !== undefined) organizations = recovered;
         }
 
         // Retry rowId resolution whenever it is still missing, even for an

@@ -214,6 +214,41 @@ describe("createGetAuth organization handling", () => {
     ).not.toHaveBeenCalled();
   });
 
+  it("recovers organizations from userinfo when a refresh returns no id token", async () => {
+    // The id token is only issued at login; a refresh-token grant returns just
+    // an access token. Without a userinfo fallback the dashboard loses every
+    // workspace after the first token refresh.
+    const cfg = makeConfig({
+      session: makeSession({ identityProviderId: "idp-sub-123" }),
+      getAccessTokenImpl: async () => ({ accessToken: "access-token" }),
+      userInfoClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: ORGS },
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const result = await getAuth(request);
+
+    expect(result?.organizations).toEqual(ORGS);
+    expect(
+      (cfg.oidc as unknown as { fetchUserInfo: ReturnType<typeof mock> })
+        .fetchUserInfo,
+    ).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores userinfo org claims when the subject does not match (OIDC 5.3.2)", async () => {
+    // A userinfo response for a different subject must never populate this
+    // session's organizations, even if the access token somehow resolved it.
+    const cfg = makeConfig({
+      session: makeSession({ identityProviderId: "idp-sub-123" }),
+      getAccessTokenImpl: async () => ({ accessToken: "access-token" }),
+      userInfoClaims: { sub: "attacker-sub", [OMNI_CLAIMS_NAMESPACE]: ORGS },
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const result = await getAuth(request);
+
+    expect(result?.organizations).toEqual([]);
+  });
+
   it("never writes organizations into the cache cookie (keeps headers bounded)", async () => {
     const cfg = makeConfig({
       session: makeSession({}),

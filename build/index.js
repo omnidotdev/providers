@@ -77925,6 +77925,33 @@ function createGetAuth(config) {
         if (!accessToken) {
           console.warn(`${logPrefix} No access token after refresh attempt`);
         }
+        const orgsFromUserInfo = async (expectedSub) => {
+          if (!accessToken || typeof oidc.fetchUserInfo !== "function")
+            return;
+          const cacheKey = expectedSub ?? null;
+          const cached = cacheKey && orgCacheTtlMs > 0 ? orgCache.get(cacheKey) : undefined;
+          if (cached && cached.expiry > now())
+            return cached.organizations;
+          try {
+            const info = await oidc.fetchUserInfo(accessToken);
+            const infoSub = info?.sub;
+            if (expectedSub && typeof infoSub === "string" && infoSub !== expectedSub) {
+              console.error(`${logPrefix} userinfo sub mismatch; ignoring org claims`);
+              return;
+            }
+            const infoOrgs = readOrgClaims(info);
+            if (infoOrgs !== undefined && cacheKey && orgCacheTtlMs > 0) {
+              orgCache.set(cacheKey, {
+                organizations: infoOrgs,
+                expiry: now() + orgCacheTtlMs
+              });
+            }
+            return infoOrgs;
+          } catch (infoError) {
+            console.error(`${logPrefix} userinfo org hydration failed:`, infoError);
+            return;
+          }
+        };
         if (tokenResult?.idToken) {
           try {
             const payload = await oidc.verifyIdToken(tokenResult.idToken);
@@ -77936,32 +77963,19 @@ function createGetAuth(config) {
               organizations = tokenOrgs;
             }
             const needsHydration = organizations.length > 0 && organizations.some((org) => org.name === undefined);
-            if (needsHydration && accessToken && typeof oidc.fetchUserInfo === "function") {
-              const cacheKey = identityProviderId ?? payload.sub ?? null;
-              const cached = cacheKey && orgCacheTtlMs > 0 ? orgCache.get(cacheKey) : undefined;
-              if (cached && cached.expiry > now()) {
-                organizations = cached.organizations;
-              } else {
-                try {
-                  const info = await oidc.fetchUserInfo(accessToken);
-                  const infoOrgs = readOrgClaims(info);
-                  if (infoOrgs !== undefined) {
-                    organizations = infoOrgs;
-                    if (cacheKey && orgCacheTtlMs > 0) {
-                      orgCache.set(cacheKey, {
-                        organizations: infoOrgs,
-                        expiry: now() + orgCacheTtlMs
-                      });
-                    }
-                  }
-                } catch (infoError) {
-                  console.error(`${logPrefix} userinfo org hydration failed:`, infoError);
-                }
-              }
+            if (needsHydration) {
+              const hydrated = await orgsFromUserInfo(identityProviderId ?? payload.sub);
+              if (hydrated !== undefined)
+                organizations = hydrated;
             }
           } catch (jwtError) {
             console.error(`${logPrefix} JWT verification failed:`, jwtError);
           }
+        }
+        if (organizations.length === 0) {
+          const recovered = await orgsFromUserInfo(identityProviderId);
+          if (recovered !== undefined)
+            organizations = recovered;
         }
         const needsRowId = !!resolveRowId && rowId === undefined && !!accessToken;
         if (identityProviderId && (!hasCachedData || needsRowId)) {
