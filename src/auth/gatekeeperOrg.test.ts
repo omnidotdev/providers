@@ -125,6 +125,29 @@ describe("GatekeeperOrgClient member endpoints", () => {
     user: { id: "u1", name: "A", email: "a@b.com", image: null },
   };
 
+  it("checkNamespaceAvailability GETs the public namespace endpoint with the slug", async () => {
+    const get = stubFetch({ available: true, conflict: null });
+
+    const result = await client.checkNamespaceAvailability("acme");
+
+    const { url, init } = get();
+    expect(url).toBe(`${baseUrl}/api/namespace/check?slug=acme`);
+    expect(init?.method ?? "GET").toBe("GET");
+    // public endpoint: no Authorization header
+    expect(
+      (init?.headers as Record<string, string> | undefined)?.Authorization,
+    ).toBeUndefined();
+    expect(result).toEqual({ available: true, conflict: null });
+  });
+
+  it("checkNamespaceAvailability reports a taken handle with its conflict", async () => {
+    stubFetch({ available: false, conflict: "organization" });
+
+    const result = await client.checkNamespaceAvailability("acme");
+
+    expect(result).toEqual({ available: false, conflict: "organization" });
+  });
+
   it("listMembers calls Better Auth list-members and unwraps { members } to { data }", async () => {
     const get = stubFetch({ members: [member], total: 1 });
 

@@ -74,6 +74,74 @@ var OrganizationProvider = ({
 var useOrganization = () => {
   return use2(OrganizationContext);
 };
+// src/react/useCreateWorkspace.ts
+import { useCallback, useState as useState2 } from "react";
+
+// src/auth/gatekeeperOrg.ts
+var slugify = (name) => name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50);
+
+// src/react/useCreateWorkspace.ts
+var createWorkspaceFlow = async ({
+  name,
+  slug,
+  checkAvailability,
+  createWorkspace,
+  refreshSession
+}) => {
+  const resolvedSlug = slug?.trim() || slugify(name);
+  if (checkAvailability) {
+    const { available } = await checkAvailability(resolvedSlug);
+    if (!available) {
+      throw new Error(`The handle "${resolvedSlug}" is not available. Please choose a different one.`);
+    }
+  }
+  const org = await createWorkspace({ name, slug: resolvedSlug });
+  if (refreshSession) {
+    try {
+      await refreshSession();
+    } catch {}
+  }
+  return org;
+};
+var useCreateWorkspace = ({
+  checkAvailability,
+  createWorkspace,
+  refreshSession
+}) => {
+  const [status, setStatus] = useState2("idle");
+  const [error, setError] = useState2(null);
+  const create = useCallback(async ({ name, slug }) => {
+    setStatus("creating");
+    setError(null);
+    try {
+      const org = await createWorkspaceFlow({
+        name,
+        slug,
+        checkAvailability,
+        createWorkspace,
+        refreshSession
+      });
+      setStatus("done");
+      return org;
+    } catch (err) {
+      const normalized = err instanceof Error ? err : new Error("Failed to create workspace");
+      setError(normalized);
+      setStatus("error");
+      throw normalized;
+    }
+  }, [checkAvailability, createWorkspace, refreshSession]);
+  const reset = useCallback(() => {
+    setStatus("idle");
+    setError(null);
+  }, []);
+  return {
+    create,
+    status,
+    error,
+    isCreating: status === "creating",
+    reset
+  };
+};
 // src/react/useSessionRefresh.ts
 import { useEffect, useRef } from "react";
 function useSessionRefresh(refreshFn, intervalMs = 4 * 60 * 1000) {
@@ -103,7 +171,9 @@ export {
   useSessionRefresh,
   useOrganization,
   useEvents,
+  useCreateWorkspace,
   gatekeeperOrgManageUrl,
+  createWorkspaceFlow,
   OrganizationProvider,
   ManageTeamLink,
   EventsProvider

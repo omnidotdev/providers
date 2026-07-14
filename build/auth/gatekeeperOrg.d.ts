@@ -32,6 +32,14 @@ type GatekeeperInvitation = {
     createdAt: string;
 };
 type GatekeeperMemberRole = "owner" | "admin" | "member";
+/**
+ * Result of a unified-namespace availability check (usernames + team org
+ * slugs). `conflict` names what already owns the handle, when taken.
+ */
+type NamespaceAvailability = {
+    available: boolean;
+    conflict?: "username" | "organization" | null;
+};
 /** Error thrown by GatekeeperOrgClient methods */
 declare class GatekeeperOrgError extends Error {
     status: number;
@@ -39,6 +47,8 @@ declare class GatekeeperOrgError extends Error {
     get isSessionExpired(): boolean;
     get isForbidden(): boolean;
 }
+/** Generate a URL-safe slug from a name */
+declare const slugify: (name: string) => string;
 /**
  * Typed client for Better Auth organization plugin endpoints on Gatekeeper.
  * GET endpoints pass query params directly (not as serialized JSON).
@@ -67,6 +77,12 @@ declare class GatekeeperOrgClient {
         name: string;
         slug?: string;
     }, accessToken: string): Promise<GatekeeperOrganization>;
+    /**
+     * Check whether a workspace handle (slug) is free across the ecosystem-global
+     * namespace (usernames + team org slugs). Public endpoint, no auth required,
+     * so products can gate the create form before submitting.
+     */
+    checkNamespaceAvailability(slug: string): Promise<NamespaceAvailability>;
     /** Invite a member to an organization */
     inviteMember(params: {
         organizationId: string;
@@ -160,5 +176,5 @@ declare const getInviteTimeInfo: (invitation: GatekeeperInvitation) => InviteTim
  * @param ms - Duration in milliseconds
  */
 declare const formatRelativeTime: (ms: number) => string;
-export { GatekeeperOrgClient, GatekeeperOrgError, formatRelativeTime, getInviteTimeInfo, isInvitationExpired, validateInvitation, };
-export type { GatekeeperInvitation, GatekeeperMember, GatekeeperMemberRole, GatekeeperOrganization, InvitationValidationResult, InviteTimeInfo, ValidateInvitationParams, };
+export { GatekeeperOrgClient, GatekeeperOrgError, formatRelativeTime, getInviteTimeInfo, isInvitationExpired, slugify, validateInvitation, };
+export type { GatekeeperInvitation, GatekeeperMember, GatekeeperMemberRole, GatekeeperOrganization, InvitationValidationResult, InviteTimeInfo, NamespaceAvailability, ValidateInvitationParams, };

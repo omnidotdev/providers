@@ -36,6 +36,15 @@ type GatekeeperInvitation = {
 
 type GatekeeperMemberRole = "owner" | "admin" | "member";
 
+/**
+ * Result of a unified-namespace availability check (usernames + team org
+ * slugs). `conflict` names what already owns the handle, when taken.
+ */
+type NamespaceAvailability = {
+  available: boolean;
+  conflict?: "username" | "organization" | null;
+};
+
 /** Error thrown by GatekeeperOrgClient methods */
 class GatekeeperOrgError extends Error {
   status: number;
@@ -143,6 +152,26 @@ class GatekeeperOrgClient {
     }
 
     return response.json() as Promise<GatekeeperOrganization>;
+  }
+
+  /**
+   * Check whether a workspace handle (slug) is free across the ecosystem-global
+   * namespace (usernames + team org slugs). Public endpoint, no auth required,
+   * so products can gate the create form before submitting.
+   */
+  async checkNamespaceAvailability(
+    slug: string,
+  ): Promise<NamespaceAvailability> {
+    const url = new URL(`${this.baseUrl}/api/namespace/check`);
+    url.searchParams.set("slug", slug);
+
+    const response = await fetch(url.toString());
+
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to check availability");
+    }
+
+    return response.json() as Promise<NamespaceAvailability>;
   }
 
   /** Invite a member to an organization */
@@ -470,6 +499,7 @@ export {
   formatRelativeTime,
   getInviteTimeInfo,
   isInvitationExpired,
+  slugify,
   validateInvitation,
 };
 
@@ -480,5 +510,6 @@ export type {
   GatekeeperOrganization,
   InvitationValidationResult,
   InviteTimeInfo,
+  NamespaceAvailability,
   ValidateInvitationParams,
 };

@@ -77708,6 +77708,15 @@ class GatekeeperOrgClient {
     }
     return response.json();
   }
+  async checkNamespaceAvailability(slug) {
+    const url = new URL(`${this.baseUrl}/api/namespace/check`);
+    url.searchParams.set("slug", slug);
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to check availability");
+    }
+    return response.json();
+  }
   async inviteMember(params, accessToken) {
     const response = await fetch(`${this.baseUrl}/organization/invite-member`, {
       method: "POST",
