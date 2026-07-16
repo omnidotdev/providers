@@ -1,3 +1,14 @@
 bun knip
 bun biome check --write --staged --no-errors-on-unmatched src
 bun tsc --noEmit
+
+# build/ is a committed artifact (bun neither runs a git dependency's `prepare`
+# by default nor installs the devDependencies a build needs, so consumers cannot
+# compile it themselves). That makes it silently stale the moment src/ changes
+# without a rebuild: every consumer pinning the commit gets the old bundle.
+# Rebuilding here keeps the two in lockstep by construction.
+if git diff --cached --name-only --diff-filter=d | grep -q '^src/'; then
+  echo "pre-commit: src/ changed, rebuilding build/"
+  bun run build
+  git add build
+fi
