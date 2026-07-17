@@ -367,7 +367,6 @@ class AetherBillingProvider {
         lastError = error;
         if (attempt < REQUEST_RETRIES) {
           await this.backoff(attempt);
-          continue;
         }
       }
     }

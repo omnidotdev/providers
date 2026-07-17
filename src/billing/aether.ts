@@ -422,7 +422,6 @@ class AetherBillingProvider implements BillingProvider {
         lastError = error;
         if (attempt < REQUEST_RETRIES) {
           await this.backoff(attempt);
-          continue;
         }
       }
     }

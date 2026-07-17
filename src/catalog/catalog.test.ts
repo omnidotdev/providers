@@ -109,7 +109,9 @@ describe("fetchPublicCatalog", () => {
   test("throws on a non-ok response", async () => {
     const fetch = mock(async () => ({ ok: false, status: 503 }) as Response);
     expect(
-      fetchPublicCatalog({ fetch: fetch as unknown as typeof globalThis.fetch }),
+      fetchPublicCatalog({
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }),
     ).rejects.toThrow("503");
   });
 
@@ -123,7 +125,9 @@ describe("fetchPublicCatalog", () => {
         }) as Response,
     );
     expect(
-      fetchPublicCatalog({ fetch: fetch as unknown as typeof globalThis.fetch }),
+      fetchPublicCatalog({
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }),
     ).rejects.toThrow("no usable catalog");
   });
 });

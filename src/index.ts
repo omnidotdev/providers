@@ -44,14 +44,6 @@ export {
   fetchPublicCatalog,
   normalizePublicCatalog,
 } from "./catalog";
-export type {
-  FetchPublicCatalogOptions,
-  PublicBundle,
-  PublicCatalog,
-  PublicConnection,
-  PublicProduct,
-  PublicRealm,
-} from "./catalog";
 // Events
 export {
   HttpEventsProvider,
@@ -153,6 +145,14 @@ export type {
   ScopeProbeResult,
   Subscription,
 } from "./billing";
+export type {
+  FetchPublicCatalogOptions,
+  PublicBundle,
+  PublicCatalog,
+  PublicConnection,
+  PublicProduct,
+  PublicRealm,
+} from "./catalog";
 export type {
   EmitResult,
   EventActor,
