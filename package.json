@@ -35,6 +35,10 @@
       "import": "./build/billing/index.js",
       "types": "./build/billing/index.d.ts"
     },
+    "./catalog": {
+      "import": "./build/catalog/index.js",
+      "types": "./build/catalog/index.d.ts"
+    },
     "./events": {
       "import": "./build/events/index.js",
       "types": "./build/events/index.d.ts"

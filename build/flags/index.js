@@ -14632,7 +14632,7 @@ var require_lib6 = __commonJS((exports, module) => {
   };
 });
 
-// node_modules/p-map/index.js
+// node_modules/cacache/node_modules/p-map/index.js
 var exports_p_map = {};
 __export(exports_p_map, {
   pMapSkip: () => pMapSkip,

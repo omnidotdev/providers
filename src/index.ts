@@ -38,6 +38,20 @@ export {
   probeWriteScope,
   safePaymentWrite,
 } from "./billing";
+// Catalog
+export {
+  PUBLIC_CATALOG_QUERY,
+  fetchPublicCatalog,
+  normalizePublicCatalog,
+} from "./catalog";
+export type {
+  FetchPublicCatalogOptions,
+  PublicBundle,
+  PublicCatalog,
+  PublicConnection,
+  PublicProduct,
+  PublicRealm,
+} from "./catalog";
 // Events
 export {
   HttpEventsProvider,
