@@ -4,6 +4,12 @@
   "version": "0.1.0",
   "description": "Shared auth, authorization, billing, events, feature flags, notifications, storage, and API key providers for the Omni ecosystem",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/omnidotdev/providers",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omnidotdev/providers.git"
+  },
+  "bugs": "https://github.com/omnidotdev/providers/issues",
   "type": "module",
   "main": "./build/index.js",
   "module": "./build/index.js",
@@ -80,7 +86,9 @@
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
     "prepublishOnly": "bun run build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "changeset": "changeset",
+    "release": "bun run build && changeset publish"
   },
   "dependencies": {
     "ajv": "^8.18.0",
@@ -142,6 +150,8 @@
     "@aws-sdk/client-s3": "^3.997.0",
     "@aws-sdk/s3-request-presigner": "^3.997.0",
     "@biomejs/biome": "2.3.12",
+    "@changesets/changelog-github": "^0.7.0",
+    "@changesets/cli": "^2.31.1",
     "@envelop/types": "^5.0.0",
     "@escape.tech/graphql-armor": "^3.2.0",
     "@iggy.rs/sdk": "^1.0.6",
