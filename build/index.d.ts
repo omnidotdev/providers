@@ -8,6 +8,7 @@ export { NoopFlagProvider, UnleashFlagProvider, createFlagProvider, } from "./fl
 export { LEGAL_BASE_URL, LEGAL_CONTACTS, LEGAL_FOOTER_LINKS, LEGAL_LINKS, LEGAL_URLS, } from "./legal";
 export { NoopNotificationProvider, createNotificationProvider, } from "./notifications";
 export { SECURITY_HEADERS } from "./server";
+export { GatekeeperSocialProvider, createSocialProvider, } from "./social";
 export { NoopStorageProvider, S3StorageProvider, createStorageProvider, } from "./storage";
 export { TtlCache } from "./util/cache";
 export { CircuitBreaker } from "./util/circuitBreaker";
@@ -19,6 +20,7 @@ export type { FetchPublicCatalogOptions, PublicBundle, PublicCatalog, PublicConn
 export type { EmitResult, EventActor, EventInput, EventsProvider, EventsProviderConfig, EventsProviderStatus, HttpEventsProviderConfig, IggyEventsProviderConfig, NoopEventsProviderConfig, RegisteredSchema, SchemaRegistration, SubscriptionCreated, SubscriptionInput, } from "./events";
 export type { FlagContext, FlagProvider, FlagProviderConfig, NoopFlagProviderConfig, UnleashFlagProviderConfig, } from "./flags";
 export type { EmailParams, EmailResult, NoopNotificationProviderConfig, NotificationProvider, NotificationProviderConfig, } from "./notifications";
+export type { GatekeeperSocialProviderConfig, SocialConnectionDTO, SocialProvider, } from "./social";
 export type { NoopStorageProviderConfig, PresignedParams, PresignedResult, S3StorageProviderConfig, StorageProvider, StorageProviderConfig, UploadParams, UploadResult, } from "./storage";
 export type { TtlCacheConfig } from "./util/cache";
 export type { CircuitBreakerConfig } from "./util/circuitBreaker";

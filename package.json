@@ -71,6 +71,10 @@
       "import": "./build/server/index.js",
       "types": "./build/server/index.d.ts"
     },
+    "./social": {
+      "import": "./build/social/index.js",
+      "types": "./build/social/index.d.ts"
+    },
     "./storage": {
       "import": "./build/storage/index.js",
       "types": "./build/storage/index.d.ts"
