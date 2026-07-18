@@ -82,6 +82,13 @@ const entries = [
     external: [] as string[],
   },
   {
+    entrypoint: "./src/social/index.ts",
+    outdir: "./build/social",
+    // Fetch-only Gatekeeper client; safe in both browser and server consumers
+    target: "browser" as const,
+    external: [] as string[],
+  },
+  {
     entrypoint: "./src/storage/index.ts",
     outdir: "./build/storage",
     target: "node" as const,

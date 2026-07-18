@@ -80084,6 +80084,49 @@ var SECURITY_HEADERS = {
   "Referrer-Policy": "strict-origin-when-cross-origin"
 };
 var headers_default = SECURITY_HEADERS;
+// src/social/gatekeeper.ts
+var REQUEST_TIMEOUT_MS9 = 5000;
+
+class GatekeeperSocialProvider {
+  config;
+  constructor(config) {
+    this.config = {
+      ...config,
+      timeoutMs: config.timeoutMs ?? REQUEST_TIMEOUT_MS9
+    };
+  }
+  async getConnections(userId) {
+    try {
+      const url = `${this.config.baseUrl}/social/connections/read?userId=${encodeURIComponent(userId)}`;
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${this.config.serviceKey}`,
+          Accept: "application/json"
+        },
+        signal: AbortSignal.timeout(this.config.timeoutMs)
+      });
+      if (!response.ok) {
+        throw new Error(`social connections read failed: ${response.status}`);
+      }
+      const raw = await response.json();
+      return Array.isArray(raw) ? raw : raw.connections ?? [];
+    } catch (error) {
+      log("error", "social", "connections read failed", {
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return [];
+    }
+  }
+  async getConnection(userId, platform) {
+    const connections = await this.getConnections(userId);
+    return connections.find((c) => c.platform === platform) ?? null;
+  }
+}
+
+// src/social/index.ts
+var createSocialProvider = (config) => new GatekeeperSocialProvider(config);
 // src/storage/noop.ts
 var NOOP_BASE_URL = "https://noop.example.com";
 
@@ -80260,6 +80303,7 @@ export {
   eventMeta,
   ensureFreshAccessToken,
   createStorageProvider,
+  createSocialProvider,
   createOmniOAuthConfig,
   createOidcClient,
   createNotificationProvider,
@@ -80291,6 +80335,7 @@ export {
   LEGAL_BASE_URL,
   IggyEventsProvider,
   HttpEventsProvider,
+  GatekeeperSocialProvider,
   GatekeeperOrgError,
   GatekeeperOrgClient,
   GatekeeperApiKeyProvider,

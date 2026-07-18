@@ -74,6 +74,11 @@ export {
 } from "./notifications";
 // Server
 export { SECURITY_HEADERS } from "./server";
+// Social
+export {
+  GatekeeperSocialProvider,
+  createSocialProvider,
+} from "./social";
 // Storage
 export {
   NoopStorageProvider,
@@ -184,6 +189,11 @@ export type {
   NotificationProvider,
   NotificationProviderConfig,
 } from "./notifications";
+export type {
+  GatekeeperSocialProviderConfig,
+  SocialConnectionDTO,
+  SocialProvider,
+} from "./social";
 export type {
   NoopStorageProviderConfig,
   PresignedParams,
