@@ -110,7 +110,7 @@ class HeraldNotificationProvider {
       for (const [index, recipient] of recipients.entries()) {
         const body = {
           to: toBareEmail(recipient),
-          from: toBareEmail(params.from ?? this.config.defaultFrom),
+          from: params.from ?? this.config.defaultFrom,
           subject: params.subject,
           html: params.body,
           ...params.html ? {} : { text: params.body },
