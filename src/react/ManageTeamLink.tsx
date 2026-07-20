@@ -13,6 +13,16 @@ export const gatekeeperOrgManageUrl = (
 ): string =>
   `${identityBaseUrl.replace(/\/+$/, "")}/dashboard/organizations/${orgSlug}`;
 
+/**
+ * Canonical Gatekeeper account/organization dashboard URL.
+ *
+ * The slug-less counterpart to {@link gatekeeperOrgManageUrl}: where a product
+ * sends users to list, create, or join organizations (no single org in scope).
+ * Products should link here instead of inlining `${identityBaseUrl}/dashboard`.
+ */
+export const gatekeeperDashboardUrl = (identityBaseUrl: string): string =>
+  `${identityBaseUrl.replace(/\/+$/, "")}/dashboard`;
+
 export interface ManageTeamLinkProps {
   /** Gatekeeper base URL, e.g. https://identity.omni.dev */
   identityBaseUrl: string;

@@ -7,6 +7,14 @@ import type { ReactNode } from "react";
  * re-implementing management UIs. This is the single source for the URL pattern.
  */
 export declare const gatekeeperOrgManageUrl: (identityBaseUrl: string, orgSlug: string) => string;
+/**
+ * Canonical Gatekeeper account/organization dashboard URL.
+ *
+ * The slug-less counterpart to {@link gatekeeperOrgManageUrl}: where a product
+ * sends users to list, create, or join organizations (no single org in scope).
+ * Products should link here instead of inlining `${identityBaseUrl}/dashboard`.
+ */
+export declare const gatekeeperDashboardUrl: (identityBaseUrl: string) => string;
 export interface ManageTeamLinkProps {
     /** Gatekeeper base URL, e.g. https://identity.omni.dev */
     identityBaseUrl: string;
