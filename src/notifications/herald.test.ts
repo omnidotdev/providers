@@ -69,6 +69,24 @@ describe("HeraldNotificationProvider.sendEmail", () => {
     expect(sent.text).toBeUndefined();
   });
 
+  it("preserves a display-name From (does not strip it to a bare address)", async () => {
+    const { calls } = stubFetch(200, { id: "m_from", status: "queued" });
+    const provider = makeProvider();
+
+    await provider.sendEmail({
+      to: "Display Name <user@example.com>",
+      from: "Omni <team@omni.dev>",
+      subject: "Hello",
+      body: "<p>Hi</p>",
+      html: true,
+    });
+
+    const sent = JSON.parse(calls[0]?.init?.body as string);
+    // from keeps its display name; recipient fields are still bare
+    expect(sent.from).toBe("Omni <team@omni.dev>");
+    expect(sent.to).toBe("user@example.com");
+  });
+
   it("returns failure without throwing on a non-2xx response", async () => {
     stubFetch(502, { error: "engine down" });
     const provider = makeProvider();
@@ -187,7 +205,7 @@ describe("HeraldNotificationProvider.sendEmail", () => {
     expect(result.error).toBeTruthy();
   });
 
-  it("strips display names so Herald receives bare from/to addresses", async () => {
+  it("strips recipient display names but keeps the From display name", async () => {
     const { calls } = stubFetch(200, { id: "m_5", status: "queued" });
     const provider = new HeraldNotificationProvider({
       apiKey: API_KEY,
@@ -207,7 +225,9 @@ describe("HeraldNotificationProvider.sendEmail", () => {
       from: string;
       to: string;
     };
-    expect(body.from).toBe("orders@send.omni.dev");
+    // from keeps its display name (Herald renders it in the header); recipients
+    // are still reduced to bare addresses
+    expect(body.from).toBe("Omni Orders <orders@send.omni.dev>");
     expect(body.to).toBe("buyer@example.com");
   });
 });
