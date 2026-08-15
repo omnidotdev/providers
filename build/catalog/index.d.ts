@@ -13,13 +13,31 @@
  * this throws on a failed fetch.
  */
 /** The public catalog surface. `products` is `is_public`-filtered server-side. */
-export declare const PUBLIC_CATALOG_QUERY = "{\n  realms(first: 100) { nodes { slug name icon tagline description } }\n  products(first: 200) {\n    nodes {\n      slug name icon description tagline websiteUrl docsUrl license\n      selfHostable releaseDate status realm { slug }\n      productDeploymentMethods { nodes { deploymentMethod { slug } } }\n    }\n  }\n  bundles(first: 50) {\n    nodes {\n      slug name description appGrants monthlyPrice yearlyPrice\n      monthlyCreditAllowance\n    }\n  }\n  productLinks(first: 1000) {\n    nodes {\n      slug sourceProduct { slug } targetProduct { slug } description status\n      productLinkRelations { nodes { relationType { slug } } }\n    }\n  }\n}";
+export declare const PUBLIC_CATALOG_QUERY = "{\n  realms(first: 100) { nodes { slug name icon tagline description } }\n  products(first: 200) {\n    nodes {\n      slug name icon description tagline websiteUrl docsUrl license brand\n      selfHostable releaseDate status realm { slug }\n      productDeploymentMethods { nodes { deploymentMethod { slug } } }\n    }\n  }\n  bundles(first: 50) {\n    nodes {\n      slug name description appGrants monthlyPrice yearlyPrice\n      monthlyCreditAllowance\n    }\n  }\n  productLinks(first: 1000) {\n    nodes {\n      slug sourceProduct { slug } targetProduct { slug } description status\n      productLinkRelations { nodes { relationType { slug } } }\n    }\n  }\n}";
 export interface PublicRealm {
     slug: string;
     name: string;
     icon?: string;
     tagline?: string;
     description?: string;
+}
+/**
+ * A single W3C Design Tokens (DTCG) color token. `$value` is a hex sRGB
+ * string (e.g. "#22C55E").
+ *
+ * @see https://tr.designtokens.org/format
+ */
+export interface ColorToken {
+    $type: "color";
+    $value: string;
+    $description?: string;
+}
+/**
+ * A product's brand token group, shaped per the DTCG format. `primary` is the
+ * canonical brand color; consumers derive any tints/shades themselves.
+ */
+export interface ProductBrand {
+    primary: ColorToken;
 }
 export interface PublicProduct {
     id: string;
@@ -31,6 +49,8 @@ export interface PublicProduct {
     websiteUrl?: string;
     docsUrl?: string;
     license?: string;
+    /** W3C design-token brand palette, absent until the product authors one. */
+    brand?: ProductBrand;
     selfHostable?: boolean;
     /** ISO release date. Absent means the product has not launched yet. */
     releaseDate?: string;
@@ -81,6 +101,7 @@ interface CatalogGqlData {
         websiteUrl?: string | null;
         docsUrl?: string | null;
         license?: string | null;
+        brand?: ProductBrand | null;
         selfHostable?: boolean | null;
         releaseDate?: string | null;
         status?: string | null;

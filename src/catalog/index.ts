@@ -20,7 +20,7 @@ export const PUBLIC_CATALOG_QUERY = `{
   realms(first: 100) { nodes { slug name icon tagline description } }
   products(first: 200) {
     nodes {
-      slug name icon description tagline websiteUrl docsUrl license
+      slug name icon description tagline websiteUrl docsUrl license brand
       selfHostable releaseDate status realm { slug }
       productDeploymentMethods { nodes { deploymentMethod { slug } } }
     }
@@ -47,6 +47,26 @@ export interface PublicRealm {
   description?: string;
 }
 
+/**
+ * A single W3C Design Tokens (DTCG) color token. `$value` is a hex sRGB
+ * string (e.g. "#22C55E").
+ *
+ * @see https://tr.designtokens.org/format
+ */
+export interface ColorToken {
+  $type: "color";
+  $value: string;
+  $description?: string;
+}
+
+/**
+ * A product's brand token group, shaped per the DTCG format. `primary` is the
+ * canonical brand color; consumers derive any tints/shades themselves.
+ */
+export interface ProductBrand {
+  primary: ColorToken;
+}
+
 export interface PublicProduct {
   id: string;
   name: string;
@@ -57,6 +77,8 @@ export interface PublicProduct {
   websiteUrl?: string;
   docsUrl?: string;
   license?: string;
+  /** W3C design-token brand palette, absent until the product authors one. */
+  brand?: ProductBrand;
   selfHostable?: boolean;
   /** ISO release date. Absent means the product has not launched yet. */
   releaseDate?: string;
@@ -109,6 +131,7 @@ interface CatalogGqlData {
     websiteUrl?: string | null;
     docsUrl?: string | null;
     license?: string | null;
+    brand?: ProductBrand | null;
     selfHostable?: boolean | null;
     releaseDate?: string | null;
     status?: string | null;
@@ -151,6 +174,7 @@ export const normalizePublicCatalog = (data: CatalogGqlData): PublicCatalog => {
     websiteUrl: p.websiteUrl ?? undefined,
     docsUrl: p.docsUrl ?? undefined,
     license: p.license ?? undefined,
+    brand: p.brand ?? undefined,
     selfHostable: p.selfHostable ?? undefined,
     releaseDate: p.releaseDate ?? undefined,
     status: p.status ?? undefined,
