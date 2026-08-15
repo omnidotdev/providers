@@ -42,16 +42,29 @@ const makeConfig = (overrides: {
   const setCookieCalls: Array<{ name: string; value: string }> = [];
   const encryptCalls: CachedAuthData[] = [];
 
+  const getAccessTokenImpl =
+    overrides.getAccessTokenImpl ??
+    (async () => ({
+      accessToken: "access-token",
+      idToken: "id-token",
+    }));
+  const refreshTokenImpl = overrides.refreshTokenImpl ?? (async () => null);
+
+  // getAuth calls getAccessToken/refreshToken with returnHeaders:true, so the
+  // mocks must mirror Better Auth's `{ headers, response }` shape for that
+  // overload. The per-test impls still supply the token body via `response`;
+  // the (empty) headers stand in for the rotated account cookie Better Auth
+  // would emit
   const authApi = {
     getSession: mock(async () => overrides.session),
-    getAccessToken: mock(
-      overrides.getAccessTokenImpl ??
-        (async () => ({
-          accessToken: "access-token",
-          idToken: "id-token",
-        })),
-    ),
-    refreshToken: mock(overrides.refreshTokenImpl ?? (async () => null)),
+    getAccessToken: mock(async () => ({
+      headers: new Headers(),
+      response: await getAccessTokenImpl(),
+    })),
+    refreshToken: mock(async () => ({
+      headers: new Headers(),
+      response: await refreshTokenImpl(),
+    })),
     signOut: mock(async () => undefined),
   } as unknown as BetterAuthApi;
 

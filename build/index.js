@@ -77869,9 +77869,17 @@ function createGetAuth(config) {
     providerId = "omni",
     logPrefix = "[getAuth]",
     resolveRowId,
+    forwardSetCookie,
     orgCacheTtlMs = 60000,
     now = Date.now
   } = config;
+  const forwardRotatedCookies = (headers) => {
+    if (!forwardSetCookie)
+      return;
+    for (const setCookie2 of headers.getSetCookie()) {
+      forwardSetCookie(setCookie2);
+    }
+  };
   const orgCache = new Map;
   const refreshInFlight = new Map;
   return async function getAuth(request) {
@@ -77894,16 +77902,18 @@ function createGetAuth(config) {
           inFlight = ensureFreshAccessToken({
             getAccessToken: async () => {
               try {
-                const result = await authApi.getAccessToken({
+                const { headers, response } = await authApi.getAccessToken({
                   body: { providerId },
-                  headers: request.headers
+                  headers: request.headers,
+                  returnHeaders: true
                 });
-                if (!result?.accessToken) {
+                forwardRotatedCookies(headers);
+                if (!response?.accessToken) {
                   console.warn(`${logPrefix} getAccessToken returned no token`, {
-                    hasResult: !!result
+                    hasResult: !!response
                   });
                 }
-                return result;
+                return response;
               } catch (err) {
                 const body = err && typeof err === "object" && "body" in err ? err.body : undefined;
                 console.error(`${logPrefix} getAccessToken failed:`, {
@@ -77915,10 +77925,13 @@ function createGetAuth(config) {
             },
             refreshToken: async () => {
               try {
-                return await authApi.refreshToken({
+                const { headers, response } = await authApi.refreshToken({
                   body: { providerId },
-                  headers: request.headers
+                  headers: request.headers,
+                  returnHeaders: true
                 });
+                forwardRotatedCookies(headers);
+                return response;
               } catch (err) {
                 console.error(`${logPrefix} refreshToken failed:`, err instanceof Error ? err.message : String(err));
                 throw err;

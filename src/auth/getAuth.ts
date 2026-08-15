@@ -6,6 +6,36 @@ import type { OidcClient } from "./oidc";
 import type { TokenResult } from "./token";
 import type { OrganizationClaim } from "./types";
 
+/** Token body returned by Better Auth's `getAccessToken` / `refreshToken` */
+type BetterAuthTokenBody = {
+  accessToken?: string;
+  accessTokenExpiresAt?: Date | string;
+  idToken?: string | null;
+};
+
+/**
+ * A Better Auth token method (`getAccessToken` / `refreshToken`).
+ *
+ * Better Auth performs the OIDC refresh-token rotation INTERNALLY during this
+ * call and emits the rotated (chunked) account cookie as `Set-Cookie` on the
+ * response headers, not on the plain return value. The `returnHeaders: true`
+ * overload exposes those headers as `{ headers, response }` so `getAuth` can
+ * forward the rotated cookie to the browser; without forwarding it, the browser
+ * keeps replaying the pre-rotation refresh token, which the issuer revokes past
+ * its theft-detection grace window and poisons the session.
+ */
+type BetterAuthTokenFn = {
+  (opts: {
+    body: { providerId: string };
+    headers: Headers;
+  }): Promise<BetterAuthTokenBody | null>;
+  (opts: {
+    body: { providerId: string };
+    headers: Headers;
+    returnHeaders: true;
+  }): Promise<{ headers: Headers; response: BetterAuthTokenBody | null }>;
+};
+
 /**
  * Minimal Better Auth API surface required by `createGetAuth`.
  * Apps pass their BA instance and the factory uses only these methods,
@@ -19,22 +49,8 @@ type BetterAuthApi = {
     }; // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
     [key: string]: any;
   } | null>;
-  getAccessToken: (opts: {
-    body: { providerId: string };
-    headers: Headers;
-  }) => Promise<{
-    accessToken?: string;
-    accessTokenExpiresAt?: Date | string;
-    idToken?: string | null;
-  } | null>;
-  refreshToken: (opts: {
-    body: { providerId: string };
-    headers: Headers;
-  }) => Promise<{
-    accessToken?: string;
-    accessTokenExpiresAt?: Date | string;
-    idToken?: string | null;
-  } | null>;
+  getAccessToken: BetterAuthTokenFn;
+  refreshToken: BetterAuthTokenFn;
   signOut: (opts: { headers: Headers }) => Promise<unknown>;
 };
 
@@ -70,6 +86,29 @@ type GetAuthConfig = {
   authCache: AuthCache;
   /** Cookie setter (e.g. `setCookie` from `@tanstack/react-start/server`) */
   setCookie: SetCookieFn;
+  /**
+   * Forward a raw `Set-Cookie` header emitted by Better Auth's internal
+   * refresh-token rotation onto the outgoing response, so the browser persists
+   * the rotated account cookie.
+   *
+   * Better Auth rotates the OIDC refresh token during
+   * `getAccessToken`/`refreshToken` and emits the new account cookie ONLY on the
+   * response headers of that call. Without forwarding it, the browser keeps
+   * replaying the pre-rotation refresh token, which the issuer revokes past its
+   * theft-detection grace window, tearing down the token family and leaving
+   * `organizations` empty ("No workspaces yet").
+   *
+   * Called once per raw `Set-Cookie` header on the SUCCESS path only. The
+   * account cookie is CHUNKED, so expect several headers per rotation
+   * (`<prefix>.account_data`, `<prefix>.account_data.1`, ...), including
+   * deletion headers for chunks no longer needed. Pass each verbatim (name,
+   * value, attributes) or the cookie is corrupted. When omitted, behavior is
+   * unchanged and the rotated cookie is dropped (the pre-fix behavior).
+   *
+   * A TanStack Start app typically supplies this as
+   * `(raw) => appendResponseHeader("set-cookie", raw)`.
+   */
+  forwardSetCookie?: (setCookieHeader: string) => void;
   /** OAuth provider ID (default: "omni") */
   providerId?: string;
   /** Log prefix for console output (default: "[getAuth]") */
@@ -155,9 +194,21 @@ function createGetAuth(config: GetAuthConfig) {
     providerId = "omni",
     logPrefix = "[getAuth]",
     resolveRowId,
+    forwardSetCookie,
     orgCacheTtlMs = 60_000,
     now = Date.now,
   } = config;
+
+  // Forward every raw Set-Cookie Better Auth emitted for a token call to the
+  // consuming app's response. The rotated account cookie is CHUNKED, so all
+  // headers (live chunks AND deletions) must be forwarded verbatim or the cookie
+  // is corrupted. No-op when the app did not wire the hook (pre-fix behavior)
+  const forwardRotatedCookies = (headers: Headers) => {
+    if (!forwardSetCookie) return;
+    for (const setCookie of headers.getSetCookie()) {
+      forwardSetCookie(setCookie);
+    }
+  };
 
   // Per-process cache of userinfo-hydrated organizations, keyed by the OIDC
   // subject. Spares the IDP a userinfo round-trip on every request once tokens
@@ -218,21 +269,27 @@ function createGetAuth(config: GetAuthConfig) {
           inFlight = ensureFreshAccessToken({
             getAccessToken: async () => {
               try {
-                const result = await authApi.getAccessToken({
+                // returnHeaders exposes the rotated (chunked) account cookie
+                // Better Auth's internal refresh emitted; forward it so the
+                // browser persists the new refresh token
+                const { headers, response } = await authApi.getAccessToken({
                   body: { providerId },
                   headers: request.headers,
+                  returnHeaders: true,
                 });
 
-                if (!result?.accessToken) {
+                forwardRotatedCookies(headers);
+
+                if (!response?.accessToken) {
                   console.warn(
                     `${logPrefix} getAccessToken returned no token`,
                     {
-                      hasResult: !!result,
+                      hasResult: !!response,
                     },
                   );
                 }
 
-                return result;
+                return response;
               } catch (err) {
                 const body =
                   err && typeof err === "object" && "body" in err
@@ -250,10 +307,18 @@ function createGetAuth(config: GetAuthConfig) {
             },
             refreshToken: async () => {
               try {
-                return await authApi.refreshToken({
+                // Same rotation applies to the explicit refresh path (only hit
+                // when getAccessToken returned no token): forward the rotated
+                // account cookie so the browser persists the new refresh token
+                const { headers, response } = await authApi.refreshToken({
                   body: { providerId },
                   headers: request.headers,
+                  returnHeaders: true,
                 });
+
+                forwardRotatedCookies(headers);
+
+                return response;
               } catch (err) {
                 console.error(
                   `${logPrefix} refreshToken failed:`,
