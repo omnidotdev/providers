@@ -38,6 +38,12 @@ export {
   probeWriteScope,
   safePaymentWrite,
 } from "./billing";
+// Brand
+export {
+  OMNI_COMMUNITY_SOCIAL_LINKS,
+  OMNI_SOCIALS,
+  OMNI_SOCIAL_LINKS,
+} from "./brand";
 // Catalog
 export {
   PUBLIC_CATALOG_QUERY,
@@ -150,6 +156,7 @@ export type {
   ScopeProbeResult,
   Subscription,
 } from "./billing";
+export type { OmniSocial } from "./brand";
 export type {
   FetchPublicCatalogOptions,
   PublicBundle,

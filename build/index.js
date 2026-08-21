@@ -78821,6 +78821,46 @@ var createBillingProvider = (config) => {
   const _exhaustive = config;
   throw new Error(`Unknown billing provider: ${_exhaustive}`);
 };
+// src/brand/index.ts
+var OMNI_SOCIALS = {
+  threads: {
+    platform: "threads",
+    label: "Threads",
+    url: "https://www.threads.com/@omnidotdev"
+  },
+  x: {
+    platform: "x",
+    label: "X",
+    url: "https://x.com/omnidotdev"
+  },
+  discord: {
+    platform: "discord",
+    label: "Discord",
+    url: "https://discord.gg/omnidotdev"
+  },
+  github: {
+    platform: "github",
+    label: "GitHub",
+    url: "https://github.com/omnidotdev"
+  },
+  linkedin: {
+    platform: "linkedin",
+    label: "LinkedIn",
+    url: "https://www.linkedin.com/company/omnidotdev"
+  }
+};
+var OMNI_SOCIAL_LINKS = [
+  OMNI_SOCIALS.threads,
+  OMNI_SOCIALS.x,
+  OMNI_SOCIALS.discord,
+  OMNI_SOCIALS.github,
+  OMNI_SOCIALS.linkedin
+];
+var OMNI_COMMUNITY_SOCIAL_LINKS = [
+  OMNI_SOCIALS.threads,
+  OMNI_SOCIALS.x,
+  OMNI_SOCIALS.discord
+];
 // src/catalog/index.ts
 var DEFAULT_GRAPHQL_URL = "https://api.omni.dev/graphql";
 var PUBLIC_CATALOG_QUERY = `{
@@ -80335,6 +80375,9 @@ export {
   headers_default as SECURITY_HEADERS,
   S3StorageProvider,
   PUBLIC_CATALOG_QUERY,
+  OMNI_SOCIAL_LINKS,
+  OMNI_SOCIALS,
+  OMNI_COMMUNITY_SOCIAL_LINKS,
   OMNI_CLAIMS_NAMESPACE,
   NoopStorageProvider,
   NoopNotificationProvider,
