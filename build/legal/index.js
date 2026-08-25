@@ -27,9 +27,9 @@ var LEGAL_LINKS = [
   { label: "Acceptable Use Policy", href: LEGAL_URLS.acceptableUse }
 ];
 export {
-  LEGAL_URLS,
-  LEGAL_LINKS,
-  LEGAL_FOOTER_LINKS,
+  LEGAL_BASE_URL,
   LEGAL_CONTACTS,
-  LEGAL_BASE_URL
+  LEGAL_FOOTER_LINKS,
+  LEGAL_LINKS,
+  LEGAL_URLS
 };

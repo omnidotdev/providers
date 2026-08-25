@@ -249,20 +249,45 @@ class HttpEventsProvider implements EventsProvider {
   }
 
   async listSubscriptions(): Promise<Subscription[]> {
-    const response = await fetch(
-      `${this.config.baseUrl}/api/v1/subscriptions`,
-      {
-        headers: this.authHeaders(),
-        signal: AbortSignal.timeout(this.timeoutMs),
-      },
-    );
+    // The subscriptions endpoint is paginated (default page size 20, max 100), so
+    // page through every result. Returning only the first page silently hid
+    // subscriptions in orgs with more than 20, which broke existence checks (a
+    // boot-time self-register then tried to recreate an existing subscription and
+    // failed). The `page < MAX_PAGES` bound is a runaway guard, not a real cap
+    const LIMIT = 100;
+    const MAX_PAGES = 1000;
+    const all: Subscription[] = [];
 
-    if (!response.ok) {
-      throw new Error(`Failed to list subscriptions: ${response.status}`);
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const response = await fetch(
+        `${this.config.baseUrl}/api/v1/subscriptions?page=${page}&limit=${LIMIT}`,
+        {
+          headers: this.authHeaders(),
+          signal: AbortSignal.timeout(this.timeoutMs),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to list subscriptions: ${response.status}`);
+      }
+
+      const result = (await response.json()) as {
+        nodes: Subscription[];
+        total?: number;
+      };
+      const nodes = result.nodes ?? [];
+      all.push(...nodes);
+
+      // Last page: a short/empty page, or we have collected the reported total
+      if (
+        nodes.length < LIMIT ||
+        (typeof result.total === "number" && all.length >= result.total)
+      ) {
+        break;
+      }
     }
 
-    const result = (await response.json()) as { nodes: Subscription[] };
-    return result.nodes;
+    return all;
   }
 
   async close(): Promise<void> {

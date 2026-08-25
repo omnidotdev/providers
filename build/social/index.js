@@ -60,6 +60,6 @@ class GatekeeperSocialProvider {
 // src/social/index.ts
 var createSocialProvider = (config) => new GatekeeperSocialProvider(config);
 export {
-  createSocialProvider,
-  GatekeeperSocialProvider
+  GatekeeperSocialProvider,
+  createSocialProvider
 };

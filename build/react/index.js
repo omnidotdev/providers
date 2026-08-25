@@ -169,14 +169,14 @@ function useSessionRefresh(refreshFn, intervalMs = 4 * 60 * 1000) {
   }, [refreshFn, intervalMs]);
 }
 export {
-  useSessionRefresh,
-  useOrganization,
-  useEvents,
-  useCreateWorkspace,
-  gatekeeperOrgManageUrl,
-  gatekeeperDashboardUrl,
-  createWorkspaceFlow,
-  OrganizationProvider,
+  EventsProvider,
   ManageTeamLink,
-  EventsProvider
+  OrganizationProvider,
+  createWorkspaceFlow,
+  gatekeeperDashboardUrl,
+  gatekeeperOrgManageUrl,
+  useCreateWorkspace,
+  useEvents,
+  useOrganization,
+  useSessionRefresh
 };

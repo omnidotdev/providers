@@ -528,12 +528,12 @@ var createBillingProvider = (config) => {
   throw new Error(`Unknown billing provider: ${_exhaustive}`);
 };
 export {
-  safePaymentWrite,
-  probeWriteScope,
-  isWithinLimit,
-  isPermissionError,
-  createBillingProvider,
-  NoopBillingProvider,
+  AetherBillingProvider,
   BILLING_WRITE_FAILED_EVENT,
-  AetherBillingProvider
+  NoopBillingProvider,
+  createBillingProvider,
+  isPermissionError,
+  isWithinLimit,
+  probeWriteScope,
+  safePaymentWrite
 };
