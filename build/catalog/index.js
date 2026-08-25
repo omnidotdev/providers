@@ -84,7 +84,7 @@ var fetchPublicCatalog = async (options = {}) => {
   return normalizePublicCatalog(payload.data);
 };
 export {
-  normalizePublicCatalog,
+  PUBLIC_CATALOG_QUERY,
   fetchPublicCatalog,
-  PUBLIC_CATALOG_QUERY
+  normalizePublicCatalog
 };

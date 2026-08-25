@@ -66,12 +66,12 @@ var formatBytes = (bytes) => {
   return `${size.toFixed(size < 10 ? 1 : 0)} ${units[unit]}`;
 };
 export {
-  validateFile,
-  kindFromMimeType,
-  formatBytes,
-  acceptString,
-  VIDEO_MIME_TYPES,
-  IMAGE_MIME_TYPES,
+  DEFAULT_MEDIA_LIMITS,
   FILE_MIME_TYPES,
-  DEFAULT_MEDIA_LIMITS
+  IMAGE_MIME_TYPES,
+  VIDEO_MIME_TYPES,
+  acceptString,
+  formatBytes,
+  kindFromMimeType,
+  validateFile
 };

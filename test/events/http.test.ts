@@ -105,6 +105,73 @@ describe("HttpEventsProvider with batch", () => {
   });
 });
 
+describe("HttpEventsProvider.listSubscriptions", () => {
+  const makePage = (page: number, count: number, total: number) =>
+    new Response(
+      JSON.stringify({
+        nodes: Array.from({ length: count }, (_, i) => ({
+          id: `sub-${(page - 1) * 100 + i}`,
+          name: `sub-${(page - 1) * 100 + i}`,
+        })),
+        total,
+        page,
+        limit: 100,
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+
+  it("pages through every subscription, not just the first page", async () => {
+    const { HttpEventsProvider } = await import("../../src/events/http");
+    const provider = new HttpEventsProvider({
+      baseUrl: "https://api.vortex.test",
+      apiKey: "test-key",
+    });
+
+    const urls: string[] = [];
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      urls.push(url);
+      const page = Number(new URL(url).searchParams.get("page"));
+      // 150 total across two pages: a full page of 100, then 50
+      return makePage(page, page === 1 ? 100 : 50, 150);
+    }) as typeof fetch;
+
+    try {
+      const subs = await provider.listSubscriptions();
+      expect(subs).toHaveLength(150);
+      expect(urls).toHaveLength(2);
+      expect(urls[0]).toContain("page=1");
+      expect(urls[1]).toContain("page=2");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("stops after a single short page", async () => {
+    const { HttpEventsProvider } = await import("../../src/events/http");
+    const provider = new HttpEventsProvider({
+      baseUrl: "https://api.vortex.test",
+      apiKey: "test-key",
+    });
+
+    let calls = 0;
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => {
+      calls++;
+      return makePage(1, 3, 3);
+    }) as typeof fetch;
+
+    try {
+      const subs = await provider.listSubscriptions();
+      expect(subs).toHaveLength(3);
+      expect(calls).toBe(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
 describe("getTraceHeaders", () => {
   it("generates valid traceparent headers", async () => {
     const { getTraceHeaders } = await import("../../src/util/traceContext");

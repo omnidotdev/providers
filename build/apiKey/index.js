@@ -274,7 +274,7 @@ var createApiKeyProvider = (config) => {
   throw new Error(`Unknown API key provider: ${_exhaustive}`);
 };
 export {
-  createApiKeyProvider,
+  GatekeeperApiKeyProvider,
   NoopApiKeyProvider,
-  GatekeeperApiKeyProvider
+  createApiKeyProvider
 };

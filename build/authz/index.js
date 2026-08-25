@@ -387,7 +387,7 @@ var createAuthzProvider = (config) => {
   return new WardenAuthzProvider({ ...config, apiUrl: config.apiUrl });
 };
 export {
-  createAuthzProvider,
+  WARDEN_RELATIONS,
   WardenAuthzProvider,
-  WARDEN_RELATIONS
+  createAuthzProvider
 };
