@@ -79658,11 +79658,31 @@ function createGetAuth(config) {
     orgCacheTtlMs = 60000,
     now = Date.now
   } = config;
-  const forwardRotatedCookies = (headers) => {
-    if (!forwardSetCookie)
+  let forwarder;
+  const resolveForwarder = async () => {
+    if (forwarder !== undefined)
+      return forwarder;
+    if (forwardSetCookie) {
+      forwarder = forwardSetCookie;
+      return forwarder;
+    }
+    try {
+      const { getResponseHeaders } = await import("@tanstack/react-start/server");
+      forwarder = (raw) => getResponseHeaders().append("set-cookie", raw);
+    } catch {
+      forwarder = null;
+    }
+    return forwarder;
+  };
+  const forwardRotatedCookies = async (headers) => {
+    const setCookies = headers.getSetCookie();
+    if (setCookies.length === 0)
       return;
-    for (const setCookie2 of headers.getSetCookie()) {
-      forwardSetCookie(setCookie2);
+    const forward = await resolveForwarder();
+    if (!forward)
+      return;
+    for (const setCookie2 of setCookies) {
+      forward(setCookie2);
     }
   };
   const orgCache = new Map;
@@ -79692,7 +79712,7 @@ function createGetAuth(config) {
                   headers: request.headers,
                   returnHeaders: true
                 });
-                forwardRotatedCookies(headers);
+                await forwardRotatedCookies(headers);
                 if (!response?.accessToken) {
                   console.warn(`${logPrefix} getAccessToken returned no token`, {
                     hasResult: !!response
@@ -79715,7 +79735,7 @@ function createGetAuth(config) {
                   headers: request.headers,
                   returnHeaders: true
                 });
-                forwardRotatedCookies(headers);
+                await forwardRotatedCookies(headers);
                 return response;
               } catch (err) {
                 console.error(`${logPrefix} refreshToken failed:`, err instanceof Error ? err.message : String(err));

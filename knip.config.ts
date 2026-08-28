@@ -12,6 +12,7 @@ export default {
     "@escape.tech/graphql-armor",
     "@iggy.rs/sdk",
     "@tanstack/query-core",
+    "@tanstack/react-start",
     "graphile-export",
     "postgraphile",
     "react",
