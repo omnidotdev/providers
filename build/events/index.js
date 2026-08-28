@@ -1,4 +1,3 @@
-import { createRequire } from "node:module";
 var __create = Object.create;
 var __getProtoOf = Object.getPrototypeOf;
 var __defProp = Object.defineProperty;
@@ -46,7 +45,7 @@ var __export = (target, all) => {
     });
 };
 var __esm = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
-var __require = /* @__PURE__ */ createRequire(import.meta.url);
+var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);
 
 // node_modules/ajv/dist/compile/codegen/code.js
 var require_code = __commonJS(function(exports) {
@@ -7195,7 +7194,7 @@ var init_client_debug = __esm(() => {
 });
 
 // node_modules/@iggy.rs/sdk/dist/client/client.utils.js
-import { Transform } from "node:stream";
+var { Transform } = __require("node:stream");
 var handleResponse = (r) => {
   const status = r.readUint32LE(0);
   const length = r.readUint32LE(4);
@@ -10428,7 +10427,7 @@ var init_error_utils = __esm(() => {
 });
 
 // node_modules/@iggy.rs/sdk/dist/client/client.socket.js
-import { Duplex } from "node:stream";
+var { Duplex } = __require("node:stream");
 var wrapSocket = (socket) => new Promise((resolve, reject) => {
   const responseStream = new CommandResponseStream(socket);
   socket.on("error", (err) => {
@@ -10589,7 +10588,7 @@ var init_client_socket = __esm(() => {
 });
 
 // node_modules/@iggy.rs/sdk/dist/client/tcp.client.js
-import { createConnection } from "node:net";
+var { createConnection } = __require("node:net");
 var createTcpSocket = (options) => {
   const socket = createConnection(options);
   return wrapSocket(socket);
@@ -10599,7 +10598,7 @@ var init_tcp_client = __esm(() => {
 });
 
 // node_modules/@iggy.rs/sdk/dist/client/tls.client.js
-import { connect } from "node:tls";
+var { connect } = __require("node:tls");
 var createTlsSocket = (port, options) => {
   const socket = connect(port, options);
   socket.setEncoding("utf8");
@@ -10708,7 +10707,7 @@ var init_client3 = __esm(() => {
 });
 
 // node_modules/@iggy.rs/sdk/dist/stream/consumer-stream.js
-import { Readable, pipeline, PassThrough } from "node:stream";
+var { Readable, pipeline, PassThrough } = __require("node:stream");
 async function* genAutoCommitedPoll(c, poll, interval = 1000) {
   const state = new Map;
   while (true) {

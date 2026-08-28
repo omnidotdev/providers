@@ -87,26 +87,28 @@ type GetAuthConfig = {
   /** Cookie setter (e.g. `setCookie` from `@tanstack/react-start/server`) */
   setCookie: SetCookieFn;
   /**
-   * Forward a raw `Set-Cookie` header emitted by Better Auth's internal
-   * refresh-token rotation onto the outgoing response, so the browser persists
-   * the rotated account cookie.
+   * OPTIONAL override for how a raw `Set-Cookie` header emitted by Better Auth's
+   * internal refresh-token rotation is forwarded onto the outgoing response.
    *
-   * Better Auth rotates the OIDC refresh token during
+   * By default this is unnecessary: `getAuth` forwards the rotated account
+   * cookie automatically via TanStack Start's `getResponseHeaders().append`, so
+   * every Omni app persists the new refresh token WITHOUT wiring anything. Supply
+   * this only to override that default (a non-TanStack host, or custom behavior).
+   *
+   * Why forwarding matters: Better Auth rotates the OIDC refresh token during
    * `getAccessToken`/`refreshToken` and emits the new account cookie ONLY on the
    * response headers of that call. Without forwarding it, the browser keeps
    * replaying the pre-rotation refresh token, which the issuer revokes past its
    * theft-detection grace window, tearing down the token family and leaving
-   * `organizations` empty ("No workspaces yet").
+   * `organizations` empty ("No workspaces yet"). This was the exact hole that
+   * silently emptied dashboards across the fleet when each app had to remember to
+   * wire the hook and did not, so the forwarding now lives here by default.
    *
    * Called once per raw `Set-Cookie` header on the SUCCESS path only. The
    * account cookie is CHUNKED, so expect several headers per rotation
    * (`<prefix>.account_data`, `<prefix>.account_data.1`, ...), including
-   * deletion headers for chunks no longer needed. Pass each verbatim (name,
-   * value, attributes) or the cookie is corrupted. When omitted, behavior is
-   * unchanged and the rotated cookie is dropped (the pre-fix behavior).
-   *
-   * A TanStack Start app typically supplies this as
-   * `(raw) => appendResponseHeader("set-cookie", raw)`.
+   * deletion headers for chunks no longer needed. Each is passed verbatim (name,
+   * value, attributes) or the cookie is corrupted.
    */
   forwardSetCookie?: (setCookieHeader: string) => void;
   /** OAuth provider ID (default: "omni") */
@@ -199,14 +201,50 @@ function createGetAuth(config: GetAuthConfig) {
     now = Date.now,
   } = config;
 
+  // Resolve the cookie forwarder ONCE. Prefer an explicit override; otherwise
+  // fall back to TanStack Start's response-header append so forwarding is
+  // automatic and no app has to remember to wire it (the omission that silently
+  // emptied dashboards fleet-wide). The tanstack import is lazy and optional: a
+  // non-tanstack consumer that supplies no override keeps the prior no-op (the
+  // rotated cookie is dropped) rather than crashing. `getResponseHeaders` is
+  // resolved once, but invoked per request inside the closure so it always reads
+  // the current request's response headers.
+  let forwarder: ((raw: string) => void) | null | undefined;
+  const resolveForwarder = async (): Promise<
+    ((raw: string) => void) | null
+  > => {
+    if (forwarder !== undefined) return forwarder;
+    if (forwardSetCookie) {
+      forwarder = forwardSetCookie;
+      return forwarder;
+    }
+    try {
+      // @tanstack/react-start is an optional RUNTIME peer resolved in the
+      // consuming app (every Omni app has it), not a providers build dependency,
+      // so providers deliberately carries no types for it
+      const { getResponseHeaders } = await import(
+        // @ts-expect-error optional runtime peer, no types in providers
+        "@tanstack/react-start/server"
+      );
+      forwarder = (raw: string) =>
+        getResponseHeaders().append("set-cookie", raw);
+    } catch {
+      forwarder = null;
+    }
+    return forwarder;
+  };
+
   // Forward every raw Set-Cookie Better Auth emitted for a token call to the
   // consuming app's response. The rotated account cookie is CHUNKED, so all
   // headers (live chunks AND deletions) must be forwarded verbatim or the cookie
-  // is corrupted. No-op when the app did not wire the hook (pre-fix behavior)
-  const forwardRotatedCookies = (headers: Headers) => {
-    if (!forwardSetCookie) return;
-    for (const setCookie of headers.getSetCookie()) {
-      forwardSetCookie(setCookie);
+  // is corrupted.
+  const forwardRotatedCookies = async (headers: Headers) => {
+    const setCookies = headers.getSetCookie();
+    if (setCookies.length === 0) return;
+    const forward = await resolveForwarder();
+    if (!forward) return;
+    for (const setCookie of setCookies) {
+      forward(setCookie);
     }
   };
 
@@ -278,7 +316,7 @@ function createGetAuth(config: GetAuthConfig) {
                   returnHeaders: true,
                 });
 
-                forwardRotatedCookies(headers);
+                await forwardRotatedCookies(headers);
 
                 if (!response?.accessToken) {
                   console.warn(
@@ -316,7 +354,7 @@ function createGetAuth(config: GetAuthConfig) {
                   returnHeaders: true,
                 });
 
-                forwardRotatedCookies(headers);
+                await forwardRotatedCookies(headers);
 
                 return response;
               } catch (err) {

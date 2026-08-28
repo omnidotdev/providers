@@ -152,59 +152,90 @@ for (const { entrypoint, outdir, target, external } of entries) {
   }
 }
 
-// Patch the main bundle so it works in Node ESM (Nitro), Bun, and
-// Vite browser builds. Bun's bundler injects CJS interop
+// Patch every node-target bundle so it works in Node ESM (Nitro), Bun,
+// and Vite browser builds. Bun's bundler injects CJS interop
 // (`createRequire`) and leaves top-level `import … from "node:*"`
 // for built-in modules. Static node:* imports break Vite when it
-// resolves this file for the client bundle.
+// resolves the file for a client bundle. This must run on EVERY
+// node-target entry a consumer might pull into a browser graph, not
+// just the main bundle: `auth` in particular is imported by apps'
+// SSR code and can end up in the client graph, so an unpatched
+// `import { createRequire } from "node:module"` there breaks their
+// `vite build` ("createRequire is not exported by __vite-browser-external").
 //
 // Fix: keep `createRequire` for Node ESM compat (where bare `require`
 // is undefined), prefer native `require` when available (Bun/CJS),
 // and convert static `node:*` imports to lazy `__require` calls that
 // only execute at runtime and never in the browser.
-const mainBundle = "./build/index.js";
-let patched = await Bun.file(mainBundle).text();
+const patchNodeInterop = async (bundlePath: string): Promise<void> => {
+  const before = await Bun.file(bundlePath).text();
+  let patched = before;
 
-// NB: patch order matters — the createRequire import must be removed
-// first, otherwise step 2's `import { X } from "node:*"` regex would
-// convert it to a `__require("node:module")` call (before __require
-// is defined). Step 3 must run after step 1, because step 1 inserts
-// `await import("node:module")` which step 3 would incorrectly catch.
+  // NB: patch order matters — the createRequire import must be removed
+  // first, otherwise step 2's `import { X } from "node:*"` regex would
+  // convert it to a `__require("node:module")` call (before __require
+  // is defined). Step 3 must run after step 1, because step 1 inserts
+  // `await import("node:module")` which step 3 would incorrectly catch.
 
-// 1. Remove Bun's static `createRequire` import (will be replaced in step 4)
-patched = patched.replace('import { createRequire } from "node:module";\n', "");
+  // 1. Remove Bun's static `createRequire` import (will be replaced in step 4)
+  patched = patched.replace(
+    'import { createRequire } from "node:module";\n',
+    "",
+  );
 
-// 2. Convert `import { X, Y } from "node:*"` to `var { X, Y } = __require("node:*")`
-//    so Vite doesn't try to resolve Node built-ins for the browser bundle
-patched = patched.replace(
-  /^import \{([^}]+)\} from "(node:[^"]+)";$/gm,
-  (_match, names, mod) => `var {${names}} = __require("${mod}");`,
-);
+  // 2. Convert `import { X, Y } from "node:*"` to `var { X, Y } = __require("node:*")`
+  //    so Vite doesn't try to resolve Node built-ins for the browser bundle
+  patched = patched.replace(
+    /^import \{([^}]+)\} from "(node:[^"]+)";$/gm,
+    (_match, names, mod) => `var {${names}} = __require("${mod}");`,
+  );
 
-// 3. Convert dynamic `await import("node:*")` and `await import("@react-email/*")`
-//    to `__require()` calls so Vite/Rollup doesn't try to resolve them.
-//    These are optional runtime deps that only execute on the server.
-patched = patched.replace(
-  /await import\("(node:[^"]+)"\)/g,
-  (_match, mod) => `__require("${mod}")`,
-);
-patched = patched.replace(
-  /await import\("(@react-email\/[^"]+)"\)/g,
-  (_match, mod) => `__require("${mod}")`,
-);
+  // 3. Convert dynamic `await import("node:*")` and `await import("@react-email/*")`
+  //    to `__require()` calls so Vite/Rollup doesn't try to resolve them.
+  //    These are optional runtime deps that only execute on the server.
+  patched = patched.replace(
+    /await import\("(node:[^"]+)"\)/g,
+    (_match, mod) => `__require("${mod}")`,
+  );
+  patched = patched.replace(
+    /await import\("(@react-email\/[^"]+)"\)/g,
+    (_match, mod) => `__require("${mod}")`,
+  );
 
-// 4. Replace __require with runtime-safe fallback that works in:
-//    - CJS / Bun ESM: `require` is defined, use it directly
-//    - Node ESM (Nitro): `require` is undefined, use `createRequire`
-//    - Vite browser: never reaches this code (server-only entry)
-//    Uses a regex to handle any `__require` format Bun may produce.
-patched = patched.replace(
-  /^var __require = .+$/m,
-  `var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);`,
-);
+  // 4. Replace __require with runtime-safe fallback (only if the bundle
+  //    actually declares one; a bundle Bun did not inject interop into
+  //    has no `__require` to replace and is left untouched by steps 1-3).
+  //    Works in CJS / Bun ESM (`require` defined), Node ESM / Nitro
+  //    (`createRequire`), and never runs in a Vite browser build.
+  patched = patched.replace(
+    /^var __require = .+$/m,
+    `var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);`,
+  );
 
-if (patched !== (await Bun.file(mainBundle).text())) {
-  await Bun.write(mainBundle, patched);
+  // 5. Make the optional TanStack Start import UNFOLLOWABLE by bundlers.
+  //    getAuth is server-only, but some consuming apps pull providers/auth
+  //    into their client (browser) graph. A literal
+  //    `import("@tanstack/react-start/server")` makes Vite/Rollup follow the
+  //    edge into TanStack's SSR internals (which import node:stream /
+  //    node:async_hooks) and fail the browser build. Replacing the literal
+  //    specifier with an IIFE-returned string defeats static analysis, so
+  //    bundlers leave it as a runtime import that only executes on the server;
+  //    @vite-ignore silences the "cannot be analyzed" warning.
+  patched = patched.replace(
+    /await import\("(@tanstack\/react-start\/server)"\)/g,
+    (_match, mod) => `await import(/* @vite-ignore */ (() => "${mod}")())`,
+  );
+
+  if (patched !== before) await Bun.write(bundlePath, patched);
+};
+
+// Every node-target entry (browser-target entries carry no node:* imports).
+const nodeTargetBundles = entries
+  .filter((e) => e.target === "node")
+  .map((e) => `${e.outdir}/index.js`);
+
+for (const bundle of nodeTargetBundles) {
+  await patchNodeInterop(bundle);
 }
 
 // Emit type declarations

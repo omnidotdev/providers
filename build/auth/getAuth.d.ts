@@ -87,26 +87,28 @@ type GetAuthConfig = {
     /** Cookie setter (e.g. `setCookie` from `@tanstack/react-start/server`) */
     setCookie: SetCookieFn;
     /**
-     * Forward a raw `Set-Cookie` header emitted by Better Auth's internal
-     * refresh-token rotation onto the outgoing response, so the browser persists
-     * the rotated account cookie.
+     * OPTIONAL override for how a raw `Set-Cookie` header emitted by Better Auth's
+     * internal refresh-token rotation is forwarded onto the outgoing response.
      *
-     * Better Auth rotates the OIDC refresh token during
+     * By default this is unnecessary: `getAuth` forwards the rotated account
+     * cookie automatically via TanStack Start's `getResponseHeaders().append`, so
+     * every Omni app persists the new refresh token WITHOUT wiring anything. Supply
+     * this only to override that default (a non-TanStack host, or custom behavior).
+     *
+     * Why forwarding matters: Better Auth rotates the OIDC refresh token during
      * `getAccessToken`/`refreshToken` and emits the new account cookie ONLY on the
      * response headers of that call. Without forwarding it, the browser keeps
      * replaying the pre-rotation refresh token, which the issuer revokes past its
      * theft-detection grace window, tearing down the token family and leaving
-     * `organizations` empty ("No workspaces yet").
+     * `organizations` empty ("No workspaces yet"). This was the exact hole that
+     * silently emptied dashboards across the fleet when each app had to remember to
+     * wire the hook and did not, so the forwarding now lives here by default.
      *
      * Called once per raw `Set-Cookie` header on the SUCCESS path only. The
      * account cookie is CHUNKED, so expect several headers per rotation
      * (`<prefix>.account_data`, `<prefix>.account_data.1`, ...), including
-     * deletion headers for chunks no longer needed. Pass each verbatim (name,
-     * value, attributes) or the cookie is corrupted. When omitted, behavior is
-     * unchanged and the rotated cookie is dropped (the pre-fix behavior).
-     *
-     * A TanStack Start app typically supplies this as
-     * `(raw) => appendResponseHeader("set-cookie", raw)`.
+     * deletion headers for chunks no longer needed. Each is passed verbatim (name,
+     * value, attributes) or the cookie is corrupted.
      */
     forwardSetCookie?: (setCookieHeader: string) => void;
     /** OAuth provider ID (default: "omni") */

@@ -38,6 +38,11 @@ const makeConfig = (overrides: {
     accessToken?: string;
     idToken?: string | null;
   } | null>;
+  /**
+   * Raw `Set-Cookie` headers the mocked `getAccessToken` emits, standing in for
+   * the rotated (chunked) account cookie Better Auth writes during rotation.
+   */
+  rotatedSetCookies?: string[];
 }) => {
   const setCookieCalls: Array<{ name: string; value: string }> = [];
   const encryptCalls: CachedAuthData[] = [];
@@ -55,10 +60,15 @@ const makeConfig = (overrides: {
   // overload. The per-test impls still supply the token body via `response`;
   // the (empty) headers stand in for the rotated account cookie Better Auth
   // would emit
+  const rotatedHeaders = new Headers();
+  for (const raw of overrides.rotatedSetCookies ?? []) {
+    rotatedHeaders.append("set-cookie", raw);
+  }
+
   const authApi = {
     getSession: mock(async () => overrides.session),
     getAccessToken: mock(async () => ({
-      headers: new Headers(),
+      headers: rotatedHeaders,
       response: await getAccessTokenImpl(),
     })),
     refreshToken: mock(async () => ({
@@ -405,5 +415,49 @@ describe("createGetAuth concurrent refresh handling", () => {
     expect(signOut).not.toHaveBeenCalled();
     // and never clears the auth cache cookie
     expect(cfg.setCookieCalls.some((c) => c.value === "")).toBe(false);
+  });
+});
+
+describe("createGetAuth rotated-cookie forwarding", () => {
+  it("forwards every rotated Set-Cookie chunk verbatim to the supplied override", async () => {
+    // The rotated account cookie is CHUNKED: several Set-Cookie headers per
+    // rotation, including deletions for chunks no longer needed. Each must reach
+    // the forwarder verbatim or the browser's cookie is corrupted and it replays
+    // a stale refresh token.
+    const rotatedSetCookies = [
+      "omni.account_data=chunk0; Path=/; HttpOnly; SameSite=Lax",
+      "omni.account_data.1=chunk1; Path=/; HttpOnly; SameSite=Lax",
+      "omni.account_data.2=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax",
+    ];
+    const cfg = makeConfig({
+      session: makeSession({ organizations: [] }),
+      rotatedSetCookies,
+    });
+
+    const forwarded: string[] = [];
+    const getAuth = createGetAuth({
+      ...cfg,
+      forwardSetCookie: (raw) => forwarded.push(raw),
+    });
+    await getAuth(request);
+
+    expect(forwarded).toEqual(rotatedSetCookies);
+  });
+
+  it("does not crash when no override is supplied and no host forwarder is available", async () => {
+    // Providers has no @tanstack/react-start dep of its own, so in this test
+    // environment the lazy tanstack default cannot resolve. Absent an override,
+    // forwarding must degrade to a no-op rather than throwing, leaving the
+    // session intact (the pre-fix behavior for non-tanstack consumers).
+    const cfg = makeConfig({
+      session: makeSession({ organizations: [] }),
+      rotatedSetCookies: ["omni.account_data=chunk0; Path=/; HttpOnly"],
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const result = await getAuth(request);
+
+    expect(result).not.toBeNull();
+    expect(result?.accessToken).toBe("access-token");
   });
 });
