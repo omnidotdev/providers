@@ -1,4 +1,4 @@
-import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, EntitlementsResponse, PortalFlow, Price, Subscription } from "./interface";
+import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Subscription } from "./interface";
 type AetherBillingProviderConfig = {
     /** Aether billing service base URL */
     baseUrl?: string;
@@ -33,6 +33,16 @@ declare class AetherBillingProvider implements BillingProvider {
     private readonly cache;
     constructor(config: ValidatedAetherConfig);
     getEntitlements(entityType: string, entityId: string, productId?: string, accessToken?: string): Promise<EntitlementsResponse | null>;
+    /**
+     * Like {@link getEntitlements} but distinguishes the three outcomes a caller
+     * needs to fail closed safely:
+     *  - `success`: entitlements resolved (the tenant's real tier).
+     *  - `not_found`: a 404 - the entity has no billing account (legitimately on
+     *    the free tier); NOT an error.
+     *  - `unavailable`: Aether is unreachable / erroring (circuit open, non-2xx,
+     *    or a thrown request). The caller decides whether to fail open or closed.
+     */
+    getEntitlementsResult(entityType: string, entityId: string, productId?: string, accessToken?: string): Promise<EntitlementsResult>;
     checkEntitlement(entityType: string, entityId: string, productId: string, featureKey: string, accessToken?: string): Promise<string | null>;
     getPrices(appName: string): Promise<Price[]>;
     createCheckoutSession(params: CheckoutParams): Promise<string>;

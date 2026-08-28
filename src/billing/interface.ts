@@ -139,6 +139,18 @@ interface BillingProvider {
   ): Promise<EntitlementsResponse | null>;
 
   /**
+   * Get all entitlements for an entity, distinguishing a no-account (`not_found`)
+   * from an Aether error (`unavailable`). Use this when the caller must fail
+   * closed safely: a `null` from {@link getEntitlements} conflates the two.
+   */
+  getEntitlementsResult(
+    entityType: string,
+    entityId: string,
+    productId?: string,
+    accessToken?: string,
+  ): Promise<EntitlementsResult>;
+
+  /**
    * Check if an entity has a specific entitlement.
    * @returns The entitlement value or null if not found
    */

@@ -1,4 +1,4 @@
-import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, EntitlementsResponse, PortalFlow, Price, Subscription } from "./interface";
+import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Subscription } from "./interface";
 type NoopBillingProviderConfig = {};
 /**
  * No-op billing provider for self-hosted, dev, and testing.
@@ -7,6 +7,7 @@ type NoopBillingProviderConfig = {};
  */
 declare class NoopBillingProvider implements BillingProvider {
     getEntitlements(_entityType: string, _entityId: string, _productId?: string, _accessToken?: string): Promise<EntitlementsResponse | null>;
+    getEntitlementsResult(_entityType: string, _entityId: string, _productId?: string, _accessToken?: string): Promise<EntitlementsResult>;
     checkEntitlement(_entityType: string, _entityId: string, _productId: string, _featureKey: string, _accessToken?: string): Promise<string | null>;
     getPrices(_appName: string): Promise<Price[]>;
     createCheckoutSession(_params: CheckoutParams): Promise<string>;

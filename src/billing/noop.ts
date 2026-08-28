@@ -4,6 +4,7 @@ import type {
   CheckoutWithWorkspaceParams,
   CheckoutWithWorkspaceResponse,
   EntitlementsResponse,
+  EntitlementsResult,
   PortalFlow,
   Price,
   Subscription,
@@ -25,6 +26,17 @@ class NoopBillingProvider implements BillingProvider {
     _accessToken?: string,
   ): Promise<EntitlementsResponse | null> {
     return null;
+  }
+
+  async getEntitlementsResult(
+    _entityType: string,
+    _entityId: string,
+    _productId?: string,
+    _accessToken?: string,
+  ): Promise<EntitlementsResult> {
+    // No billing configured: treat as a legitimate no-account (free tier),
+    // never as an outage, so a self-hosted/dev deploy never fails closed
+    return { status: "not_found" };
   }
 
   async checkEntitlement(
