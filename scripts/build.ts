@@ -212,6 +212,20 @@ const patchNodeInterop = async (bundlePath: string): Promise<void> => {
     `var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);`,
   );
 
+  // 5. Make the optional TanStack Start import UNFOLLOWABLE by bundlers.
+  //    getAuth is server-only, but some consuming apps pull providers/auth
+  //    into their client (browser) graph. A literal
+  //    `import("@tanstack/react-start/server")` makes Vite/Rollup follow the
+  //    edge into TanStack's SSR internals (which import node:stream /
+  //    node:async_hooks) and fail the browser build. Replacing the literal
+  //    specifier with an IIFE-returned string defeats static analysis, so
+  //    bundlers leave it as a runtime import that only executes on the server;
+  //    @vite-ignore silences the "cannot be analyzed" warning.
+  patched = patched.replace(
+    /await import\("(@tanstack\/react-start\/server)"\)/g,
+    (_match, mod) => `await import(/* @vite-ignore */ (() => "${mod}")())`,
+  );
+
   if (patched !== before) await Bun.write(bundlePath, patched);
 };
 

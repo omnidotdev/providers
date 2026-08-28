@@ -79667,7 +79667,7 @@ function createGetAuth(config) {
       return forwarder;
     }
     try {
-      const { getResponseHeaders } = await import("@tanstack/react-start/server");
+      const { getResponseHeaders } = await import(/* @vite-ignore */ (() => "@tanstack/react-start/server")());
       forwarder = (raw) => getResponseHeaders().append("set-cookie", raw);
     } catch {
       forwarder = null;
