@@ -1,4 +1,3 @@
-import { createRequire } from "node:module";
 var __defProp = Object.defineProperty;
 var __returnValue = (v) => v;
 function __exportSetter(name, newValue) {
@@ -14,7 +13,7 @@ var __export = (target, all) => {
     });
 };
 var __esm = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
-var __require = /* @__PURE__ */ createRequire(import.meta.url);
+var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);
 
 // node_modules/jose/dist/webapi/lib/buffer_utils.js
 function concat(...buffers) {

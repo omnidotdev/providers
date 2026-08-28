@@ -1,4 +1,3 @@
-import { createRequire } from "node:module";
 var __create = Object.create;
 var __getProtoOf = Object.getPrototypeOf;
 var __defProp = Object.defineProperty;
@@ -32,7 +31,7 @@ var __toESM = (mod, isNodeMode, target) => {
   return to;
 };
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
-var __require = /* @__PURE__ */ createRequire(import.meta.url);
+var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);
 
 // node_modules/@smithy/types/dist-cjs/index.js
 var require_dist_cjs = __commonJS(function(exports) {
@@ -13068,7 +13067,7 @@ var require_invoke_store = __commonJS(function(exports) {
     als;
     static async create() {
       const instance = new InvokeStoreMulti;
-      const asyncHooks = await import("node:async_hooks");
+      const asyncHooks = __require("node:async_hooks");
       instance.als = new asyncHooks.AsyncLocalStorage;
       return instance;
     }
