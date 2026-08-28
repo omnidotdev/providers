@@ -8,6 +8,7 @@ import type {
   CheckoutWithWorkspaceParams,
   CheckoutWithWorkspaceResponse,
   EntitlementsResponse,
+  EntitlementsResult,
   PortalFlow,
   Price,
   Subscription,
@@ -86,14 +87,41 @@ class AetherBillingProvider implements BillingProvider {
     productId?: string,
     accessToken?: string,
   ): Promise<EntitlementsResponse | null> {
+    // Backward-compatible null shape: callers that only fail-open keep working.
+    // The discriminated variant below is for callers that must tell an Aether
+    // error apart from a legit no-account (to fail closed safely)
+    const result = await this.getEntitlementsResult(
+      entityType,
+      entityId,
+      productId,
+      accessToken,
+    );
+    return result.status === "success" ? result.data : null;
+  }
+
+  /**
+   * Like {@link getEntitlements} but distinguishes the three outcomes a caller
+   * needs to fail closed safely:
+   *  - `success`: entitlements resolved (the tenant's real tier).
+   *  - `not_found`: a 404 - the entity has no billing account (legitimately on
+   *    the free tier); NOT an error.
+   *  - `unavailable`: Aether is unreachable / erroring (circuit open, non-2xx,
+   *    or a thrown request). The caller decides whether to fail open or closed.
+   */
+  async getEntitlementsResult(
+    entityType: string,
+    entityId: string,
+    productId?: string,
+    accessToken?: string,
+  ): Promise<EntitlementsResult> {
     const cacheKey = `${entityType}:${entityId}:${productId ?? "all"}`;
 
     const cached = this.cache.get(cacheKey);
-    if (cached) return cached;
+    if (cached) return { status: "success", data: cached };
 
     if (this.circuitBreaker.isOpen()) {
-      log("warn", "billing", "circuit breaker open, returning null");
-      return null;
+      log("warn", "billing", "circuit breaker open, entitlements unavailable");
+      return { status: "unavailable", error: "circuit breaker open" };
     }
 
     try {
@@ -113,26 +141,27 @@ class AetherBillingProvider implements BillingProvider {
       const response = await this.resilientFetch(url.toString(), { headers });
 
       if (response.status === 404) {
-        return null;
+        return { status: "not_found" };
       }
 
       if (!response.ok) {
         log("error", "billing", "failed to fetch entitlements", {
           status: response.status,
         });
-        return null;
+        return { status: "unavailable", error: `status ${response.status}` };
       }
 
       const result = (await response.json()) as EntitlementsResponse;
 
       this.cache.set(cacheKey, result);
 
-      return result;
+      return { status: "success", data: result };
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       log("error", "billing", "error fetching entitlements", {
-        error: error instanceof Error ? error.message : String(error),
+        error: message,
       });
-      return null;
+      return { status: "unavailable", error: message };
     }
   }
 

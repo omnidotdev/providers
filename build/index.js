@@ -80238,13 +80238,17 @@ class AetherBillingProvider {
     });
   }
   async getEntitlements(entityType, entityId, productId, accessToken) {
+    const result = await this.getEntitlementsResult(entityType, entityId, productId, accessToken);
+    return result.status === "success" ? result.data : null;
+  }
+  async getEntitlementsResult(entityType, entityId, productId, accessToken) {
     const cacheKey = `${entityType}:${entityId}:${productId ?? "all"}`;
     const cached = this.cache.get(cacheKey);
     if (cached)
-      return cached;
+      return { status: "success", data: cached };
     if (this.circuitBreaker.isOpen()) {
-      log("warn", "billing", "circuit breaker open, returning null");
-      return null;
+      log("warn", "billing", "circuit breaker open, entitlements unavailable");
+      return { status: "unavailable", error: "circuit breaker open" };
     }
     try {
       const appId = productId ?? this.config.appId;
@@ -80258,22 +80262,23 @@ class AetherBillingProvider {
       }
       const response = await this.resilientFetch(url.toString(), { headers });
       if (response.status === 404) {
-        return null;
+        return { status: "not_found" };
       }
       if (!response.ok) {
         log("error", "billing", "failed to fetch entitlements", {
           status: response.status
         });
-        return null;
+        return { status: "unavailable", error: `status ${response.status}` };
       }
       const result = await response.json();
       this.cache.set(cacheKey, result);
-      return result;
+      return { status: "success", data: result };
     } catch (error) {
+      const message2 = error instanceof Error ? error.message : String(error);
       log("error", "billing", "error fetching entitlements", {
-        error: error instanceof Error ? error.message : String(error)
+        error: message2
       });
-      return null;
+      return { status: "unavailable", error: message2 };
     }
   }
   async checkEntitlement(entityType, entityId, productId, featureKey, accessToken) {
@@ -80462,6 +80467,9 @@ class AetherBillingProvider {
 class NoopBillingProvider {
   async getEntitlements(_entityType, _entityId, _productId, _accessToken) {
     return null;
+  }
+  async getEntitlementsResult(_entityType, _entityId, _productId, _accessToken) {
+    return { status: "not_found" };
   }
   async checkEntitlement(_entityType, _entityId, _productId, _featureKey, _accessToken) {
     return null;
