@@ -105,6 +105,54 @@ describe("HttpEventsProvider with batch", () => {
   });
 });
 
+describe("HttpEventsProvider.emit request body", () => {
+  const captureBody = async (event: {
+    type: string;
+    data: Record<string, unknown>;
+    idempotencyKey?: string;
+  }) => {
+    const { HttpEventsProvider } = await import("../../src/events/http");
+    const provider = new HttpEventsProvider({
+      baseUrl: "https://api.vortex.test",
+      apiKey: "test-key",
+    });
+
+    let captured: Record<string, unknown> | undefined;
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      captured = JSON.parse(String(init?.body));
+      return new Response(
+        JSON.stringify({ eventId: "evt-1", timestamp: "2026-08-31T00:00:00Z" }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    }) as typeof fetch;
+
+    try {
+      await provider.emit(event);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+
+    return captured;
+  };
+
+  it("forwards idempotencyKey when set", async () => {
+    const body = await captureBody({
+      type: "test.event",
+      data: { foo: "bar" },
+      idempotencyKey: "idem-123",
+    });
+
+    expect(body?.idempotencyKey).toBe("idem-123");
+  });
+
+  it("omits idempotencyKey when not set", async () => {
+    const body = await captureBody({ type: "test.event", data: { foo: "bar" } });
+
+    expect(body?.idempotencyKey).toBeUndefined();
+  });
+});
+
 describe("HttpEventsProvider.listSubscriptions", () => {
   const makePage = (page: number, count: number, total: number) =>
     new Response(

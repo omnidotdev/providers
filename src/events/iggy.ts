@@ -80,6 +80,7 @@ class IggyEventsProvider implements EventsProvider {
       subject: event.subject,
       organizationId: topicName,
       correlationId: event.correlationId,
+      idempotencyKey: event.idempotencyKey,
       schemaId: event.schemaId,
       timestamp,
       traceContext: {

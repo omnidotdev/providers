@@ -11059,6 +11059,7 @@ class HttpEventsProvider {
       source: event.source ?? this.config.source,
       subject: event.subject,
       correlationId: event.correlationId,
+      idempotencyKey: event.idempotencyKey,
       schemaId: event.schemaId,
       specversion: event.specversion,
       datacontenttype: event.datacontenttype,
@@ -11227,6 +11228,7 @@ class IggyEventsProvider {
       subject: event.subject,
       organizationId: topicName,
       correlationId: event.correlationId,
+      idempotencyKey: event.idempotencyKey,
       schemaId: event.schemaId,
       timestamp,
       traceContext: {

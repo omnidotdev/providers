@@ -15,6 +15,14 @@ type EventInput = {
     organizationId?: string;
     /** Correlation ID for distributed tracing */
     correlationId?: string;
+    /**
+     * Idempotency key for exactly-once semantics. When set, Vortex drops a
+     * redelivery carrying the same key; when omitted, dedup falls back to the
+     * generated event id (unique per emit, so retries are not deduplicated).
+     * Unlike `correlationId` (shared across related events), this must be unique
+     * per logical event.
+     */
+    idempotencyKey?: string;
     /** Schema ID for payload validation */
     schemaId?: string;
     /** CloudEvents spec version (default "1.0") */
