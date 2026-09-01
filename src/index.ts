@@ -89,6 +89,10 @@ export {
 export {
   NoopStorageProvider,
   S3StorageProvider,
+  S3_CONNECTION_TIMEOUT_MS,
+  S3_REQUEST_TIMEOUT_MS,
+  buildResilientRequestHandler,
+  createResilientS3Client,
   createStorageProvider,
 } from "./storage";
 // Utilities

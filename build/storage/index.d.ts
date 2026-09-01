@@ -19,6 +19,7 @@ type StorageProviderConfig = ({
 declare const createStorageProvider: (config: StorageProviderConfig) => StorageProvider;
 export { createStorageProvider };
 export { NoopStorageProvider } from "./noop";
+export { S3_CONNECTION_TIMEOUT_MS, S3_REQUEST_TIMEOUT_MS, buildResilientRequestHandler, createResilientS3Client, } from "./requestHandler";
 export { S3StorageProvider } from "./s3";
 export type { StorageProviderConfig };
 export type { PresignedParams, PresignedResult, StorageProvider, UploadParams, UploadResult, } from "./interface";
