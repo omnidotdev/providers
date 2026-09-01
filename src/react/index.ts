@@ -1,3 +1,4 @@
+export { accountUrl } from "./accountUrl";
 export { EventsProvider, useEvents } from "./EventsProvider";
 export {
   ManageTeamLink,
