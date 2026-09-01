@@ -63,8 +63,14 @@ export const buildAuth = (opts: BuildOpts) =>
             mapProfileToUser: (profile) => ({
               name: profile.name,
               email: profile.email,
-              emailVerified: profile.email_verified,
-              image: profile.picture,
+              emailVerified:
+                typeof profile.email_verified === "boolean"
+                  ? profile.email_verified
+                  : undefined,
+              image:
+                typeof profile.picture === "string"
+                  ? profile.picture
+                  : undefined,
             }),
           },
         ],
@@ -136,13 +142,13 @@ export const signIn = async (auth: Auth): Promise<CookieJar> => {
 
   // 1. kick off sign-in: better-auth stores state + pkce verifier in a cookie
   const signInRes = await auth.handler(
-    new Request(`${BASE_URL}/api/auth/sign-in/oauth2`, {
+    new Request(`${BASE_URL}/api/auth/sign-in/social`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
         origin: BASE_URL,
       },
-      body: JSON.stringify({ providerId: "omni", callbackURL: "/" }),
+      body: JSON.stringify({ provider: "omni", callbackURL: "/" }),
     }),
   );
   jar.applySetCookies(signInRes.headers);
@@ -155,7 +161,7 @@ export const signIn = async (auth: Auth): Promise<CookieJar> => {
   // sets the session + account cookies
   const callbackRes = await auth.handler(
     new Request(
-      `${BASE_URL}/api/auth/oauth2/callback/omni?code=spike-code&state=${state}`,
+      `${BASE_URL}/api/auth/callback/omni?code=spike-code&state=${state}`,
       {
         method: "GET",
         headers: { cookie: jar.header() },

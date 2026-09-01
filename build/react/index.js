@@ -20,7 +20,6 @@ var useEvents = () => {
 import { jsx as jsx2 } from "react/jsx-runtime";
 var gatekeeperOrgManageUrl = (identityBaseUrl, orgSlug) => `${identityBaseUrl.replace(/\/+$/, "")}/dashboard/organizations/${orgSlug}`;
 var gatekeeperDashboardUrl = (identityBaseUrl) => `${identityBaseUrl.replace(/\/+$/, "")}/dashboard`;
-var accountUrl = (accountBaseUrl) => accountBaseUrl.replace(/\/+$/, "");
 var ManageTeamLink = ({
   identityBaseUrl,
   orgSlug,

@@ -79651,7 +79651,6 @@ function createGetAuth(config) {
     oidc,
     authCache,
     setCookie,
-    providerId = "omni",
     logPrefix = "[getAuth]",
     resolveRowId,
     forwardSetCookie,
@@ -79708,7 +79707,7 @@ function createGetAuth(config) {
             getAccessToken: async () => {
               try {
                 const { headers, response } = await authApi.getAccessToken({
-                  body: { providerId },
+                  body: { useAccountCookie: true },
                   headers: request.headers,
                   returnHeaders: true
                 });
@@ -79731,7 +79730,7 @@ function createGetAuth(config) {
             refreshToken: async () => {
               try {
                 const { headers, response } = await authApi.refreshToken({
-                  body: { providerId },
+                  body: { useAccountCookie: true },
                   headers: request.headers,
                   returnHeaders: true
                 });

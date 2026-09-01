@@ -26,11 +26,11 @@ type BetterAuthTokenBody = {
  */
 type BetterAuthTokenFn = {
   (opts: {
-    body: { providerId: string };
+    body: { useAccountCookie: true };
     headers: Headers;
   }): Promise<BetterAuthTokenBody | null>;
   (opts: {
-    body: { providerId: string };
+    body: { useAccountCookie: true };
     headers: Headers;
     returnHeaders: true;
   }): Promise<{ headers: Headers; response: BetterAuthTokenBody | null }>;
@@ -111,7 +111,12 @@ type GetAuthConfig = {
    * value, attributes) or the cookie is corrupted.
    */
   forwardSetCookie?: (setCookieHeader: string) => void;
-  /** OAuth provider ID (default: "omni") */
+  /**
+   * @deprecated Unused since better-auth 1.7 rebuilt generic OAuth on the
+   * social-provider path: the account is now selected from its signed cookie
+   * (`useAccountCookie`), not by provider id. Still accepted so existing
+   * `createGetAuth` calls keep type-checking; it has no effect
+   */
   providerId?: string;
   /** Log prefix for console output (default: "[getAuth]") */
   logPrefix?: string;
@@ -193,7 +198,6 @@ function createGetAuth(config: GetAuthConfig) {
     oidc,
     authCache,
     setCookie,
-    providerId = "omni",
     logPrefix = "[getAuth]",
     resolveRowId,
     forwardSetCookie,
@@ -311,7 +315,7 @@ function createGetAuth(config: GetAuthConfig) {
                 // Better Auth's internal refresh emitted; forward it so the
                 // browser persists the new refresh token
                 const { headers, response } = await authApi.getAccessToken({
-                  body: { providerId },
+                  body: { useAccountCookie: true },
                   headers: request.headers,
                   returnHeaders: true,
                 });
@@ -349,7 +353,7 @@ function createGetAuth(config: GetAuthConfig) {
                 // when getAccessToken returned no token): forward the rotated
                 // account cookie so the browser persists the new refresh token
                 const { headers, response } = await authApi.refreshToken({
-                  body: { providerId },
+                  body: { useAccountCookie: true },
                   headers: request.headers,
                   returnHeaders: true,
                 });
