@@ -10,7 +10,7 @@ export { LEGAL_BASE_URL, LEGAL_CONTACTS, LEGAL_FOOTER_LINKS, LEGAL_LINKS, LEGAL_
 export { NoopNotificationProvider, createNotificationProvider, } from "./notifications";
 export { SECURITY_HEADERS } from "./server";
 export { GatekeeperSocialProvider, createSocialProvider, } from "./social";
-export { NoopStorageProvider, S3StorageProvider, createStorageProvider, } from "./storage";
+export { NoopStorageProvider, S3StorageProvider, S3_CONNECTION_TIMEOUT_MS, S3_REQUEST_TIMEOUT_MS, buildResilientRequestHandler, createResilientS3Client, createStorageProvider, } from "./storage";
 export { TtlCache } from "./util/cache";
 export { CircuitBreaker } from "./util/circuitBreaker";
 export type { ApiKeyInfo, ApiKeyProvider, ApiKeyProviderConfig, GatekeeperApiKeyProviderConfig, NoopApiKeyProviderConfig, } from "./apiKey";

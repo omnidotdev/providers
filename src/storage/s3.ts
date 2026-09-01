@@ -1,5 +1,6 @@
 import { CircuitBreaker } from "../util/circuitBreaker";
 import { log } from "../util/log";
+import { createResilientS3Client } from "./requestHandler";
 
 import type {
   PresignedParams,
@@ -170,15 +171,15 @@ class S3StorageProvider implements StorageProvider {
   async #requireClient() {
     if (this.client) return this.client;
 
-    const { S3Client } = await import("@aws-sdk/client-s3");
-
     const forcePathStyle =
       this.config.forcePathStyle ??
       (this.config.endpoint
         ? /localhost|127\.0\.0\.1/.test(this.config.endpoint)
         : false);
 
-    this.client = new S3Client({
+    // Hardened against the stale keep-alive socket hang that caused the
+    // s3.omni.dev media outage (keepAlive false + a throwing request timeout)
+    this.client = await createResilientS3Client({
       endpoint: this.config.endpoint,
       region: this.config.region ?? "us-east-1",
       credentials: this.config.credentials,

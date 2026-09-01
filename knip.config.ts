@@ -19,6 +19,7 @@ export default {
     "unleash-client",
     "@aws-sdk/client-s3",
     "@aws-sdk/s3-request-presigner",
+    "@smithy/node-http-handler",
     "ajv",
   ],
 };

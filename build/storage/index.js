@@ -276,786 +276,8 @@ var require_dist_cjs2 = __commonJS(function(exports) {
   exports.resolveHttpHandlerRuntimeConfig = resolveHttpHandlerRuntimeConfig;
 });
 
-// node_modules/@aws-sdk/middleware-expect-continue/dist-cjs/index.js
-var require_dist_cjs3 = __commonJS(function(exports) {
-  var protocolHttp = require_dist_cjs2();
-  function addExpectContinueMiddleware(options) {
-    return (next) => async (args) => {
-      const { request } = args;
-      if (options.expectContinueHeader !== false && protocolHttp.HttpRequest.isInstance(request) && request.body && options.runtime === "node" && options.requestHandler?.constructor?.name !== "FetchHttpHandler") {
-        let sendHeader = true;
-        if (typeof options.expectContinueHeader === "number") {
-          try {
-            const bodyLength = Number(request.headers?.["content-length"]) ?? options.bodyLengthChecker?.(request.body) ?? Infinity;
-            sendHeader = bodyLength >= options.expectContinueHeader;
-          } catch (e) {}
-        } else {
-          sendHeader = !!options.expectContinueHeader;
-        }
-        if (sendHeader) {
-          request.headers.Expect = "100-continue";
-        }
-      }
-      return next({
-        ...args,
-        request
-      });
-    };
-  }
-  var addExpectContinueMiddlewareOptions = {
-    step: "build",
-    tags: ["SET_EXPECT_HEADER", "EXPECT_HEADER"],
-    name: "addExpectContinueMiddleware",
-    override: true
-  };
-  var getAddExpectContinuePlugin = (options) => ({
-    applyToStack: (clientStack) => {
-      clientStack.add(addExpectContinueMiddleware(options), addExpectContinueMiddlewareOptions);
-    }
-  });
-  exports.addExpectContinueMiddleware = addExpectContinueMiddleware;
-  exports.addExpectContinueMiddlewareOptions = addExpectContinueMiddlewareOptions;
-  exports.getAddExpectContinuePlugin = getAddExpectContinuePlugin;
-});
-
-// node_modules/@smithy/util-middleware/dist-cjs/index.js
-var require_dist_cjs4 = __commonJS(function(exports) {
-  var types = require_dist_cjs();
-  var getSmithyContext = (context) => context[types.SMITHY_CONTEXT_KEY] || (context[types.SMITHY_CONTEXT_KEY] = {});
-  var normalizeProvider = (input) => {
-    if (typeof input === "function")
-      return input;
-    const promisified = Promise.resolve(input);
-    return () => promisified;
-  };
-  exports.getSmithyContext = getSmithyContext;
-  exports.normalizeProvider = normalizeProvider;
-});
-
-// node_modules/@smithy/middleware-serde/dist-cjs/index.js
-var require_dist_cjs5 = __commonJS(function(exports) {
-  var protocolHttp = require_dist_cjs2();
-  var deserializerMiddleware = (options, deserializer) => (next, context) => async (args) => {
-    const { response } = await next(args);
-    try {
-      const parsed = await deserializer(response, options);
-      return {
-        response,
-        output: parsed
-      };
-    } catch (error) {
-      Object.defineProperty(error, "$response", {
-        value: response,
-        enumerable: false,
-        writable: false,
-        configurable: false
-      });
-      if (!("$metadata" in error)) {
-        const hint = `Deserialization error: to see the raw response, inspect the hidden field {error}.$response on this object.`;
-        try {
-          error.message += `
-  ` + hint;
-        } catch (e) {
-          if (!context.logger || context.logger?.constructor?.name === "NoOpLogger") {
-            console.warn(hint);
-          } else {
-            context.logger?.warn?.(hint);
-          }
-        }
-        if (typeof error.$responseBodyText !== "undefined") {
-          if (error.$response) {
-            error.$response.body = error.$responseBodyText;
-          }
-        }
-        try {
-          if (protocolHttp.HttpResponse.isInstance(response)) {
-            const { headers = {} } = response;
-            const headerEntries = Object.entries(headers);
-            error.$metadata = {
-              httpStatusCode: response.statusCode,
-              requestId: findHeader(/^x-[\w-]+-request-?id$/, headerEntries),
-              extendedRequestId: findHeader(/^x-[\w-]+-id-2$/, headerEntries),
-              cfId: findHeader(/^x-[\w-]+-cf-id$/, headerEntries)
-            };
-          }
-        } catch (e) {}
-      }
-      throw error;
-    }
-  };
-  var findHeader = (pattern, headers) => {
-    return (headers.find(([k]) => {
-      return k.match(pattern);
-    }) || [undefined, undefined])[1];
-  };
-  var serializerMiddleware = (options, serializer) => (next, context) => async (args) => {
-    const endpointConfig = options;
-    const endpoint = context.endpointV2?.url && endpointConfig.urlParser ? async () => endpointConfig.urlParser(context.endpointV2.url) : endpointConfig.endpoint;
-    if (!endpoint) {
-      throw new Error("No valid endpoint provider available.");
-    }
-    const request = await serializer(args.input, { ...options, endpoint });
-    return next({
-      ...args,
-      request
-    });
-  };
-  var deserializerMiddlewareOption = {
-    name: "deserializerMiddleware",
-    step: "deserialize",
-    tags: ["DESERIALIZER"],
-    override: true
-  };
-  var serializerMiddlewareOption = {
-    name: "serializerMiddleware",
-    step: "serialize",
-    tags: ["SERIALIZER"],
-    override: true
-  };
-  function getSerdePlugin(config, serializer, deserializer) {
-    return {
-      applyToStack: (commandStack) => {
-        commandStack.add(deserializerMiddleware(config, deserializer), deserializerMiddlewareOption);
-        commandStack.add(serializerMiddleware(config, serializer), serializerMiddlewareOption);
-      }
-    };
-  }
-  exports.deserializerMiddleware = deserializerMiddleware;
-  exports.deserializerMiddlewareOption = deserializerMiddlewareOption;
-  exports.getSerdePlugin = getSerdePlugin;
-  exports.serializerMiddleware = serializerMiddleware;
-  exports.serializerMiddlewareOption = serializerMiddlewareOption;
-});
-
-// node_modules/@smithy/is-array-buffer/dist-cjs/index.js
-var require_dist_cjs6 = __commonJS(function(exports) {
-  var isArrayBuffer = (arg) => typeof ArrayBuffer === "function" && arg instanceof ArrayBuffer || Object.prototype.toString.call(arg) === "[object ArrayBuffer]";
-  exports.isArrayBuffer = isArrayBuffer;
-});
-
-// node_modules/@smithy/util-buffer-from/dist-cjs/index.js
-var require_dist_cjs7 = __commonJS(function(exports) {
-  var isArrayBuffer = require_dist_cjs6();
-  var buffer = __require("buffer");
-  var fromArrayBuffer = (input, offset = 0, length = input.byteLength - offset) => {
-    if (!isArrayBuffer.isArrayBuffer(input)) {
-      throw new TypeError(`The "input" argument must be ArrayBuffer. Received type ${typeof input} (${input})`);
-    }
-    return buffer.Buffer.from(input, offset, length);
-  };
-  var fromString = (input, encoding) => {
-    if (typeof input !== "string") {
-      throw new TypeError(`The "input" argument must be of type string. Received type ${typeof input} (${input})`);
-    }
-    return encoding ? buffer.Buffer.from(input, encoding) : buffer.Buffer.from(input);
-  };
-  exports.fromArrayBuffer = fromArrayBuffer;
-  exports.fromString = fromString;
-});
-
-// node_modules/@smithy/util-base64/dist-cjs/fromBase64.js
-var require_fromBase64 = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.fromBase64 = undefined;
-  var util_buffer_from_1 = require_dist_cjs7();
-  var BASE64_REGEX = /^[A-Za-z0-9+/]*={0,2}$/;
-  var fromBase64 = (input) => {
-    if (input.length * 3 % 4 !== 0) {
-      throw new TypeError(`Incorrect padding on base64 string.`);
-    }
-    if (!BASE64_REGEX.exec(input)) {
-      throw new TypeError(`Invalid base64 string.`);
-    }
-    const buffer = (0, util_buffer_from_1.fromString)(input, "base64");
-    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-  };
-  exports.fromBase64 = fromBase64;
-});
-
-// node_modules/@smithy/util-utf8/dist-cjs/index.js
-var require_dist_cjs8 = __commonJS(function(exports) {
-  var utilBufferFrom = require_dist_cjs7();
-  var fromUtf8 = (input) => {
-    const buf = utilBufferFrom.fromString(input, "utf8");
-    return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength / Uint8Array.BYTES_PER_ELEMENT);
-  };
-  var toUint8Array = (data) => {
-    if (typeof data === "string") {
-      return fromUtf8(data);
-    }
-    if (ArrayBuffer.isView(data)) {
-      return new Uint8Array(data.buffer, data.byteOffset, data.byteLength / Uint8Array.BYTES_PER_ELEMENT);
-    }
-    return new Uint8Array(data);
-  };
-  var toUtf8 = (input) => {
-    if (typeof input === "string") {
-      return input;
-    }
-    if (typeof input !== "object" || typeof input.byteOffset !== "number" || typeof input.byteLength !== "number") {
-      throw new Error("@smithy/util-utf8: toUtf8 encoder function only accepts string | Uint8Array.");
-    }
-    return utilBufferFrom.fromArrayBuffer(input.buffer, input.byteOffset, input.byteLength).toString("utf8");
-  };
-  exports.fromUtf8 = fromUtf8;
-  exports.toUint8Array = toUint8Array;
-  exports.toUtf8 = toUtf8;
-});
-
-// node_modules/@smithy/util-base64/dist-cjs/toBase64.js
-var require_toBase64 = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.toBase64 = undefined;
-  var util_buffer_from_1 = require_dist_cjs7();
-  var util_utf8_1 = require_dist_cjs8();
-  var toBase64 = (_input) => {
-    let input;
-    if (typeof _input === "string") {
-      input = (0, util_utf8_1.fromUtf8)(_input);
-    } else {
-      input = _input;
-    }
-    if (typeof input !== "object" || typeof input.byteOffset !== "number" || typeof input.byteLength !== "number") {
-      throw new Error("@smithy/util-base64: toBase64 encoder function only accepts string | Uint8Array.");
-    }
-    return (0, util_buffer_from_1.fromArrayBuffer)(input.buffer, input.byteOffset, input.byteLength).toString("base64");
-  };
-  exports.toBase64 = toBase64;
-});
-
-// node_modules/@smithy/util-base64/dist-cjs/index.js
-var require_dist_cjs9 = __commonJS(function(exports) {
-  var fromBase64 = require_fromBase64();
-  var toBase64 = require_toBase64();
-  Object.prototype.hasOwnProperty.call(fromBase64, "__proto__") && !Object.prototype.hasOwnProperty.call(exports, "__proto__") && Object.defineProperty(exports, "__proto__", {
-    enumerable: true,
-    value: fromBase64["__proto__"]
-  });
-  Object.keys(fromBase64).forEach(function(k) {
-    if (k !== "default" && !Object.prototype.hasOwnProperty.call(exports, k))
-      exports[k] = fromBase64[k];
-  });
-  Object.prototype.hasOwnProperty.call(toBase64, "__proto__") && !Object.prototype.hasOwnProperty.call(exports, "__proto__") && Object.defineProperty(exports, "__proto__", {
-    enumerable: true,
-    value: toBase64["__proto__"]
-  });
-  Object.keys(toBase64).forEach(function(k) {
-    if (k !== "default" && !Object.prototype.hasOwnProperty.call(exports, k))
-      exports[k] = toBase64[k];
-  });
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/checksum/ChecksumStream.js
-var require_ChecksumStream = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.ChecksumStream = undefined;
-  var util_base64_1 = require_dist_cjs9();
-  var stream_1 = __require("stream");
-
-  class ChecksumStream extends stream_1.Duplex {
-    expectedChecksum;
-    checksumSourceLocation;
-    checksum;
-    source;
-    base64Encoder;
-    pendingCallback = null;
-    constructor({ expectedChecksum, checksum, source, checksumSourceLocation, base64Encoder }) {
-      super();
-      if (typeof source.pipe === "function") {
-        this.source = source;
-      } else {
-        throw new Error(`@smithy/util-stream: unsupported source type ${source?.constructor?.name ?? source} in ChecksumStream.`);
-      }
-      this.base64Encoder = base64Encoder ?? util_base64_1.toBase64;
-      this.expectedChecksum = expectedChecksum;
-      this.checksum = checksum;
-      this.checksumSourceLocation = checksumSourceLocation;
-      this.source.pipe(this);
-    }
-    _read(size) {
-      if (this.pendingCallback) {
-        const callback = this.pendingCallback;
-        this.pendingCallback = null;
-        callback();
-      }
-    }
-    _write(chunk, encoding, callback) {
-      try {
-        this.checksum.update(chunk);
-        const canPushMore = this.push(chunk);
-        if (!canPushMore) {
-          this.pendingCallback = callback;
-          return;
-        }
-      } catch (e) {
-        return callback(e);
-      }
-      return callback();
-    }
-    async _final(callback) {
-      try {
-        const digest = await this.checksum.digest();
-        const received = this.base64Encoder(digest);
-        if (this.expectedChecksum !== received) {
-          return callback(new Error(`Checksum mismatch: expected "${this.expectedChecksum}" but received "${received}"` + ` in response header "${this.checksumSourceLocation}".`));
-        }
-      } catch (e) {
-        return callback(e);
-      }
-      this.push(null);
-      return callback();
-    }
-  }
-  exports.ChecksumStream = ChecksumStream;
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/stream-type-check.js
-var require_stream_type_check = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.isBlob = exports.isReadableStream = undefined;
-  var isReadableStream = (stream) => typeof ReadableStream === "function" && (stream?.constructor?.name === ReadableStream.name || stream instanceof ReadableStream);
-  exports.isReadableStream = isReadableStream;
-  var isBlob = (blob) => {
-    return typeof Blob === "function" && (blob?.constructor?.name === Blob.name || blob instanceof Blob);
-  };
-  exports.isBlob = isBlob;
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/checksum/ChecksumStream.browser.js
-var require_ChecksumStream_browser = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.ChecksumStream = undefined;
-  var ReadableStreamRef = typeof ReadableStream === "function" ? ReadableStream : function() {};
-
-  class ChecksumStream extends ReadableStreamRef {
-  }
-  exports.ChecksumStream = ChecksumStream;
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/checksum/createChecksumStream.browser.js
-var require_createChecksumStream_browser = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.createChecksumStream = undefined;
-  var util_base64_1 = require_dist_cjs9();
-  var stream_type_check_1 = require_stream_type_check();
-  var ChecksumStream_browser_1 = require_ChecksumStream_browser();
-  var createChecksumStream = ({ expectedChecksum, checksum, source, checksumSourceLocation, base64Encoder }) => {
-    if (!(0, stream_type_check_1.isReadableStream)(source)) {
-      throw new Error(`@smithy/util-stream: unsupported source type ${source?.constructor?.name ?? source} in ChecksumStream.`);
-    }
-    const encoder = base64Encoder ?? util_base64_1.toBase64;
-    if (typeof TransformStream !== "function") {
-      throw new Error("@smithy/util-stream: unable to instantiate ChecksumStream because API unavailable: ReadableStream/TransformStream.");
-    }
-    const transform = new TransformStream({
-      start() {},
-      async transform(chunk, controller) {
-        checksum.update(chunk);
-        controller.enqueue(chunk);
-      },
-      async flush(controller) {
-        const digest = await checksum.digest();
-        const received = encoder(digest);
-        if (expectedChecksum !== received) {
-          const error = new Error(`Checksum mismatch: expected "${expectedChecksum}" but received "${received}"` + ` in response header "${checksumSourceLocation}".`);
-          controller.error(error);
-        } else {
-          controller.terminate();
-        }
-      }
-    });
-    source.pipeThrough(transform);
-    const readable = transform.readable;
-    Object.setPrototypeOf(readable, ChecksumStream_browser_1.ChecksumStream.prototype);
-    return readable;
-  };
-  exports.createChecksumStream = createChecksumStream;
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/checksum/createChecksumStream.js
-var require_createChecksumStream = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.createChecksumStream = createChecksumStream;
-  var stream_type_check_1 = require_stream_type_check();
-  var ChecksumStream_1 = require_ChecksumStream();
-  var createChecksumStream_browser_1 = require_createChecksumStream_browser();
-  function createChecksumStream(init) {
-    if (typeof ReadableStream === "function" && (0, stream_type_check_1.isReadableStream)(init.source)) {
-      return (0, createChecksumStream_browser_1.createChecksumStream)(init);
-    }
-    return new ChecksumStream_1.ChecksumStream(init);
-  }
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/ByteArrayCollector.js
-var require_ByteArrayCollector = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.ByteArrayCollector = undefined;
-
-  class ByteArrayCollector {
-    allocByteArray;
-    byteLength = 0;
-    byteArrays = [];
-    constructor(allocByteArray) {
-      this.allocByteArray = allocByteArray;
-    }
-    push(byteArray) {
-      this.byteArrays.push(byteArray);
-      this.byteLength += byteArray.byteLength;
-    }
-    flush() {
-      if (this.byteArrays.length === 1) {
-        const bytes = this.byteArrays[0];
-        this.reset();
-        return bytes;
-      }
-      const aggregation = this.allocByteArray(this.byteLength);
-      let cursor = 0;
-      for (let i = 0;i < this.byteArrays.length; ++i) {
-        const bytes = this.byteArrays[i];
-        aggregation.set(bytes, cursor);
-        cursor += bytes.byteLength;
-      }
-      this.reset();
-      return aggregation;
-    }
-    reset() {
-      this.byteArrays = [];
-      this.byteLength = 0;
-    }
-  }
-  exports.ByteArrayCollector = ByteArrayCollector;
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/createBufferedReadableStream.js
-var require_createBufferedReadableStream = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.createBufferedReadable = undefined;
-  exports.createBufferedReadableStream = createBufferedReadableStream;
-  exports.merge = merge;
-  exports.flush = flush;
-  exports.sizeOf = sizeOf;
-  exports.modeOf = modeOf;
-  var ByteArrayCollector_1 = require_ByteArrayCollector();
-  function createBufferedReadableStream(upstream, size, logger) {
-    const reader = upstream.getReader();
-    let streamBufferingLoggedWarning = false;
-    let bytesSeen = 0;
-    const buffers = ["", new ByteArrayCollector_1.ByteArrayCollector((size2) => new Uint8Array(size2))];
-    let mode = -1;
-    const pull = async (controller) => {
-      const { value, done } = await reader.read();
-      const chunk = value;
-      if (done) {
-        if (mode !== -1) {
-          const remainder = flush(buffers, mode);
-          if (sizeOf(remainder) > 0) {
-            controller.enqueue(remainder);
-          }
-        }
-        controller.close();
-      } else {
-        const chunkMode = modeOf(chunk, false);
-        if (mode !== chunkMode) {
-          if (mode >= 0) {
-            controller.enqueue(flush(buffers, mode));
-          }
-          mode = chunkMode;
-        }
-        if (mode === -1) {
-          controller.enqueue(chunk);
-          return;
-        }
-        const chunkSize = sizeOf(chunk);
-        bytesSeen += chunkSize;
-        const bufferSize = sizeOf(buffers[mode]);
-        if (chunkSize >= size && bufferSize === 0) {
-          controller.enqueue(chunk);
-        } else {
-          const newSize = merge(buffers, mode, chunk);
-          if (!streamBufferingLoggedWarning && bytesSeen > size * 2) {
-            streamBufferingLoggedWarning = true;
-            logger?.warn(`@smithy/util-stream - stream chunk size ${chunkSize} is below threshold of ${size}, automatically buffering.`);
-          }
-          if (newSize >= size) {
-            controller.enqueue(flush(buffers, mode));
-          } else {
-            await pull(controller);
-          }
-        }
-      }
-    };
-    return new ReadableStream({
-      pull
-    });
-  }
-  exports.createBufferedReadable = createBufferedReadableStream;
-  function merge(buffers, mode, chunk) {
-    switch (mode) {
-      case 0:
-        buffers[0] += chunk;
-        return sizeOf(buffers[0]);
-      case 1:
-      case 2:
-        buffers[mode].push(chunk);
-        return sizeOf(buffers[mode]);
-    }
-  }
-  function flush(buffers, mode) {
-    switch (mode) {
-      case 0:
-        const s = buffers[0];
-        buffers[0] = "";
-        return s;
-      case 1:
-      case 2:
-        return buffers[mode].flush();
-    }
-    throw new Error(`@smithy/util-stream - invalid index ${mode} given to flush()`);
-  }
-  function sizeOf(chunk) {
-    return chunk?.byteLength ?? chunk?.length ?? 0;
-  }
-  function modeOf(chunk, allowBuffer = true) {
-    if (allowBuffer && typeof Buffer !== "undefined" && chunk instanceof Buffer) {
-      return 2;
-    }
-    if (chunk instanceof Uint8Array) {
-      return 1;
-    }
-    if (typeof chunk === "string") {
-      return 0;
-    }
-    return -1;
-  }
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/createBufferedReadable.js
-var require_createBufferedReadable = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.createBufferedReadable = createBufferedReadable;
-  var node_stream_1 = __require("node:stream");
-  var ByteArrayCollector_1 = require_ByteArrayCollector();
-  var createBufferedReadableStream_1 = require_createBufferedReadableStream();
-  var stream_type_check_1 = require_stream_type_check();
-  function createBufferedReadable(upstream, size, logger) {
-    if ((0, stream_type_check_1.isReadableStream)(upstream)) {
-      return (0, createBufferedReadableStream_1.createBufferedReadableStream)(upstream, size, logger);
-    }
-    const downstream = new node_stream_1.Readable({ read() {} });
-    let streamBufferingLoggedWarning = false;
-    let bytesSeen = 0;
-    const buffers = [
-      "",
-      new ByteArrayCollector_1.ByteArrayCollector((size2) => new Uint8Array(size2)),
-      new ByteArrayCollector_1.ByteArrayCollector((size2) => Buffer.from(new Uint8Array(size2)))
-    ];
-    let mode = -1;
-    upstream.on("data", (chunk) => {
-      const chunkMode = (0, createBufferedReadableStream_1.modeOf)(chunk, true);
-      if (mode !== chunkMode) {
-        if (mode >= 0) {
-          downstream.push((0, createBufferedReadableStream_1.flush)(buffers, mode));
-        }
-        mode = chunkMode;
-      }
-      if (mode === -1) {
-        downstream.push(chunk);
-        return;
-      }
-      const chunkSize = (0, createBufferedReadableStream_1.sizeOf)(chunk);
-      bytesSeen += chunkSize;
-      const bufferSize = (0, createBufferedReadableStream_1.sizeOf)(buffers[mode]);
-      if (chunkSize >= size && bufferSize === 0) {
-        downstream.push(chunk);
-      } else {
-        const newSize = (0, createBufferedReadableStream_1.merge)(buffers, mode, chunk);
-        if (!streamBufferingLoggedWarning && bytesSeen > size * 2) {
-          streamBufferingLoggedWarning = true;
-          logger?.warn(`@smithy/util-stream - stream chunk size ${chunkSize} is below threshold of ${size}, automatically buffering.`);
-        }
-        if (newSize >= size) {
-          downstream.push((0, createBufferedReadableStream_1.flush)(buffers, mode));
-        }
-      }
-    });
-    upstream.on("end", () => {
-      if (mode !== -1) {
-        const remainder = (0, createBufferedReadableStream_1.flush)(buffers, mode);
-        if ((0, createBufferedReadableStream_1.sizeOf)(remainder) > 0) {
-          downstream.push(remainder);
-        }
-      }
-      downstream.push(null);
-    });
-    return downstream;
-  }
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/getAwsChunkedEncodingStream.browser.js
-var require_getAwsChunkedEncodingStream_browser = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.getAwsChunkedEncodingStream = undefined;
-  var getAwsChunkedEncodingStream = (readableStream, options) => {
-    const { base64Encoder, bodyLengthChecker, checksumAlgorithmFn, checksumLocationName, streamHasher } = options;
-    const checksumRequired = base64Encoder !== undefined && bodyLengthChecker !== undefined && checksumAlgorithmFn !== undefined && checksumLocationName !== undefined && streamHasher !== undefined;
-    const digest = checksumRequired ? streamHasher(checksumAlgorithmFn, readableStream) : undefined;
-    const reader = readableStream.getReader();
-    return new ReadableStream({
-      async pull(controller) {
-        const { value, done } = await reader.read();
-        if (done) {
-          controller.enqueue(`0\r
-`);
-          if (checksumRequired) {
-            const checksum = base64Encoder(await digest);
-            controller.enqueue(`${checksumLocationName}:${checksum}\r
-`);
-            controller.enqueue(`\r
-`);
-          }
-          controller.close();
-        } else {
-          controller.enqueue(`${(bodyLengthChecker(value) || 0).toString(16)}\r
-${value}\r
-`);
-        }
-      }
-    });
-  };
-  exports.getAwsChunkedEncodingStream = getAwsChunkedEncodingStream;
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/getAwsChunkedEncodingStream.js
-var require_getAwsChunkedEncodingStream = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.getAwsChunkedEncodingStream = getAwsChunkedEncodingStream;
-  var node_stream_1 = __require("node:stream");
-  var getAwsChunkedEncodingStream_browser_1 = require_getAwsChunkedEncodingStream_browser();
-  var stream_type_check_1 = require_stream_type_check();
-  function getAwsChunkedEncodingStream(stream, options) {
-    const readable = stream;
-    const readableStream = stream;
-    if ((0, stream_type_check_1.isReadableStream)(readableStream)) {
-      return (0, getAwsChunkedEncodingStream_browser_1.getAwsChunkedEncodingStream)(readableStream, options);
-    }
-    const { base64Encoder, bodyLengthChecker, checksumAlgorithmFn, checksumLocationName, streamHasher } = options;
-    const checksumRequired = base64Encoder !== undefined && checksumAlgorithmFn !== undefined && checksumLocationName !== undefined && streamHasher !== undefined;
-    const digest = checksumRequired ? streamHasher(checksumAlgorithmFn, readable) : undefined;
-    const awsChunkedEncodingStream = new node_stream_1.Readable({
-      read: () => {}
-    });
-    readable.on("data", (data) => {
-      const length = bodyLengthChecker(data) || 0;
-      if (length === 0) {
-        return;
-      }
-      awsChunkedEncodingStream.push(`${length.toString(16)}\r
-`);
-      awsChunkedEncodingStream.push(data);
-      awsChunkedEncodingStream.push(`\r
-`);
-    });
-    readable.on("end", async () => {
-      awsChunkedEncodingStream.push(`0\r
-`);
-      if (checksumRequired) {
-        const checksum = base64Encoder(await digest);
-        awsChunkedEncodingStream.push(`${checksumLocationName}:${checksum}\r
-`);
-        awsChunkedEncodingStream.push(`\r
-`);
-      }
-      awsChunkedEncodingStream.push(null);
-    });
-    return awsChunkedEncodingStream;
-  }
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/headStream.browser.js
-var require_headStream_browser = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.headStream = headStream;
-  async function headStream(stream, bytes) {
-    let byteLengthCounter = 0;
-    const chunks = [];
-    const reader = stream.getReader();
-    let isDone = false;
-    while (!isDone) {
-      const { done, value } = await reader.read();
-      if (value) {
-        chunks.push(value);
-        byteLengthCounter += value?.byteLength ?? 0;
-      }
-      if (byteLengthCounter >= bytes) {
-        break;
-      }
-      isDone = done;
-    }
-    reader.releaseLock();
-    const collected = new Uint8Array(Math.min(bytes, byteLengthCounter));
-    let offset = 0;
-    for (const chunk of chunks) {
-      if (chunk.byteLength > collected.byteLength - offset) {
-        collected.set(chunk.subarray(0, collected.byteLength - offset), offset);
-        break;
-      } else {
-        collected.set(chunk, offset);
-      }
-      offset += chunk.length;
-    }
-    return collected;
-  }
-});
-
-// node_modules/@smithy/util-stream/dist-cjs/headStream.js
-var require_headStream = __commonJS(function(exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.headStream = undefined;
-  var stream_1 = __require("stream");
-  var headStream_browser_1 = require_headStream_browser();
-  var stream_type_check_1 = require_stream_type_check();
-  var headStream = (stream, bytes) => {
-    if ((0, stream_type_check_1.isReadableStream)(stream)) {
-      return (0, headStream_browser_1.headStream)(stream, bytes);
-    }
-    return new Promise((resolve, reject) => {
-      const collector = new Collector;
-      collector.limit = bytes;
-      stream.pipe(collector);
-      stream.on("error", (err) => {
-        collector.end();
-        reject(err);
-      });
-      collector.on("error", reject);
-      collector.on("finish", function() {
-        const bytes2 = new Uint8Array(Buffer.concat(this.buffers));
-        resolve(bytes2);
-      });
-    });
-  };
-  exports.headStream = headStream;
-
-  class Collector extends stream_1.Writable {
-    buffers = [];
-    limit = Infinity;
-    bytesBuffered = 0;
-    _write(chunk, encoding, callback) {
-      this.buffers.push(chunk);
-      this.bytesBuffered += chunk.byteLength ?? 0;
-      if (this.bytesBuffered >= this.limit) {
-        const excess = this.bytesBuffered - this.limit;
-        const tailBuffer = this.buffers[this.buffers.length - 1];
-        this.buffers[this.buffers.length - 1] = tailBuffer.subarray(0, tailBuffer.byteLength - excess);
-        this.emit("finish");
-      }
-      callback();
-    }
-  }
-});
-
 // node_modules/@smithy/util-uri-escape/dist-cjs/index.js
-var require_dist_cjs10 = __commonJS(function(exports) {
+var require_dist_cjs3 = __commonJS(function(exports) {
   var escapeUri = (uri) => encodeURIComponent(uri).replace(/[!'()*]/g, hexEncode);
   var hexEncode = (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`;
   var escapeUriPath = (uri) => uri.split("/").map(escapeUri).join("/");
@@ -1064,8 +286,8 @@ var require_dist_cjs10 = __commonJS(function(exports) {
 });
 
 // node_modules/@smithy/querystring-builder/dist-cjs/index.js
-var require_dist_cjs11 = __commonJS(function(exports) {
-  var utilUriEscape = require_dist_cjs10();
+var require_dist_cjs4 = __commonJS(function(exports) {
+  var utilUriEscape = require_dist_cjs3();
   function buildQueryString(query) {
     const parts = [];
     for (let key of Object.keys(query).sort()) {
@@ -1089,9 +311,9 @@ var require_dist_cjs11 = __commonJS(function(exports) {
 });
 
 // node_modules/@smithy/node-http-handler/dist-cjs/index.js
-var require_dist_cjs12 = __commonJS(function(exports) {
+var require_dist_cjs5 = __commonJS(function(exports) {
   var protocolHttp = require_dist_cjs2();
-  var querystringBuilder = require_dist_cjs11();
+  var querystringBuilder = require_dist_cjs4();
   var http = __require("http");
   var https = __require("https");
   var stream = __require("stream");
@@ -1797,11 +1019,789 @@ or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler conf
   exports.streamCollector = streamCollector;
 });
 
+// node_modules/@aws-sdk/middleware-expect-continue/dist-cjs/index.js
+var require_dist_cjs6 = __commonJS(function(exports) {
+  var protocolHttp = require_dist_cjs2();
+  function addExpectContinueMiddleware(options) {
+    return (next) => async (args) => {
+      const { request } = args;
+      if (options.expectContinueHeader !== false && protocolHttp.HttpRequest.isInstance(request) && request.body && options.runtime === "node" && options.requestHandler?.constructor?.name !== "FetchHttpHandler") {
+        let sendHeader = true;
+        if (typeof options.expectContinueHeader === "number") {
+          try {
+            const bodyLength = Number(request.headers?.["content-length"]) ?? options.bodyLengthChecker?.(request.body) ?? Infinity;
+            sendHeader = bodyLength >= options.expectContinueHeader;
+          } catch (e) {}
+        } else {
+          sendHeader = !!options.expectContinueHeader;
+        }
+        if (sendHeader) {
+          request.headers.Expect = "100-continue";
+        }
+      }
+      return next({
+        ...args,
+        request
+      });
+    };
+  }
+  var addExpectContinueMiddlewareOptions = {
+    step: "build",
+    tags: ["SET_EXPECT_HEADER", "EXPECT_HEADER"],
+    name: "addExpectContinueMiddleware",
+    override: true
+  };
+  var getAddExpectContinuePlugin = (options) => ({
+    applyToStack: (clientStack) => {
+      clientStack.add(addExpectContinueMiddleware(options), addExpectContinueMiddlewareOptions);
+    }
+  });
+  exports.addExpectContinueMiddleware = addExpectContinueMiddleware;
+  exports.addExpectContinueMiddlewareOptions = addExpectContinueMiddlewareOptions;
+  exports.getAddExpectContinuePlugin = getAddExpectContinuePlugin;
+});
+
+// node_modules/@smithy/util-middleware/dist-cjs/index.js
+var require_dist_cjs7 = __commonJS(function(exports) {
+  var types = require_dist_cjs();
+  var getSmithyContext = (context) => context[types.SMITHY_CONTEXT_KEY] || (context[types.SMITHY_CONTEXT_KEY] = {});
+  var normalizeProvider = (input) => {
+    if (typeof input === "function")
+      return input;
+    const promisified = Promise.resolve(input);
+    return () => promisified;
+  };
+  exports.getSmithyContext = getSmithyContext;
+  exports.normalizeProvider = normalizeProvider;
+});
+
+// node_modules/@smithy/middleware-serde/dist-cjs/index.js
+var require_dist_cjs8 = __commonJS(function(exports) {
+  var protocolHttp = require_dist_cjs2();
+  var deserializerMiddleware = (options, deserializer) => (next, context) => async (args) => {
+    const { response } = await next(args);
+    try {
+      const parsed = await deserializer(response, options);
+      return {
+        response,
+        output: parsed
+      };
+    } catch (error) {
+      Object.defineProperty(error, "$response", {
+        value: response,
+        enumerable: false,
+        writable: false,
+        configurable: false
+      });
+      if (!("$metadata" in error)) {
+        const hint = `Deserialization error: to see the raw response, inspect the hidden field {error}.$response on this object.`;
+        try {
+          error.message += `
+  ` + hint;
+        } catch (e) {
+          if (!context.logger || context.logger?.constructor?.name === "NoOpLogger") {
+            console.warn(hint);
+          } else {
+            context.logger?.warn?.(hint);
+          }
+        }
+        if (typeof error.$responseBodyText !== "undefined") {
+          if (error.$response) {
+            error.$response.body = error.$responseBodyText;
+          }
+        }
+        try {
+          if (protocolHttp.HttpResponse.isInstance(response)) {
+            const { headers = {} } = response;
+            const headerEntries = Object.entries(headers);
+            error.$metadata = {
+              httpStatusCode: response.statusCode,
+              requestId: findHeader(/^x-[\w-]+-request-?id$/, headerEntries),
+              extendedRequestId: findHeader(/^x-[\w-]+-id-2$/, headerEntries),
+              cfId: findHeader(/^x-[\w-]+-cf-id$/, headerEntries)
+            };
+          }
+        } catch (e) {}
+      }
+      throw error;
+    }
+  };
+  var findHeader = (pattern, headers) => {
+    return (headers.find(([k]) => {
+      return k.match(pattern);
+    }) || [undefined, undefined])[1];
+  };
+  var serializerMiddleware = (options, serializer) => (next, context) => async (args) => {
+    const endpointConfig = options;
+    const endpoint = context.endpointV2?.url && endpointConfig.urlParser ? async () => endpointConfig.urlParser(context.endpointV2.url) : endpointConfig.endpoint;
+    if (!endpoint) {
+      throw new Error("No valid endpoint provider available.");
+    }
+    const request = await serializer(args.input, { ...options, endpoint });
+    return next({
+      ...args,
+      request
+    });
+  };
+  var deserializerMiddlewareOption = {
+    name: "deserializerMiddleware",
+    step: "deserialize",
+    tags: ["DESERIALIZER"],
+    override: true
+  };
+  var serializerMiddlewareOption = {
+    name: "serializerMiddleware",
+    step: "serialize",
+    tags: ["SERIALIZER"],
+    override: true
+  };
+  function getSerdePlugin(config, serializer, deserializer) {
+    return {
+      applyToStack: (commandStack) => {
+        commandStack.add(deserializerMiddleware(config, deserializer), deserializerMiddlewareOption);
+        commandStack.add(serializerMiddleware(config, serializer), serializerMiddlewareOption);
+      }
+    };
+  }
+  exports.deserializerMiddleware = deserializerMiddleware;
+  exports.deserializerMiddlewareOption = deserializerMiddlewareOption;
+  exports.getSerdePlugin = getSerdePlugin;
+  exports.serializerMiddleware = serializerMiddleware;
+  exports.serializerMiddlewareOption = serializerMiddlewareOption;
+});
+
+// node_modules/@smithy/is-array-buffer/dist-cjs/index.js
+var require_dist_cjs9 = __commonJS(function(exports) {
+  var isArrayBuffer = (arg) => typeof ArrayBuffer === "function" && arg instanceof ArrayBuffer || Object.prototype.toString.call(arg) === "[object ArrayBuffer]";
+  exports.isArrayBuffer = isArrayBuffer;
+});
+
+// node_modules/@smithy/util-buffer-from/dist-cjs/index.js
+var require_dist_cjs10 = __commonJS(function(exports) {
+  var isArrayBuffer = require_dist_cjs9();
+  var buffer = __require("buffer");
+  var fromArrayBuffer = (input, offset = 0, length = input.byteLength - offset) => {
+    if (!isArrayBuffer.isArrayBuffer(input)) {
+      throw new TypeError(`The "input" argument must be ArrayBuffer. Received type ${typeof input} (${input})`);
+    }
+    return buffer.Buffer.from(input, offset, length);
+  };
+  var fromString = (input, encoding) => {
+    if (typeof input !== "string") {
+      throw new TypeError(`The "input" argument must be of type string. Received type ${typeof input} (${input})`);
+    }
+    return encoding ? buffer.Buffer.from(input, encoding) : buffer.Buffer.from(input);
+  };
+  exports.fromArrayBuffer = fromArrayBuffer;
+  exports.fromString = fromString;
+});
+
+// node_modules/@smithy/util-base64/dist-cjs/fromBase64.js
+var require_fromBase64 = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.fromBase64 = undefined;
+  var util_buffer_from_1 = require_dist_cjs10();
+  var BASE64_REGEX = /^[A-Za-z0-9+/]*={0,2}$/;
+  var fromBase64 = (input) => {
+    if (input.length * 3 % 4 !== 0) {
+      throw new TypeError(`Incorrect padding on base64 string.`);
+    }
+    if (!BASE64_REGEX.exec(input)) {
+      throw new TypeError(`Invalid base64 string.`);
+    }
+    const buffer = (0, util_buffer_from_1.fromString)(input, "base64");
+    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  };
+  exports.fromBase64 = fromBase64;
+});
+
+// node_modules/@smithy/util-utf8/dist-cjs/index.js
+var require_dist_cjs11 = __commonJS(function(exports) {
+  var utilBufferFrom = require_dist_cjs10();
+  var fromUtf8 = (input) => {
+    const buf = utilBufferFrom.fromString(input, "utf8");
+    return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength / Uint8Array.BYTES_PER_ELEMENT);
+  };
+  var toUint8Array = (data) => {
+    if (typeof data === "string") {
+      return fromUtf8(data);
+    }
+    if (ArrayBuffer.isView(data)) {
+      return new Uint8Array(data.buffer, data.byteOffset, data.byteLength / Uint8Array.BYTES_PER_ELEMENT);
+    }
+    return new Uint8Array(data);
+  };
+  var toUtf8 = (input) => {
+    if (typeof input === "string") {
+      return input;
+    }
+    if (typeof input !== "object" || typeof input.byteOffset !== "number" || typeof input.byteLength !== "number") {
+      throw new Error("@smithy/util-utf8: toUtf8 encoder function only accepts string | Uint8Array.");
+    }
+    return utilBufferFrom.fromArrayBuffer(input.buffer, input.byteOffset, input.byteLength).toString("utf8");
+  };
+  exports.fromUtf8 = fromUtf8;
+  exports.toUint8Array = toUint8Array;
+  exports.toUtf8 = toUtf8;
+});
+
+// node_modules/@smithy/util-base64/dist-cjs/toBase64.js
+var require_toBase64 = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.toBase64 = undefined;
+  var util_buffer_from_1 = require_dist_cjs10();
+  var util_utf8_1 = require_dist_cjs11();
+  var toBase64 = (_input) => {
+    let input;
+    if (typeof _input === "string") {
+      input = (0, util_utf8_1.fromUtf8)(_input);
+    } else {
+      input = _input;
+    }
+    if (typeof input !== "object" || typeof input.byteOffset !== "number" || typeof input.byteLength !== "number") {
+      throw new Error("@smithy/util-base64: toBase64 encoder function only accepts string | Uint8Array.");
+    }
+    return (0, util_buffer_from_1.fromArrayBuffer)(input.buffer, input.byteOffset, input.byteLength).toString("base64");
+  };
+  exports.toBase64 = toBase64;
+});
+
+// node_modules/@smithy/util-base64/dist-cjs/index.js
+var require_dist_cjs12 = __commonJS(function(exports) {
+  var fromBase64 = require_fromBase64();
+  var toBase64 = require_toBase64();
+  Object.prototype.hasOwnProperty.call(fromBase64, "__proto__") && !Object.prototype.hasOwnProperty.call(exports, "__proto__") && Object.defineProperty(exports, "__proto__", {
+    enumerable: true,
+    value: fromBase64["__proto__"]
+  });
+  Object.keys(fromBase64).forEach(function(k) {
+    if (k !== "default" && !Object.prototype.hasOwnProperty.call(exports, k))
+      exports[k] = fromBase64[k];
+  });
+  Object.prototype.hasOwnProperty.call(toBase64, "__proto__") && !Object.prototype.hasOwnProperty.call(exports, "__proto__") && Object.defineProperty(exports, "__proto__", {
+    enumerable: true,
+    value: toBase64["__proto__"]
+  });
+  Object.keys(toBase64).forEach(function(k) {
+    if (k !== "default" && !Object.prototype.hasOwnProperty.call(exports, k))
+      exports[k] = toBase64[k];
+  });
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/checksum/ChecksumStream.js
+var require_ChecksumStream = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.ChecksumStream = undefined;
+  var util_base64_1 = require_dist_cjs12();
+  var stream_1 = __require("stream");
+
+  class ChecksumStream extends stream_1.Duplex {
+    expectedChecksum;
+    checksumSourceLocation;
+    checksum;
+    source;
+    base64Encoder;
+    pendingCallback = null;
+    constructor({ expectedChecksum, checksum, source, checksumSourceLocation, base64Encoder }) {
+      super();
+      if (typeof source.pipe === "function") {
+        this.source = source;
+      } else {
+        throw new Error(`@smithy/util-stream: unsupported source type ${source?.constructor?.name ?? source} in ChecksumStream.`);
+      }
+      this.base64Encoder = base64Encoder ?? util_base64_1.toBase64;
+      this.expectedChecksum = expectedChecksum;
+      this.checksum = checksum;
+      this.checksumSourceLocation = checksumSourceLocation;
+      this.source.pipe(this);
+    }
+    _read(size) {
+      if (this.pendingCallback) {
+        const callback = this.pendingCallback;
+        this.pendingCallback = null;
+        callback();
+      }
+    }
+    _write(chunk, encoding, callback) {
+      try {
+        this.checksum.update(chunk);
+        const canPushMore = this.push(chunk);
+        if (!canPushMore) {
+          this.pendingCallback = callback;
+          return;
+        }
+      } catch (e) {
+        return callback(e);
+      }
+      return callback();
+    }
+    async _final(callback) {
+      try {
+        const digest = await this.checksum.digest();
+        const received = this.base64Encoder(digest);
+        if (this.expectedChecksum !== received) {
+          return callback(new Error(`Checksum mismatch: expected "${this.expectedChecksum}" but received "${received}"` + ` in response header "${this.checksumSourceLocation}".`));
+        }
+      } catch (e) {
+        return callback(e);
+      }
+      this.push(null);
+      return callback();
+    }
+  }
+  exports.ChecksumStream = ChecksumStream;
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/stream-type-check.js
+var require_stream_type_check = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.isBlob = exports.isReadableStream = undefined;
+  var isReadableStream = (stream) => typeof ReadableStream === "function" && (stream?.constructor?.name === ReadableStream.name || stream instanceof ReadableStream);
+  exports.isReadableStream = isReadableStream;
+  var isBlob = (blob) => {
+    return typeof Blob === "function" && (blob?.constructor?.name === Blob.name || blob instanceof Blob);
+  };
+  exports.isBlob = isBlob;
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/checksum/ChecksumStream.browser.js
+var require_ChecksumStream_browser = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.ChecksumStream = undefined;
+  var ReadableStreamRef = typeof ReadableStream === "function" ? ReadableStream : function() {};
+
+  class ChecksumStream extends ReadableStreamRef {
+  }
+  exports.ChecksumStream = ChecksumStream;
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/checksum/createChecksumStream.browser.js
+var require_createChecksumStream_browser = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.createChecksumStream = undefined;
+  var util_base64_1 = require_dist_cjs12();
+  var stream_type_check_1 = require_stream_type_check();
+  var ChecksumStream_browser_1 = require_ChecksumStream_browser();
+  var createChecksumStream = ({ expectedChecksum, checksum, source, checksumSourceLocation, base64Encoder }) => {
+    if (!(0, stream_type_check_1.isReadableStream)(source)) {
+      throw new Error(`@smithy/util-stream: unsupported source type ${source?.constructor?.name ?? source} in ChecksumStream.`);
+    }
+    const encoder = base64Encoder ?? util_base64_1.toBase64;
+    if (typeof TransformStream !== "function") {
+      throw new Error("@smithy/util-stream: unable to instantiate ChecksumStream because API unavailable: ReadableStream/TransformStream.");
+    }
+    const transform = new TransformStream({
+      start() {},
+      async transform(chunk, controller) {
+        checksum.update(chunk);
+        controller.enqueue(chunk);
+      },
+      async flush(controller) {
+        const digest = await checksum.digest();
+        const received = encoder(digest);
+        if (expectedChecksum !== received) {
+          const error = new Error(`Checksum mismatch: expected "${expectedChecksum}" but received "${received}"` + ` in response header "${checksumSourceLocation}".`);
+          controller.error(error);
+        } else {
+          controller.terminate();
+        }
+      }
+    });
+    source.pipeThrough(transform);
+    const readable = transform.readable;
+    Object.setPrototypeOf(readable, ChecksumStream_browser_1.ChecksumStream.prototype);
+    return readable;
+  };
+  exports.createChecksumStream = createChecksumStream;
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/checksum/createChecksumStream.js
+var require_createChecksumStream = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.createChecksumStream = createChecksumStream;
+  var stream_type_check_1 = require_stream_type_check();
+  var ChecksumStream_1 = require_ChecksumStream();
+  var createChecksumStream_browser_1 = require_createChecksumStream_browser();
+  function createChecksumStream(init) {
+    if (typeof ReadableStream === "function" && (0, stream_type_check_1.isReadableStream)(init.source)) {
+      return (0, createChecksumStream_browser_1.createChecksumStream)(init);
+    }
+    return new ChecksumStream_1.ChecksumStream(init);
+  }
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/ByteArrayCollector.js
+var require_ByteArrayCollector = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.ByteArrayCollector = undefined;
+
+  class ByteArrayCollector {
+    allocByteArray;
+    byteLength = 0;
+    byteArrays = [];
+    constructor(allocByteArray) {
+      this.allocByteArray = allocByteArray;
+    }
+    push(byteArray) {
+      this.byteArrays.push(byteArray);
+      this.byteLength += byteArray.byteLength;
+    }
+    flush() {
+      if (this.byteArrays.length === 1) {
+        const bytes = this.byteArrays[0];
+        this.reset();
+        return bytes;
+      }
+      const aggregation = this.allocByteArray(this.byteLength);
+      let cursor = 0;
+      for (let i = 0;i < this.byteArrays.length; ++i) {
+        const bytes = this.byteArrays[i];
+        aggregation.set(bytes, cursor);
+        cursor += bytes.byteLength;
+      }
+      this.reset();
+      return aggregation;
+    }
+    reset() {
+      this.byteArrays = [];
+      this.byteLength = 0;
+    }
+  }
+  exports.ByteArrayCollector = ByteArrayCollector;
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/createBufferedReadableStream.js
+var require_createBufferedReadableStream = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.createBufferedReadable = undefined;
+  exports.createBufferedReadableStream = createBufferedReadableStream;
+  exports.merge = merge;
+  exports.flush = flush;
+  exports.sizeOf = sizeOf;
+  exports.modeOf = modeOf;
+  var ByteArrayCollector_1 = require_ByteArrayCollector();
+  function createBufferedReadableStream(upstream, size, logger) {
+    const reader = upstream.getReader();
+    let streamBufferingLoggedWarning = false;
+    let bytesSeen = 0;
+    const buffers = ["", new ByteArrayCollector_1.ByteArrayCollector((size2) => new Uint8Array(size2))];
+    let mode = -1;
+    const pull = async (controller) => {
+      const { value, done } = await reader.read();
+      const chunk = value;
+      if (done) {
+        if (mode !== -1) {
+          const remainder = flush(buffers, mode);
+          if (sizeOf(remainder) > 0) {
+            controller.enqueue(remainder);
+          }
+        }
+        controller.close();
+      } else {
+        const chunkMode = modeOf(chunk, false);
+        if (mode !== chunkMode) {
+          if (mode >= 0) {
+            controller.enqueue(flush(buffers, mode));
+          }
+          mode = chunkMode;
+        }
+        if (mode === -1) {
+          controller.enqueue(chunk);
+          return;
+        }
+        const chunkSize = sizeOf(chunk);
+        bytesSeen += chunkSize;
+        const bufferSize = sizeOf(buffers[mode]);
+        if (chunkSize >= size && bufferSize === 0) {
+          controller.enqueue(chunk);
+        } else {
+          const newSize = merge(buffers, mode, chunk);
+          if (!streamBufferingLoggedWarning && bytesSeen > size * 2) {
+            streamBufferingLoggedWarning = true;
+            logger?.warn(`@smithy/util-stream - stream chunk size ${chunkSize} is below threshold of ${size}, automatically buffering.`);
+          }
+          if (newSize >= size) {
+            controller.enqueue(flush(buffers, mode));
+          } else {
+            await pull(controller);
+          }
+        }
+      }
+    };
+    return new ReadableStream({
+      pull
+    });
+  }
+  exports.createBufferedReadable = createBufferedReadableStream;
+  function merge(buffers, mode, chunk) {
+    switch (mode) {
+      case 0:
+        buffers[0] += chunk;
+        return sizeOf(buffers[0]);
+      case 1:
+      case 2:
+        buffers[mode].push(chunk);
+        return sizeOf(buffers[mode]);
+    }
+  }
+  function flush(buffers, mode) {
+    switch (mode) {
+      case 0:
+        const s = buffers[0];
+        buffers[0] = "";
+        return s;
+      case 1:
+      case 2:
+        return buffers[mode].flush();
+    }
+    throw new Error(`@smithy/util-stream - invalid index ${mode} given to flush()`);
+  }
+  function sizeOf(chunk) {
+    return chunk?.byteLength ?? chunk?.length ?? 0;
+  }
+  function modeOf(chunk, allowBuffer = true) {
+    if (allowBuffer && typeof Buffer !== "undefined" && chunk instanceof Buffer) {
+      return 2;
+    }
+    if (chunk instanceof Uint8Array) {
+      return 1;
+    }
+    if (typeof chunk === "string") {
+      return 0;
+    }
+    return -1;
+  }
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/createBufferedReadable.js
+var require_createBufferedReadable = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.createBufferedReadable = createBufferedReadable;
+  var node_stream_1 = __require("node:stream");
+  var ByteArrayCollector_1 = require_ByteArrayCollector();
+  var createBufferedReadableStream_1 = require_createBufferedReadableStream();
+  var stream_type_check_1 = require_stream_type_check();
+  function createBufferedReadable(upstream, size, logger) {
+    if ((0, stream_type_check_1.isReadableStream)(upstream)) {
+      return (0, createBufferedReadableStream_1.createBufferedReadableStream)(upstream, size, logger);
+    }
+    const downstream = new node_stream_1.Readable({ read() {} });
+    let streamBufferingLoggedWarning = false;
+    let bytesSeen = 0;
+    const buffers = [
+      "",
+      new ByteArrayCollector_1.ByteArrayCollector((size2) => new Uint8Array(size2)),
+      new ByteArrayCollector_1.ByteArrayCollector((size2) => Buffer.from(new Uint8Array(size2)))
+    ];
+    let mode = -1;
+    upstream.on("data", (chunk) => {
+      const chunkMode = (0, createBufferedReadableStream_1.modeOf)(chunk, true);
+      if (mode !== chunkMode) {
+        if (mode >= 0) {
+          downstream.push((0, createBufferedReadableStream_1.flush)(buffers, mode));
+        }
+        mode = chunkMode;
+      }
+      if (mode === -1) {
+        downstream.push(chunk);
+        return;
+      }
+      const chunkSize = (0, createBufferedReadableStream_1.sizeOf)(chunk);
+      bytesSeen += chunkSize;
+      const bufferSize = (0, createBufferedReadableStream_1.sizeOf)(buffers[mode]);
+      if (chunkSize >= size && bufferSize === 0) {
+        downstream.push(chunk);
+      } else {
+        const newSize = (0, createBufferedReadableStream_1.merge)(buffers, mode, chunk);
+        if (!streamBufferingLoggedWarning && bytesSeen > size * 2) {
+          streamBufferingLoggedWarning = true;
+          logger?.warn(`@smithy/util-stream - stream chunk size ${chunkSize} is below threshold of ${size}, automatically buffering.`);
+        }
+        if (newSize >= size) {
+          downstream.push((0, createBufferedReadableStream_1.flush)(buffers, mode));
+        }
+      }
+    });
+    upstream.on("end", () => {
+      if (mode !== -1) {
+        const remainder = (0, createBufferedReadableStream_1.flush)(buffers, mode);
+        if ((0, createBufferedReadableStream_1.sizeOf)(remainder) > 0) {
+          downstream.push(remainder);
+        }
+      }
+      downstream.push(null);
+    });
+    return downstream;
+  }
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/getAwsChunkedEncodingStream.browser.js
+var require_getAwsChunkedEncodingStream_browser = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.getAwsChunkedEncodingStream = undefined;
+  var getAwsChunkedEncodingStream = (readableStream, options) => {
+    const { base64Encoder, bodyLengthChecker, checksumAlgorithmFn, checksumLocationName, streamHasher } = options;
+    const checksumRequired = base64Encoder !== undefined && bodyLengthChecker !== undefined && checksumAlgorithmFn !== undefined && checksumLocationName !== undefined && streamHasher !== undefined;
+    const digest = checksumRequired ? streamHasher(checksumAlgorithmFn, readableStream) : undefined;
+    const reader = readableStream.getReader();
+    return new ReadableStream({
+      async pull(controller) {
+        const { value, done } = await reader.read();
+        if (done) {
+          controller.enqueue(`0\r
+`);
+          if (checksumRequired) {
+            const checksum = base64Encoder(await digest);
+            controller.enqueue(`${checksumLocationName}:${checksum}\r
+`);
+            controller.enqueue(`\r
+`);
+          }
+          controller.close();
+        } else {
+          controller.enqueue(`${(bodyLengthChecker(value) || 0).toString(16)}\r
+${value}\r
+`);
+        }
+      }
+    });
+  };
+  exports.getAwsChunkedEncodingStream = getAwsChunkedEncodingStream;
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/getAwsChunkedEncodingStream.js
+var require_getAwsChunkedEncodingStream = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.getAwsChunkedEncodingStream = getAwsChunkedEncodingStream;
+  var node_stream_1 = __require("node:stream");
+  var getAwsChunkedEncodingStream_browser_1 = require_getAwsChunkedEncodingStream_browser();
+  var stream_type_check_1 = require_stream_type_check();
+  function getAwsChunkedEncodingStream(stream, options) {
+    const readable = stream;
+    const readableStream = stream;
+    if ((0, stream_type_check_1.isReadableStream)(readableStream)) {
+      return (0, getAwsChunkedEncodingStream_browser_1.getAwsChunkedEncodingStream)(readableStream, options);
+    }
+    const { base64Encoder, bodyLengthChecker, checksumAlgorithmFn, checksumLocationName, streamHasher } = options;
+    const checksumRequired = base64Encoder !== undefined && checksumAlgorithmFn !== undefined && checksumLocationName !== undefined && streamHasher !== undefined;
+    const digest = checksumRequired ? streamHasher(checksumAlgorithmFn, readable) : undefined;
+    const awsChunkedEncodingStream = new node_stream_1.Readable({
+      read: () => {}
+    });
+    readable.on("data", (data) => {
+      const length = bodyLengthChecker(data) || 0;
+      if (length === 0) {
+        return;
+      }
+      awsChunkedEncodingStream.push(`${length.toString(16)}\r
+`);
+      awsChunkedEncodingStream.push(data);
+      awsChunkedEncodingStream.push(`\r
+`);
+    });
+    readable.on("end", async () => {
+      awsChunkedEncodingStream.push(`0\r
+`);
+      if (checksumRequired) {
+        const checksum = base64Encoder(await digest);
+        awsChunkedEncodingStream.push(`${checksumLocationName}:${checksum}\r
+`);
+        awsChunkedEncodingStream.push(`\r
+`);
+      }
+      awsChunkedEncodingStream.push(null);
+    });
+    return awsChunkedEncodingStream;
+  }
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/headStream.browser.js
+var require_headStream_browser = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.headStream = headStream;
+  async function headStream(stream, bytes) {
+    let byteLengthCounter = 0;
+    const chunks = [];
+    const reader = stream.getReader();
+    let isDone = false;
+    while (!isDone) {
+      const { done, value } = await reader.read();
+      if (value) {
+        chunks.push(value);
+        byteLengthCounter += value?.byteLength ?? 0;
+      }
+      if (byteLengthCounter >= bytes) {
+        break;
+      }
+      isDone = done;
+    }
+    reader.releaseLock();
+    const collected = new Uint8Array(Math.min(bytes, byteLengthCounter));
+    let offset = 0;
+    for (const chunk of chunks) {
+      if (chunk.byteLength > collected.byteLength - offset) {
+        collected.set(chunk.subarray(0, collected.byteLength - offset), offset);
+        break;
+      } else {
+        collected.set(chunk, offset);
+      }
+      offset += chunk.length;
+    }
+    return collected;
+  }
+});
+
+// node_modules/@smithy/util-stream/dist-cjs/headStream.js
+var require_headStream = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.headStream = undefined;
+  var stream_1 = __require("stream");
+  var headStream_browser_1 = require_headStream_browser();
+  var stream_type_check_1 = require_stream_type_check();
+  var headStream = (stream, bytes) => {
+    if ((0, stream_type_check_1.isReadableStream)(stream)) {
+      return (0, headStream_browser_1.headStream)(stream, bytes);
+    }
+    return new Promise((resolve, reject) => {
+      const collector = new Collector;
+      collector.limit = bytes;
+      stream.pipe(collector);
+      stream.on("error", (err) => {
+        collector.end();
+        reject(err);
+      });
+      collector.on("error", reject);
+      collector.on("finish", function() {
+        const bytes2 = new Uint8Array(Buffer.concat(this.buffers));
+        resolve(bytes2);
+      });
+    });
+  };
+  exports.headStream = headStream;
+
+  class Collector extends stream_1.Writable {
+    buffers = [];
+    limit = Infinity;
+    bytesBuffered = 0;
+    _write(chunk, encoding, callback) {
+      this.buffers.push(chunk);
+      this.bytesBuffered += chunk.byteLength ?? 0;
+      if (this.bytesBuffered >= this.limit) {
+        const excess = this.bytesBuffered - this.limit;
+        const tailBuffer = this.buffers[this.buffers.length - 1];
+        this.buffers[this.buffers.length - 1] = tailBuffer.subarray(0, tailBuffer.byteLength - excess);
+        this.emit("finish");
+      }
+      callback();
+    }
+  }
+});
+
 // node_modules/@smithy/fetch-http-handler/dist-cjs/index.js
 var require_dist_cjs13 = __commonJS(function(exports) {
   var protocolHttp = require_dist_cjs2();
-  var querystringBuilder = require_dist_cjs11();
-  var utilBase64 = require_dist_cjs9();
+  var querystringBuilder = require_dist_cjs4();
+  var utilBase64 = require_dist_cjs12();
   function createRequest(url, requestOptions) {
     return new Request(url, requestOptions);
   }
@@ -2051,9 +2051,9 @@ var require_sdk_stream_mixin_browser = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.sdkStreamMixin = undefined;
   var fetch_http_handler_1 = require_dist_cjs13();
-  var util_base64_1 = require_dist_cjs9();
+  var util_base64_1 = require_dist_cjs12();
   var util_hex_encoding_1 = require_dist_cjs14();
-  var util_utf8_1 = require_dist_cjs8();
+  var util_utf8_1 = require_dist_cjs11();
   var stream_type_check_1 = require_stream_type_check();
   var ERR_MSG_STREAM_HAS_BEEN_TRANSFORMED = "The stream has already been transformed.";
   var sdkStreamMixin = (stream) => {
@@ -2115,8 +2115,8 @@ var require_sdk_stream_mixin_browser = __commonJS(function(exports) {
 var require_sdk_stream_mixin = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.sdkStreamMixin = undefined;
-  var node_http_handler_1 = require_dist_cjs12();
-  var util_buffer_from_1 = require_dist_cjs7();
+  var node_http_handler_1 = require_dist_cjs5();
+  var util_buffer_from_1 = require_dist_cjs10();
   var stream_1 = __require("stream");
   var sdk_stream_mixin_browser_1 = require_sdk_stream_mixin_browser();
   var ERR_MSG_STREAM_HAS_BEEN_TRANSFORMED = "The stream has already been transformed.";
@@ -2200,8 +2200,8 @@ var require_splitStream = __commonJS(function(exports) {
 
 // node_modules/@smithy/util-stream/dist-cjs/index.js
 var require_dist_cjs15 = __commonJS(function(exports) {
-  var utilBase64 = require_dist_cjs9();
-  var utilUtf8 = require_dist_cjs8();
+  var utilBase64 = require_dist_cjs12();
+  var utilUtf8 = require_dist_cjs11();
   var ChecksumStream = require_ChecksumStream();
   var createChecksumStream = require_createChecksumStream();
   var createBufferedReadable = require_createBufferedReadable();
@@ -2296,7 +2296,7 @@ var require_dist_cjs15 = __commonJS(function(exports) {
 // node_modules/@smithy/core/dist-cjs/submodules/schema/index.js
 var require_schema = __commonJS(function(exports) {
   var protocolHttp = require_dist_cjs2();
-  var utilMiddleware = require_dist_cjs4();
+  var utilMiddleware = require_dist_cjs7();
   var deref = (schemaRef) => {
     if (typeof schemaRef === "function") {
       return schemaRef();
@@ -4227,7 +4227,7 @@ var require_serde = __commonJS(function(exports) {
 
 // node_modules/@smithy/core/dist-cjs/submodules/event-streams/index.js
 var require_event_streams = __commonJS(function(exports) {
-  var utilUtf8 = require_dist_cjs8();
+  var utilUtf8 = require_dist_cjs11();
 
   class EventStreamSerde {
     marshaller;
@@ -4472,8 +4472,8 @@ var require_protocols = __commonJS(function(exports) {
   var schema = require_schema();
   var serde = require_serde();
   var protocolHttp = require_dist_cjs2();
-  var utilBase64 = require_dist_cjs9();
-  var utilUtf8 = require_dist_cjs8();
+  var utilBase64 = require_dist_cjs12();
+  var utilUtf8 = require_dist_cjs11();
   var collectBody = async (streamBody = new Uint8Array, context) => {
     if (streamBody instanceof Uint8Array) {
       return utilStream.Uint8ArrayBlobAdapter.mutate(streamBody);
@@ -5298,8 +5298,8 @@ var require_protocols = __commonJS(function(exports) {
 // node_modules/@smithy/core/dist-cjs/index.js
 var require_dist_cjs17 = __commonJS(function(exports) {
   var types = require_dist_cjs();
-  var utilMiddleware = require_dist_cjs4();
-  var middlewareSerde = require_dist_cjs5();
+  var utilMiddleware = require_dist_cjs7();
+  var middlewareSerde = require_dist_cjs8();
   var protocolHttp = require_dist_cjs2();
   var protocols = require_protocols();
   var getSmithyContext = (context) => context[types.SMITHY_CONTEXT_KEY] || (context[types.SMITHY_CONTEXT_KEY] = {});
@@ -5785,11 +5785,11 @@ More information can be found at: https://a.co/c895JFp`);
 // node_modules/@smithy/signature-v4/dist-cjs/index.js
 var require_dist_cjs19 = __commonJS(function(exports) {
   var utilHexEncoding = require_dist_cjs14();
-  var utilUtf8 = require_dist_cjs8();
-  var isArrayBuffer = require_dist_cjs6();
+  var utilUtf8 = require_dist_cjs11();
+  var isArrayBuffer = require_dist_cjs9();
   var protocolHttp = require_dist_cjs2();
-  var utilMiddleware = require_dist_cjs4();
-  var utilUriEscape = require_dist_cjs10();
+  var utilMiddleware = require_dist_cjs7();
+  var utilUriEscape = require_dist_cjs3();
   var ALGORITHM_QUERY_PARAM = "X-Amz-Algorithm";
   var CREDENTIAL_QUERY_PARAM = "X-Amz-Credential";
   var AMZ_DATE_QUERY_PARAM = "X-Amz-Date";
@@ -6338,13 +6338,13 @@ var require_dist_cjs20 = __commonJS(function(exports) {
 // node_modules/@smithy/core/dist-cjs/submodules/cbor/index.js
 var require_cbor = __commonJS(function(exports) {
   var serde = require_serde();
-  var utilUtf8 = require_dist_cjs8();
+  var utilUtf8 = require_dist_cjs11();
   var protocols = require_protocols();
   var protocolHttp = require_dist_cjs2();
   var utilBodyLengthBrowser = require_dist_cjs20();
   var schema = require_schema();
-  var utilMiddleware = require_dist_cjs4();
-  var utilBase64 = require_dist_cjs9();
+  var utilMiddleware = require_dist_cjs7();
+  var utilBase64 = require_dist_cjs12();
   var majorUint64 = 0;
   var majorNegativeInt64 = 1;
   var majorUnstructuredByteString = 2;
@@ -9399,8 +9399,8 @@ var require_dist_cjs24 = __commonJS(function(exports) {
   var smithyClient = require_dist_cjs22();
   var protocols = require_protocols();
   var serde = require_serde();
-  var utilBase64 = require_dist_cjs9();
-  var utilUtf8 = require_dist_cjs8();
+  var utilBase64 = require_dist_cjs12();
+  var utilUtf8 = require_dist_cjs11();
   var xmlBuilder = require_dist_cjs23();
   var state = {
     warningEmitted: false
@@ -12528,12 +12528,12 @@ var require_dist_cjs29 = __commonJS(function(exports) {
   var core = require_dist_cjs24();
   var protocolHttp = require_dist_cjs2();
   var utilStream = require_dist_cjs15();
-  var isArrayBuffer = require_dist_cjs6();
+  var isArrayBuffer = require_dist_cjs9();
   var crc32c = require_main2();
   var crc64Nvme = require_dist_cjs28();
   var getCrc32ChecksumAlgorithmFunction = require_getCrc32ChecksumAlgorithmFunction();
-  var utilUtf8 = require_dist_cjs8();
-  var utilMiddleware = require_dist_cjs4();
+  var utilUtf8 = require_dist_cjs11();
+  var utilMiddleware = require_dist_cjs7();
   var RequestChecksumCalculation = {
     WHEN_SUPPORTED: "WHEN_SUPPORTED",
     WHEN_REQUIRED: "WHEN_REQUIRED"
@@ -13257,7 +13257,7 @@ var require_dist_cjs35 = __commonJS(function(exports) {
   var core = require_dist_cjs24();
   var core$1 = require_dist_cjs17();
   require_dist_cjs();
-  var utilMiddleware = require_dist_cjs4();
+  var utilMiddleware = require_dist_cjs7();
   var CONTENT_LENGTH_HEADER = "content-length";
   var DECODED_CONTENT_LENGTH_HEADER = "x-amz-decoded-content-length";
   function checkContentLengthHeader() {
@@ -14849,7 +14849,7 @@ var require_dist_cjs40 = __commonJS(function(exports) {
 // node_modules/@smithy/config-resolver/dist-cjs/index.js
 var require_dist_cjs41 = __commonJS(function(exports) {
   var utilConfigProvider = require_dist_cjs34();
-  var utilMiddleware = require_dist_cjs4();
+  var utilMiddleware = require_dist_cjs7();
   var utilEndpoints = require_dist_cjs36();
   var ENV_USE_DUALSTACK_ENDPOINT = "AWS_USE_DUALSTACK_ENDPOINT";
   var CONFIG_USE_DUALSTACK_ENDPOINT = "use_dualstack_endpoint";
@@ -15406,8 +15406,8 @@ var require_dist_cjs46 = __commonJS(function(exports) {
   var getEndpointFromConfig = require_getEndpointFromConfig();
   var urlParser = require_dist_cjs38();
   var core = require_dist_cjs17();
-  var utilMiddleware = require_dist_cjs4();
-  var middlewareSerde = require_dist_cjs5();
+  var utilMiddleware = require_dist_cjs7();
+  var middlewareSerde = require_dist_cjs8();
   var resolveParamsForS3 = async (endpointParams) => {
     const bucket = endpointParams?.Bucket || "";
     if (typeof endpointParams.Bucket === "string") {
@@ -15987,7 +15987,7 @@ var require_dist_cjs49 = __commonJS(function(exports) {
   var protocolHttp = require_dist_cjs2();
   var serviceErrorClassification = require_dist_cjs47();
   var uuid = require_dist_cjs16();
-  var utilMiddleware = require_dist_cjs4();
+  var utilMiddleware = require_dist_cjs7();
   var smithyClient = require_dist_cjs22();
   var isStreamingPayload = require_isStreamingPayload();
   var getDefaultRetryQuota = (initialRetryTokens, options) => {
@@ -16664,7 +16664,7 @@ var require_httpAuthSchemeProvider = __commonJS(function(exports) {
   var core_1 = require_dist_cjs24();
   var signature_v4_multi_region_1 = require_dist_cjs50();
   var middleware_endpoint_1 = require_dist_cjs46();
-  var util_middleware_1 = require_dist_cjs4();
+  var util_middleware_1 = require_dist_cjs7();
   var endpointResolver_1 = require_endpointResolver();
   var createEndpointRuleSetHttpAuthSchemeParametersProvider = (defaultHttpAuthSchemeParametersProvider) => async (config, context, input) => {
     if (!input) {
@@ -22846,7 +22846,7 @@ var require_fromHttp = __commonJS(function(exports) {
   exports.fromHttp = undefined;
   var tslib_1 = require_tslib();
   var client_1 = require_client();
-  var node_http_handler_1 = require_dist_cjs12();
+  var node_http_handler_1 = require_dist_cjs5();
   var property_provider_1 = require_dist_cjs18();
   var promises_1 = tslib_1.__importDefault(__require("fs/promises"));
   var checkUrl_1 = require_checkUrl();
@@ -23210,7 +23210,7 @@ var require_httpAuthSchemeProvider2 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.resolveHttpAuthSchemeConfig = exports.defaultSSOOIDCHttpAuthSchemeProvider = exports.defaultSSOOIDCHttpAuthSchemeParametersProvider = undefined;
   var core_1 = require_dist_cjs24();
-  var util_middleware_1 = require_dist_cjs4();
+  var util_middleware_1 = require_dist_cjs7();
   var defaultSSOOIDCHttpAuthSchemeParametersProvider = async (config, context, input) => {
     return {
       operation: (0, util_middleware_1.getSmithyContext)(context).operation,
@@ -23479,8 +23479,8 @@ var require_dist_cjs54 = __commonJS(function(exports) {
 
 // node_modules/@smithy/hash-node/dist-cjs/index.js
 var require_dist_cjs55 = __commonJS(function(exports) {
-  var utilBufferFrom = require_dist_cjs7();
-  var utilUtf8 = require_dist_cjs8();
+  var utilBufferFrom = require_dist_cjs10();
+  var utilUtf8 = require_dist_cjs11();
   var buffer = __require("buffer");
   var crypto2 = __require("crypto");
 
@@ -23621,8 +23621,8 @@ var require_protocols2 = __commonJS(function(exports) {
   var smithyClient = require_dist_cjs22();
   var protocols = require_protocols();
   var serde = require_serde();
-  var utilBase64 = require_dist_cjs9();
-  var utilUtf8 = require_dist_cjs8();
+  var utilBase64 = require_dist_cjs12();
+  var utilUtf8 = require_dist_cjs11();
   var xmlBuilder = require_dist_cjs23();
 
   class ProtocolLib {
@@ -25937,8 +25937,8 @@ var require_runtimeConfig_shared = __commonJS(function(exports) {
   var core_2 = require_dist_cjs17();
   var smithy_client_1 = require_dist_cjs22();
   var url_parser_1 = require_dist_cjs38();
-  var util_base64_1 = require_dist_cjs9();
-  var util_utf8_1 = require_dist_cjs8();
+  var util_base64_1 = require_dist_cjs12();
+  var util_utf8_1 = require_dist_cjs11();
   var httpAuthSchemeProvider_1 = require_httpAuthSchemeProvider2();
   var endpointResolver_1 = require_endpointResolver2();
   var schemas_0_1 = require_schemas_02();
@@ -25992,7 +25992,7 @@ var require_runtimeConfig = __commonJS(function(exports) {
   var hash_node_1 = require_dist_cjs55();
   var middleware_retry_1 = require_dist_cjs49();
   var node_config_provider_1 = require_dist_cjs45();
-  var node_http_handler_1 = require_dist_cjs12();
+  var node_http_handler_1 = require_dist_cjs5();
   var smithy_client_1 = require_dist_cjs22();
   var util_body_length_node_1 = require_dist_cjs56();
   var util_defaults_mode_node_1 = require_dist_cjs57();
@@ -26397,7 +26397,7 @@ var require_httpAuthSchemeProvider3 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.resolveHttpAuthSchemeConfig = exports.defaultSSOHttpAuthSchemeProvider = exports.defaultSSOHttpAuthSchemeParametersProvider = undefined;
   var core_1 = require_dist_cjs24();
-  var util_middleware_1 = require_dist_cjs4();
+  var util_middleware_1 = require_dist_cjs7();
   var defaultSSOHttpAuthSchemeParametersProvider = async (config, context, input) => {
     return {
       operation: (0, util_middleware_1.getSmithyContext)(context).operation,
@@ -26785,8 +26785,8 @@ var require_runtimeConfig_shared2 = __commonJS(function(exports) {
   var core_2 = require_dist_cjs17();
   var smithy_client_1 = require_dist_cjs22();
   var url_parser_1 = require_dist_cjs38();
-  var util_base64_1 = require_dist_cjs9();
-  var util_utf8_1 = require_dist_cjs8();
+  var util_base64_1 = require_dist_cjs12();
+  var util_utf8_1 = require_dist_cjs11();
   var httpAuthSchemeProvider_1 = require_httpAuthSchemeProvider3();
   var endpointResolver_1 = require_endpointResolver3();
   var schemas_0_1 = require_schemas_03();
@@ -26840,7 +26840,7 @@ var require_runtimeConfig2 = __commonJS(function(exports) {
   var hash_node_1 = require_dist_cjs55();
   var middleware_retry_1 = require_dist_cjs49();
   var node_config_provider_1 = require_dist_cjs45();
-  var node_http_handler_1 = require_dist_cjs12();
+  var node_http_handler_1 = require_dist_cjs5();
   var smithy_client_1 = require_dist_cjs22();
   var util_body_length_node_1 = require_dist_cjs56();
   var util_defaults_mode_node_1 = require_dist_cjs57();
@@ -27216,7 +27216,7 @@ var require_httpAuthSchemeProvider4 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.resolveHttpAuthSchemeConfig = exports.defaultSigninHttpAuthSchemeProvider = exports.defaultSigninHttpAuthSchemeParametersProvider = undefined;
   var core_1 = require_dist_cjs24();
-  var util_middleware_1 = require_dist_cjs4();
+  var util_middleware_1 = require_dist_cjs7();
   var defaultSigninHttpAuthSchemeParametersProvider = async (config, context, input) => {
     return {
       operation: (0, util_middleware_1.getSmithyContext)(context).operation,
@@ -27674,8 +27674,8 @@ var require_runtimeConfig_shared3 = __commonJS(function(exports) {
   var core_2 = require_dist_cjs17();
   var smithy_client_1 = require_dist_cjs22();
   var url_parser_1 = require_dist_cjs38();
-  var util_base64_1 = require_dist_cjs9();
-  var util_utf8_1 = require_dist_cjs8();
+  var util_base64_1 = require_dist_cjs12();
+  var util_utf8_1 = require_dist_cjs11();
   var httpAuthSchemeProvider_1 = require_httpAuthSchemeProvider4();
   var endpointResolver_1 = require_endpointResolver4();
   var schemas_0_1 = require_schemas_04();
@@ -27729,7 +27729,7 @@ var require_runtimeConfig3 = __commonJS(function(exports) {
   var hash_node_1 = require_dist_cjs55();
   var middleware_retry_1 = require_dist_cjs49();
   var node_config_provider_1 = require_dist_cjs45();
-  var node_http_handler_1 = require_dist_cjs12();
+  var node_http_handler_1 = require_dist_cjs5();
   var smithy_client_1 = require_dist_cjs22();
   var util_body_length_node_1 = require_dist_cjs56();
   var util_defaults_mode_node_1 = require_dist_cjs57();
@@ -28206,7 +28206,7 @@ var require_httpAuthSchemeProvider5 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.resolveHttpAuthSchemeConfig = exports.resolveStsAuthConfig = exports.defaultSTSHttpAuthSchemeProvider = exports.defaultSTSHttpAuthSchemeParametersProvider = undefined;
   var core_1 = require_dist_cjs24();
-  var util_middleware_1 = require_dist_cjs4();
+  var util_middleware_1 = require_dist_cjs7();
   var STSClient_1 = require_STSClient();
   var defaultSTSHttpAuthSchemeParametersProvider = async (config, context, input) => {
     return {
@@ -28820,8 +28820,8 @@ var require_runtimeConfig_shared4 = __commonJS(function(exports) {
   var core_2 = require_dist_cjs17();
   var smithy_client_1 = require_dist_cjs22();
   var url_parser_1 = require_dist_cjs38();
-  var util_base64_1 = require_dist_cjs9();
-  var util_utf8_1 = require_dist_cjs8();
+  var util_base64_1 = require_dist_cjs12();
+  var util_utf8_1 = require_dist_cjs11();
   var httpAuthSchemeProvider_1 = require_httpAuthSchemeProvider5();
   var endpointResolver_1 = require_endpointResolver5();
   var schemas_0_1 = require_schemas_05();
@@ -28877,7 +28877,7 @@ var require_runtimeConfig4 = __commonJS(function(exports) {
   var hash_node_1 = require_dist_cjs55();
   var middleware_retry_1 = require_dist_cjs49();
   var node_config_provider_1 = require_dist_cjs45();
-  var node_http_handler_1 = require_dist_cjs12();
+  var node_http_handler_1 = require_dist_cjs5();
   var smithy_client_1 = require_dist_cjs22();
   var util_body_length_node_1 = require_dist_cjs56();
   var util_defaults_mode_node_1 = require_dist_cjs57();
@@ -30667,7 +30667,7 @@ var require_dist_cjs69 = __commonJS(function(exports) {
 // node_modules/@smithy/hash-stream-node/dist-cjs/index.js
 var require_dist_cjs70 = __commonJS(function(exports) {
   var fs = __require("fs");
-  var utilUtf8 = require_dist_cjs8();
+  var utilUtf8 = require_dist_cjs11();
   var stream = __require("stream");
 
   class HashCalculator extends stream.Writable {
@@ -30738,9 +30738,9 @@ var require_runtimeConfig_shared5 = __commonJS(function(exports) {
   var signature_v4_multi_region_1 = require_dist_cjs50();
   var smithy_client_1 = require_dist_cjs22();
   var url_parser_1 = require_dist_cjs38();
-  var util_base64_1 = require_dist_cjs9();
+  var util_base64_1 = require_dist_cjs12();
   var util_stream_1 = require_dist_cjs15();
-  var util_utf8_1 = require_dist_cjs8();
+  var util_utf8_1 = require_dist_cjs11();
   var httpAuthSchemeProvider_1 = require_httpAuthSchemeProvider();
   var endpointResolver_1 = require_endpointResolver();
   var schemas_0_1 = require_schemas_0();
@@ -30806,7 +30806,7 @@ var require_runtimeConfig5 = __commonJS(function(exports) {
   var hash_stream_node_1 = require_dist_cjs70();
   var middleware_retry_1 = require_dist_cjs49();
   var node_config_provider_1 = require_dist_cjs45();
-  var node_http_handler_1 = require_dist_cjs12();
+  var node_http_handler_1 = require_dist_cjs5();
   var smithy_client_1 = require_dist_cjs22();
   var util_body_length_node_1 = require_dist_cjs56();
   var util_defaults_mode_node_1 = require_dist_cjs57();
@@ -31127,7 +31127,7 @@ var require_dist_cjs73 = __commonJS(function(exports) {
 
 // node_modules/@aws-sdk/client-s3/dist-cjs/index.js
 var require_dist_cjs74 = __commonJS(function(exports) {
-  var middlewareExpectContinue = require_dist_cjs3();
+  var middlewareExpectContinue = require_dist_cjs6();
   var middlewareFlexibleChecksums = require_dist_cjs29();
   var middlewareHostHeader = require_dist_cjs30();
   var middlewareLogger = require_dist_cjs31();
@@ -33410,7 +33410,7 @@ var require_dist_cjs74 = __commonJS(function(exports) {
 
 // node_modules/@aws-sdk/util-format-url/dist-cjs/index.js
 var require_dist_cjs75 = __commonJS(function(exports) {
-  var querystringBuilder = require_dist_cjs11();
+  var querystringBuilder = require_dist_cjs4();
   function formatUrl(request) {
     const { port, query } = request;
     let { protocol, path, hostname } = request;
@@ -33669,6 +33669,28 @@ class CircuitBreaker {
   }
 }
 
+// src/storage/requestHandler.ts
+var S3_CONNECTION_TIMEOUT_MS = 3000;
+var S3_REQUEST_TIMEOUT_MS = 1e4;
+var buildResilientRequestHandler = async () => {
+  const { NodeHttpHandler } = await Promise.resolve().then(() => __toESM(require_dist_cjs5(), 1));
+  const { Agent: HttpAgent } = __require("node:http");
+  const { Agent: HttpsAgent } = __require("node:https");
+  const agentOptions = { keepAlive: false };
+  return new NodeHttpHandler({
+    connectionTimeout: S3_CONNECTION_TIMEOUT_MS,
+    requestTimeout: S3_REQUEST_TIMEOUT_MS,
+    throwOnRequestTimeout: true,
+    httpAgent: new HttpAgent(agentOptions),
+    httpsAgent: new HttpsAgent(agentOptions)
+  });
+};
+var createResilientS3Client = async (config) => {
+  const { S3Client } = await Promise.resolve().then(() => __toESM(require_dist_cjs74(), 1));
+  const requestHandler = await buildResilientRequestHandler();
+  return new S3Client({ ...config, requestHandler });
+};
+
 // src/storage/s3.ts
 var DEFAULT_PRESIGNED_EXPIRY = 3600;
 
@@ -33773,9 +33795,8 @@ class S3StorageProvider {
   async#requireClient() {
     if (this.client)
       return this.client;
-    const { S3Client } = await Promise.resolve().then(() => __toESM(require_dist_cjs74(), 1));
     const forcePathStyle = this.config.forcePathStyle ?? (this.config.endpoint ? /localhost|127\.0\.0\.1/.test(this.config.endpoint) : false);
-    this.client = new S3Client({
+    this.client = await createResilientS3Client({
       endpoint: this.config.endpoint,
       region: this.config.region ?? "us-east-1",
       credentials: this.config.credentials,
@@ -33808,5 +33829,9 @@ var createStorageProvider = (config) => {
 export {
   NoopStorageProvider,
   S3StorageProvider,
+  S3_CONNECTION_TIMEOUT_MS,
+  S3_REQUEST_TIMEOUT_MS,
+  buildResilientRequestHandler,
+  createResilientS3Client,
   createStorageProvider
 };
