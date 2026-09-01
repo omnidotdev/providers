@@ -1,3 +1,5 @@
+// src/react/accountUrl.ts
+var accountUrl = (accountBaseUrl) => accountBaseUrl ? accountBaseUrl.replace(/\/+$/, "") : "";
 // src/react/EventsProvider.tsx
 import { createContext, use } from "react";
 import { jsx } from "react/jsx-runtime";
@@ -172,6 +174,7 @@ export {
   EventsProvider,
   ManageTeamLink,
   OrganizationProvider,
+  accountUrl,
   createWorkspaceFlow,
   gatekeeperDashboardUrl,
   gatekeeperOrgManageUrl,
