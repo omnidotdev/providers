@@ -16,7 +16,7 @@ var useEvents = () => {
 };
 // src/react/ManageTeamLink.tsx
 import { jsx as jsx2 } from "react/jsx-runtime";
-var gatekeeperOrgManageUrl = (identityBaseUrl, orgSlug) => `${identityBaseUrl.replace(/\/+$/, "")}/dashboard/organizations/${orgSlug}`;
+var gatekeeperOrgManageUrl = (identityBaseUrl, orgSlug) => `${identityBaseUrl.replace(/\/+$/, "")}/@${orgSlug}`;
 var gatekeeperDashboardUrl = (identityBaseUrl) => `${identityBaseUrl.replace(/\/+$/, "")}/dashboard`;
 var ManageTeamLink = ({
   identityBaseUrl,
@@ -169,14 +169,14 @@ function useSessionRefresh(refreshFn, intervalMs = 4 * 60 * 1000) {
   }, [refreshFn, intervalMs]);
 }
 export {
-  useSessionRefresh,
-  useOrganization,
-  useEvents,
-  useCreateWorkspace,
-  gatekeeperOrgManageUrl,
-  gatekeeperDashboardUrl,
-  createWorkspaceFlow,
-  OrganizationProvider,
+  EventsProvider,
   ManageTeamLink,
-  EventsProvider
+  OrganizationProvider,
+  createWorkspaceFlow,
+  gatekeeperDashboardUrl,
+  gatekeeperOrgManageUrl,
+  useCreateWorkspace,
+  useEvents,
+  useOrganization,
+  useSessionRefresh
 };

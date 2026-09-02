@@ -221,7 +221,7 @@ var createNotificationProvider = (config) => {
   throw new Error(`Unknown notification provider: ${_exhaustive}`);
 };
 export {
-  createNotificationProvider,
+  HeraldNotificationProvider,
   NoopNotificationProvider,
-  HeraldNotificationProvider
+  createNotificationProvider
 };
