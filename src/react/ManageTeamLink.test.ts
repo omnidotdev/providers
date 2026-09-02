@@ -1,6 +1,20 @@
 import { describe, expect, it } from "bun:test";
 
-import { accountUrl } from "./ManageTeamLink";
+import { accountUrl, gatekeeperOrgManageUrl } from "./ManageTeamLink";
+
+describe("gatekeeperOrgManageUrl", () => {
+  it("points at the account hub organizations route", () => {
+    expect(gatekeeperOrgManageUrl("https://account.omni.dev", "acme")).toBe(
+      "https://account.omni.dev/organizations/acme",
+    );
+  });
+
+  it("trims a trailing slash on the base URL", () => {
+    expect(gatekeeperOrgManageUrl("https://account.omni.dev/", "acme")).toBe(
+      "https://account.omni.dev/organizations/acme",
+    );
+  });
+});
 
 describe("accountUrl", () => {
   it("returns the base URL unchanged", () => {
