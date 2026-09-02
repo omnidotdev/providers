@@ -10,8 +10,7 @@ import type { ReactNode } from "react";
 export const gatekeeperOrgManageUrl = (
   identityBaseUrl: string,
   orgSlug: string,
-): string =>
-  `${identityBaseUrl.replace(/\/+$/, "")}/dashboard/organizations/${orgSlug}`;
+): string => `${identityBaseUrl.replace(/\/+$/, "")}/@${orgSlug}`;
 
 /**
  * Canonical Gatekeeper account/organization dashboard URL.
