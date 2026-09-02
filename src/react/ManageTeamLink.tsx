@@ -1,16 +1,21 @@
 import type { ReactNode } from "react";
 
 /**
- * Canonical Gatekeeper org-management URL.
+ * Canonical org-management URL.
  *
  * Org/workspace membership (invite, remove, change role, pending invitations)
- * is managed centrally at Gatekeeper, so products deep-link here instead of
- * re-implementing management UIs. This is the single source for the URL pattern.
+ * is an identity concern managed in ONE place: the account hub (backed by
+ * Gatekeeper). Products deep-link here instead of re-implementing management
+ * UIs. This is the single source for the URL pattern; a change of destination
+ * happens here, not in every app.
+ *
+ * Pass the app's `ACCOUNT_BASE_URL` (env `VITE_ACCOUNT_URL`), NOT the identity
+ * URL: the account hub, not Gatekeeper's issuer, owns this surface.
  */
 export const gatekeeperOrgManageUrl = (
-  identityBaseUrl: string,
+  accountBaseUrl: string,
   orgSlug: string,
-): string => `${identityBaseUrl.replace(/\/+$/, "")}/@${orgSlug}`;
+): string => `${accountBaseUrl.replace(/\/+$/, "")}/organizations/${orgSlug}`;
 
 /**
  * Canonical Gatekeeper account/organization dashboard URL.
@@ -23,8 +28,8 @@ export const gatekeeperDashboardUrl = (identityBaseUrl: string): string =>
   `${identityBaseUrl.replace(/\/+$/, "")}/dashboard`;
 
 export interface ManageTeamLinkProps {
-  /** Gatekeeper base URL, e.g. https://identity.omni.dev */
-  identityBaseUrl: string;
+  /** Account hub base URL, e.g. https://account.omni.dev (env VITE_ACCOUNT_URL) */
+  accountBaseUrl: string;
   /** Organization slug whose team to manage */
   orgSlug: string;
   /** App-specific styling */
@@ -34,24 +39,25 @@ export interface ManageTeamLinkProps {
 }
 
 /**
- * Deep-link to the centralized Gatekeeper team-management dashboard.
+ * Deep-link to the centralized team-management surface on the account hub.
  *
- * Team membership management lives at Gatekeeper (the shared IDP), not in each
- * product. This headless, dependency-free link is the standard in-product entry
- * point so products funnel consistently instead of shipping drifting invite UIs.
- * Renders nothing when the base URL or slug is missing.
+ * Team membership management lives in one place (the account hub, backed by the
+ * shared IDP), not in each product. This headless, dependency-free link is the
+ * standard in-product entry point so products funnel consistently instead of
+ * shipping drifting invite UIs. Renders nothing when the base URL or slug is
+ * missing.
  */
 export const ManageTeamLink = ({
-  identityBaseUrl,
+  accountBaseUrl,
   orgSlug,
   className,
   children,
 }: ManageTeamLinkProps) => {
-  if (!identityBaseUrl || !orgSlug) return null;
+  if (!accountBaseUrl || !orgSlug) return null;
 
   return (
     <a
-      href={gatekeeperOrgManageUrl(identityBaseUrl, orgSlug)}
+      href={gatekeeperOrgManageUrl(accountBaseUrl, orgSlug)}
       target="_blank"
       rel="noopener noreferrer"
       className={className}
