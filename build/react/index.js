@@ -18,18 +18,18 @@ var useEvents = () => {
 };
 // src/react/ManageTeamLink.tsx
 import { jsx as jsx2 } from "react/jsx-runtime";
-var gatekeeperOrgManageUrl = (identityBaseUrl, orgSlug) => `${identityBaseUrl.replace(/\/+$/, "")}/@${orgSlug}`;
+var gatekeeperOrgManageUrl = (accountBaseUrl, orgSlug) => `${accountBaseUrl.replace(/\/+$/, "")}/organizations/${orgSlug}`;
 var gatekeeperDashboardUrl = (identityBaseUrl) => `${identityBaseUrl.replace(/\/+$/, "")}/dashboard`;
 var ManageTeamLink = ({
-  identityBaseUrl,
+  accountBaseUrl,
   orgSlug,
   className,
   children
 }) => {
-  if (!identityBaseUrl || !orgSlug)
+  if (!accountBaseUrl || !orgSlug)
     return null;
   return /* @__PURE__ */ jsx2("a", {
-    href: gatekeeperOrgManageUrl(identityBaseUrl, orgSlug),
+    href: gatekeeperOrgManageUrl(accountBaseUrl, orgSlug),
     target: "_blank",
     rel: "noopener noreferrer",
     className,
