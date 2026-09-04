@@ -1,6 +1,8 @@
 import { describe, expect, it } from "bun:test";
 
 import {
+  creditPurchaseReceiptTemplate,
+  overageChargeFailedTemplate,
   paymentReceiptTemplate,
   productNameFromAppId,
   renewalReminderTemplate,
@@ -57,5 +59,29 @@ describe("billing email templates", () => {
     expect(subscriptionCanceledTemplate().subject).toBe(
       "Your subscription was canceled",
     );
+  });
+
+  it("overage-charge-failed is action-required and names the product + amount", () => {
+    const { subject, html } = overageChargeFailedTemplate({
+      productName: "Fractal",
+      amount: "$4.20",
+      manageBillingUrl: "https://example.com/billing",
+    });
+    expect(subject).toBe("Action required: your Fractal usage charge failed");
+    expect(html).toContain("$4.20");
+    expect(html).toContain("https://example.com/billing");
+  });
+
+  it("credit-purchase receipt names product, amount, and credits", () => {
+    const { subject, html } = creditPurchaseReceiptTemplate({
+      productName: "Aspen",
+      amount: "$10.00",
+      credits: "1,000 credits",
+      paidOn: "September 4, 2026",
+    });
+    expect(subject).toBe("Your Aspen credit purchase receipt");
+    expect(html).toContain("$10.00");
+    expect(html).toContain("1,000 credits");
+    expect(html.toLowerCase()).toContain("receipt");
   });
 });

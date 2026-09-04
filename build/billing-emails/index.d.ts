@@ -90,3 +90,25 @@ export declare const trialEndingTemplate: (opts?: {
     trialEnd?: string;
     manageBillingUrl?: string;
 }) => BillingTemplate;
+/**
+ * Sent when a metered-usage overage charge fails (the invoice for
+ * beyond-plan usage could not be collected). Action-required, like a failed
+ * subscription payment: without a working payment method the metered services
+ * are at risk of being paused.
+ */
+export declare const overageChargeFailedTemplate: (opts?: {
+    productName?: string;
+    amount?: string;
+    manageBillingUrl?: string;
+}) => BillingTemplate;
+/**
+ * Receipt for a one-time credit purchase (a top-up, not a subscription charge).
+ * Confirms the credits were added; deliberately a receipt, not action-required.
+ */
+export declare const creditPurchaseReceiptTemplate: (opts?: {
+    productName?: string;
+    amount?: string;
+    credits?: string;
+    paidOn?: string;
+    manageBillingUrl?: string;
+}) => BillingTemplate;

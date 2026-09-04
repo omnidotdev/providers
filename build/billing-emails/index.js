@@ -165,8 +165,37 @@ var trialEndingTemplate = (opts) => {
     ${cta(opts?.manageBillingUrl, "Confirm payment method")}`, opts?.manageBillingUrl)
   };
 };
+var overageChargeFailedTemplate = (opts) => {
+  const product = opts?.productName ? `${opts.productName} ` : "";
+  const amount = opts?.amount ? ` of ${opts.amount}` : "";
+  return {
+    subject: `Action required: your ${product}usage charge failed`,
+    html: layout("We couldn't charge for your usage", `<p style="font-size:14px;line-height:24px;text-align:center">
+      We were unable to collect the charge${amount} for your recent ${product}usage
+      beyond your plan. To avoid your metered services being paused, please update
+      your payment method.
+    </p>
+    ${cta(opts?.manageBillingUrl, "Update payment method")}`, opts?.manageBillingUrl)
+  };
+};
+var creditPurchaseReceiptTemplate = (opts) => {
+  const product = opts?.productName ? `${opts.productName} ` : "";
+  const amount = opts?.amount ? ` of ${opts.amount}` : "";
+  const credits = opts?.credits ? ` (${opts.credits})` : "";
+  const when = opts?.paidOn ? ` on ${opts.paidOn}` : "";
+  return {
+    subject: `Your ${product}credit purchase receipt`,
+    html: layout("Thanks for your purchase", `<p style="font-size:14px;line-height:24px;text-align:center">
+      We received your payment${amount}${when} and added the ${product}credits${credits}
+      to your account. No action is needed. This email is your receipt.
+    </p>
+    ${cta(opts?.manageBillingUrl, "View billing")}`, opts?.manageBillingUrl)
+  };
+};
 export {
+  creditPurchaseReceiptTemplate,
   creditsExhaustedTemplate,
+  overageChargeFailedTemplate,
   paymentFailedTemplate,
   paymentReceiptTemplate,
   productNameFromAppId,
