@@ -50,6 +50,13 @@ const entries = [
     external: [] as string[],
   },
   {
+    entrypoint: "./src/billing-emails/index.ts",
+    outdir: "./build/billing-emails",
+    // Pure string templates; safe in both browser and server consumers
+    target: "browser" as const,
+    external: [] as string[],
+  },
+  {
     entrypoint: "./src/catalog/index.ts",
     outdir: "./build/catalog",
     // Fetch + pure normalization; safe in both browser and server consumers

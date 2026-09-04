@@ -35,6 +35,10 @@
       "import": "./build/billing/index.js",
       "types": "./build/billing/index.d.ts"
     },
+    "./billing-emails": {
+      "import": "./build/billing-emails/index.js",
+      "types": "./build/billing-emails/index.d.ts"
+    },
     "./brand": {
       "import": "./build/brand/index.js",
       "types": "./build/brand/index.d.ts"
