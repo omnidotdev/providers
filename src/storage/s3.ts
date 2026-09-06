@@ -183,6 +183,14 @@ class S3StorageProvider implements StorageProvider {
       region: this.config.region ?? "us-east-1",
       credentials: this.config.credentials,
       forcePathStyle,
+      // Only attach integrity checksums when the operation actually requires
+      // them. Since @aws-sdk/client-s3 v3.729 the default (WHEN_SUPPORTED) adds a
+      // CRC32 checksum to every upload, which non-AWS S3-compatible stores
+      // (Garage, MinIO, and others this provider targets) reject with "invalid
+      // checksum algorithm", silently breaking uploads. WHEN_REQUIRED keeps real
+      // AWS S3 working while staying compatible with those backends.
+      requestChecksumCalculation: "WHEN_REQUIRED",
+      responseChecksumValidation: "WHEN_REQUIRED",
     });
 
     log("info", "storage", "S3 client initialized", {

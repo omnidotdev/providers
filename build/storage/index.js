@@ -33780,7 +33780,9 @@ class S3StorageProvider {
       endpoint: this.config.endpoint,
       region: this.config.region ?? "us-east-1",
       credentials: this.config.credentials,
-      forcePathStyle
+      forcePathStyle,
+      requestChecksumCalculation: "WHEN_REQUIRED",
+      responseChecksumValidation: "WHEN_REQUIRED"
     });
     log("info", "storage", "S3 client initialized", {
       bucket: this.config.bucket,
