@@ -18,7 +18,7 @@ var useEvents = () => {
 };
 // src/react/ManageTeamLink.tsx
 import { jsx as jsx2 } from "react/jsx-runtime";
-var gatekeeperOrgManageUrl = (accountBaseUrl, orgSlug) => `${accountBaseUrl.replace(/\/+$/, "")}/organizations/${orgSlug}`;
+var gatekeeperOrgManageUrl = (accountBaseUrl, orgSlug) => `${accountBaseUrl.replace(/\/+$/, "")}/@${orgSlug}`;
 var gatekeeperDashboardUrl = (identityBaseUrl) => `${identityBaseUrl.replace(/\/+$/, "")}/dashboard`;
 var ManageTeamLink = ({
   accountBaseUrl,

@@ -9,13 +9,16 @@ import type { ReactNode } from "react";
  * UIs. This is the single source for the URL pattern; a change of destination
  * happens here, not in every app.
  *
+ * Uses the platform `@handle` grammar (`${accountBaseUrl}/@<slug>`), matching how
+ * every product addresses a workspace, so the org's URL is consistent fleet-wide.
+ *
  * Pass the app's `ACCOUNT_BASE_URL` (env `VITE_ACCOUNT_URL`), NOT the identity
  * URL: the account hub, not Gatekeeper's issuer, owns this surface.
  */
 export const gatekeeperOrgManageUrl = (
   accountBaseUrl: string,
   orgSlug: string,
-): string => `${accountBaseUrl.replace(/\/+$/, "")}/organizations/${orgSlug}`;
+): string => `${accountBaseUrl.replace(/\/+$/, "")}/@${orgSlug}`;
 
 /**
  * Canonical Gatekeeper account/organization dashboard URL.
