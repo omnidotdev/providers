@@ -13,7 +13,7 @@
  * this throws on a failed fetch.
  */
 /** The public catalog surface. `products` is `is_public`-filtered server-side. */
-export declare const PUBLIC_CATALOG_QUERY = "{\n  realms(first: 100) { nodes { slug name icon tagline description } }\n  products(first: 200) {\n    nodes {\n      slug name icon description tagline websiteUrl docsUrl license brand\n      selfHostable releaseDate status realm { slug }\n      productDeploymentMethods { nodes { deploymentMethod { slug } } }\n    }\n  }\n  bundles(first: 50) {\n    nodes {\n      slug name description appGrants monthlyPrice yearlyPrice\n      monthlyCreditAllowance\n    }\n  }\n  productLinks(first: 1000) {\n    nodes {\n      slug sourceProduct { slug } targetProduct { slug } description status\n      productLinkRelations { nodes { relationType { slug } } }\n    }\n  }\n}";
+export declare const PUBLIC_CATALOG_QUERY = "{\n  realms(first: 100) { nodes { slug name icon tagline description } }\n  products(first: 200) {\n    nodes {\n      slug name icon description tagline websiteUrl docsUrl repoUrl license brand\n      selfHostable releaseDate status realm { slug }\n      productDeploymentMethods { nodes { deploymentMethod { slug } } }\n    }\n  }\n  bundles(first: 50) {\n    nodes {\n      slug name description appGrants monthlyPrice yearlyPrice\n      monthlyCreditAllowance\n    }\n  }\n  productLinks(first: 1000) {\n    nodes {\n      slug sourceProduct { slug } targetProduct { slug } description status\n      productLinkRelations { nodes { relationType { slug } } }\n    }\n  }\n}";
 export interface PublicRealm {
     slug: string;
     name: string;
@@ -48,6 +48,8 @@ export interface PublicProduct {
     tagline?: string;
     websiteUrl?: string;
     docsUrl?: string;
+    /** Canonical public source repository, for open-source products. */
+    repoUrl?: string;
     license?: string;
     /** W3C design-token brand palette, absent until the product authors one. */
     brand?: ProductBrand;
@@ -100,6 +102,7 @@ interface CatalogGqlData {
         tagline?: string | null;
         websiteUrl?: string | null;
         docsUrl?: string | null;
+        repoUrl?: string | null;
         license?: string | null;
         brand?: ProductBrand | null;
         selfHostable?: boolean | null;
