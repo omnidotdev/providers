@@ -20,7 +20,7 @@ export const PUBLIC_CATALOG_QUERY = `{
   realms(first: 100) { nodes { slug name icon tagline description } }
   products(first: 200) {
     nodes {
-      slug name icon description tagline websiteUrl docsUrl license brand
+      slug name icon description tagline websiteUrl docsUrl repoUrl license brand
       selfHostable releaseDate status realm { slug }
       productDeploymentMethods { nodes { deploymentMethod { slug } } }
     }
@@ -76,6 +76,8 @@ export interface PublicProduct {
   tagline?: string;
   websiteUrl?: string;
   docsUrl?: string;
+  /** Canonical public source repository, for open-source products. */
+  repoUrl?: string;
   license?: string;
   /** W3C design-token brand palette, absent until the product authors one. */
   brand?: ProductBrand;
@@ -130,6 +132,7 @@ interface CatalogGqlData {
     tagline?: string | null;
     websiteUrl?: string | null;
     docsUrl?: string | null;
+    repoUrl?: string | null;
     license?: string | null;
     brand?: ProductBrand | null;
     selfHostable?: boolean | null;
@@ -173,6 +176,7 @@ export const normalizePublicCatalog = (data: CatalogGqlData): PublicCatalog => {
     tagline: p.tagline ?? undefined,
     websiteUrl: p.websiteUrl ?? undefined,
     docsUrl: p.docsUrl ?? undefined,
+    repoUrl: p.repoUrl ?? undefined,
     license: p.license ?? undefined,
     brand: p.brand ?? undefined,
     selfHostable: p.selfHostable ?? undefined,

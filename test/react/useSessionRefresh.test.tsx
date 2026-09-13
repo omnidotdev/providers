@@ -13,6 +13,7 @@ function HookHost({
   refreshFn,
   intervalMs,
 }: {
+  // biome-ignore lint/suspicious/noConfusingVoidType: callback may return void (sync) or a promise (async)
   refreshFn: () => void | Promise<unknown>;
   intervalMs?: number;
 }) {
