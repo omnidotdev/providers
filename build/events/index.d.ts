@@ -21,6 +21,7 @@ type EventsProviderConfig = ({
  */
 declare const createEventsProvider: (config: EventsProviderConfig) => EventsProvider;
 export { createEventsProvider };
+export { applicationSubmittedSchema, applicationSubmittedSchemaRegistration, submitApplication, } from "./application";
 export { EventBuffer } from "./buffer";
 export { eventMeta } from "./enrich";
 export { registerSchemas } from "./helpers";
@@ -28,6 +29,7 @@ export { HttpEventsProvider } from "./http";
 export { IggyEventsProvider } from "./iggy";
 export { NoopEventsProvider } from "./noop";
 export { SchemaCache, validateEventData } from "./validation";
+export type { ApplicationEmitter, ApplicationSubmission, ApplicationSubmittedData, } from "./application";
 export type { BufferConfig } from "./buffer";
 export type { EventActor } from "./enrich";
 export type { EventsProviderConfig };

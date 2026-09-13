@@ -11377,6 +11377,64 @@ class NoopEventsProvider {
   }
   async close() {}
 }
+
+// src/events/application.ts
+var SUBMITTED_TYPE_SUFFIX = ".application.submitted";
+var resolveHandle = (handle, email, userId) => handle?.trim() || email?.split("@")[0]?.trim() || userId;
+var submitApplication = (emit, submission) => {
+  const product = submission.product?.trim();
+  const applicationId = submission.applicationId?.trim();
+  const userId = submission.userId?.trim();
+  if (!product)
+    throw new Error("submitApplication: product is required");
+  if (!applicationId) {
+    throw new Error("submitApplication: applicationId is required");
+  }
+  if (!userId)
+    throw new Error("submitApplication: userId is required");
+  const email = submission.email ?? null;
+  return emit({
+    type: `${product}${SUBMITTED_TYPE_SUFFIX}`,
+    subject: applicationId,
+    data: {
+      product,
+      applicationId,
+      userId,
+      handle: resolveHandle(submission.handle, email, userId),
+      email,
+      answers: submission.answers ?? {},
+      nda: submission.nda ?? null
+    }
+  });
+};
+var applicationSubmittedSchema = {
+  type: "object",
+  required: ["product", "applicationId", "userId", "handle"],
+  properties: {
+    product: { type: "string", minLength: 1 },
+    applicationId: { type: "string", minLength: 1 },
+    userId: { type: "string", minLength: 1 },
+    handle: { type: "string", minLength: 1 },
+    email: { type: ["string", "null"] },
+    answers: { type: "object" },
+    nda: {
+      type: ["object", "null"],
+      properties: {
+        accepted: { type: ["boolean", "null"] },
+        version: { type: ["string", "null"] },
+        acceptedAt: { type: ["string", "null"] }
+      }
+    }
+  }
+};
+var applicationSubmittedSchemaRegistration = (product, source, enforcement = "warn") => ({
+  name: `${product}${SUBMITTED_TYPE_SUFFIX}`,
+  source,
+  version: 1,
+  description: `A user submitted a ${product} application; Bifrost ingests it for cross-product staff review`,
+  payloadSchema: applicationSubmittedSchema,
+  enforcement
+});
 // src/events/enrich.ts
 var eventMeta = (observer, resourceType, resourceName) => ({
   resourceType,
@@ -11483,8 +11541,11 @@ export {
   IggyEventsProvider,
   NoopEventsProvider,
   SchemaCache,
+  applicationSubmittedSchema,
+  applicationSubmittedSchemaRegistration,
   createEventsProvider,
   eventMeta,
   registerSchemas,
+  submitApplication,
   validateEventData
 };
