@@ -28,6 +28,7 @@ export interface CreateWorkspaceFlowParams<TOrg> {
    * Typically the app's `fetchSession`. Failures are swallowed since the org
    * has already been created.
    */
+  // biome-ignore lint/suspicious/noConfusingVoidType: callback may return void (sync) or a promise (async)
   refreshSession?: () => void | Promise<unknown>;
 }
 

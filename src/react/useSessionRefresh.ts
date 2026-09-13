@@ -15,6 +15,7 @@ import { useEffect, useRef } from "react";
  * @param intervalMs - Refresh interval in milliseconds (default: 4 min)
  */
 function useSessionRefresh(
+  // biome-ignore lint/suspicious/noConfusingVoidType: callback may return void (sync) or a promise (async)
   refreshFn: () => void | Promise<unknown>,
   intervalMs = 4 * 60 * 1000,
 ) {
