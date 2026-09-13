@@ -119,7 +119,10 @@ describe("HttpEventsProvider.emit request body", () => {
 
     let captured: Record<string, unknown> | undefined;
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = (async (
+      _input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
       captured = JSON.parse(String(init?.body));
       return new Response(
         JSON.stringify({ eventId: "evt-1", timestamp: "2026-08-31T00:00:00Z" }),
@@ -147,7 +150,10 @@ describe("HttpEventsProvider.emit request body", () => {
   });
 
   it("omits idempotencyKey when not set", async () => {
-    const body = await captureBody({ type: "test.event", data: { foo: "bar" } });
+    const body = await captureBody({
+      type: "test.event",
+      data: { foo: "bar" },
+    });
 
     expect(body?.idempotencyKey).toBeUndefined();
   });
