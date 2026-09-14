@@ -54,9 +54,11 @@ export type ApplicationEmitter = (event: EventInput) => Promise<unknown>;
  * the caller keeps fire-and-forget control (attach `.catch`); the underlying
  * provider no-ops when Vortex is unconfigured.
  *
- * @throws When a required identity field (`product`/`applicationId`/`userId`) is
- * blank; these come from a just-written row, so a blank one is a programmer
- * error, surfaced synchronously rather than dropped silently at ingest.
+ * A missing required identity field (`product`/`applicationId`/`userId`) rejects
+ * the returned promise rather than throwing synchronously, so a caller's
+ * fire-and-forget `.catch` catches every failure and an emit can never break the
+ * mutation it runs in. These come from a just-written row, so a blank one is a
+ * programmer error, surfaced rather than dropped silently at ingest.
  */
 export declare const submitApplication: (emit: ApplicationEmitter, submission: ApplicationSubmission) => Promise<unknown>;
 /**
