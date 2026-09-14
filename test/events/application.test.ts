@@ -98,17 +98,23 @@ describe("submitApplication", () => {
     expect(calls[0]?.data.email).toBeNull();
   });
 
-  it("throws on a missing required identity field", () => {
-    const { emit } = makeEmit();
-    expect(() => submitApplication(emit, { ...base, product: "" })).toThrow(
-      /product is required/,
-    );
-    expect(() =>
+  it("rejects (never throws synchronously) on a missing required identity field", async () => {
+    const { emit, calls } = makeEmit();
+
+    // returns a rejected promise rather than throwing synchronously, so a
+    // caller's fire-and-forget .catch catches it and cannot break the mutation
+    const missingProduct = submitApplication(emit, { ...base, product: "" });
+    expect(missingProduct).toBeInstanceOf(Promise);
+
+    await expect(missingProduct).rejects.toThrow(/product is required/);
+    await expect(
       submitApplication(emit, { ...base, applicationId: "  " }),
-    ).toThrow(/applicationId is required/);
-    expect(() => submitApplication(emit, { ...base, userId: "" })).toThrow(
-      /userId is required/,
-    );
+    ).rejects.toThrow(/applicationId is required/);
+    await expect(
+      submitApplication(emit, { ...base, userId: "" }),
+    ).rejects.toThrow(/userId is required/);
+
+    expect(calls).toHaveLength(0);
   });
 });
 

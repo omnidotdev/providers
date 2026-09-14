@@ -11386,13 +11386,15 @@ var submitApplication = (emit, submission) => {
   const product = submission.product?.trim();
   const applicationId = submission.applicationId?.trim();
   const userId = submission.userId?.trim();
-  if (!product)
-    throw new Error("submitApplication: product is required");
-  if (!applicationId) {
-    throw new Error("submitApplication: applicationId is required");
+  if (!product) {
+    return Promise.reject(new Error("submitApplication: product is required"));
   }
-  if (!userId)
-    throw new Error("submitApplication: userId is required");
+  if (!applicationId) {
+    return Promise.reject(new Error("submitApplication: applicationId is required"));
+  }
+  if (!userId) {
+    return Promise.reject(new Error("submitApplication: userId is required"));
+  }
   const email = submission.email ?? null;
   return emit({
     type: `${product}${SUBMITTED_TYPE_SUFFIX}`,
