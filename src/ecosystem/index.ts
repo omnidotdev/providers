@@ -46,3 +46,9 @@ export {
   createHeraldConnection,
 } from "./heraldConnection";
 export { type TtlCache, createTtlCache } from "./ttlCache";
+export {
+  ECOSYSTEM_READ_NEGATIVE_TTL_MS,
+  ECOSYSTEM_READ_TTL_MS,
+  type TtlReadCache,
+  createTtlReadCache,
+} from "./ttlReadCache";

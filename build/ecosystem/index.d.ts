@@ -20,3 +20,4 @@ export { type CrystalConfig, type CrystalConnection, createCrystalConnection, } 
 export { type GraphqlRequest, type HaloConfig, type HaloConnection, createHaloConnection, } from "./haloConnection";
 export { type HeraldConfig, type HeraldConnection, createHeraldConnection, } from "./heraldConnection";
 export { type TtlCache, createTtlCache } from "./ttlCache";
+export { ECOSYSTEM_READ_NEGATIVE_TTL_MS, ECOSYSTEM_READ_TTL_MS, type TtlReadCache, createTtlReadCache, } from "./ttlReadCache";
