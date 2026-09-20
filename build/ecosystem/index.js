@@ -199,13 +199,59 @@ var createTtlCache = (ttlMs, now = Date.now) => {
     }
   };
 };
+// src/ecosystem/ttlReadCache.ts
+var ECOSYSTEM_READ_TTL_MS = 45000;
+var ECOSYSTEM_READ_NEGATIVE_TTL_MS = 1e4;
+var ECOSYSTEM_READ_MAX_ENTRIES = 5000;
+var createTtlReadCache = ({
+  ttlMs = ECOSYSTEM_READ_TTL_MS,
+  negativeTtlMs = ECOSYSTEM_READ_NEGATIVE_TTL_MS,
+  maxEntries = ECOSYSTEM_READ_MAX_ENTRIES,
+  now = Date.now
+} = {}) => {
+  const store = new Map;
+  const evict = (nowMs) => {
+    if (store.size <= maxEntries)
+      return;
+    for (const [key, entry] of store) {
+      if (entry.expiresAt <= nowMs)
+        store.delete(key);
+    }
+    while (store.size > maxEntries) {
+      const oldest = store.keys().next().value;
+      if (oldest === undefined)
+        break;
+      store.delete(oldest);
+    }
+  };
+  return {
+    read: async (key, load) => {
+      const nowMs = now();
+      const hit = store.get(key);
+      if (hit) {
+        if (hit.expiresAt > nowMs)
+          return hit.value;
+        store.delete(key);
+      }
+      const value = await load();
+      const ttl = value === null ? negativeTtlMs : ttlMs;
+      store.set(key, { value, expiresAt: now() + ttl });
+      evict(now());
+      return value;
+    },
+    clear: () => store.clear()
+  };
+};
 export {
+  ECOSYSTEM_READ_NEGATIVE_TTL_MS,
+  ECOSYSTEM_READ_TTL_MS,
   createArborConnection,
   createCoalescer,
   createCrystalConnection,
   createHaloConnection,
   createHeraldConnection,
   createTtlCache,
+  createTtlReadCache,
   resolveBuyCheckout,
   resolveSubscribe,
   resolveSupportCheckout
