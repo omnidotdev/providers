@@ -47,6 +47,10 @@
       "import": "./build/catalog/index.js",
       "types": "./build/catalog/index.d.ts"
     },
+    "./ecosystem": {
+      "import": "./build/ecosystem/index.js",
+      "types": "./build/ecosystem/index.d.ts"
+    },
     "./events": {
       "import": "./build/events/index.js",
       "types": "./build/events/index.d.ts"

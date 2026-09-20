@@ -17,7 +17,7 @@ var __toESM = (mod, isNodeMode, target) => {
       return cached;
   }
   target = mod != null ? __create(__getProtoOf(mod)) : {};
-  const to = isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target;
+  const to = isNodeMode || !mod || !mod.__esModule || !__hasOwnProp.call(mod, "default") ? __defProp(target, "default", { value: mod, enumerable: true }) : target;
   if (mod && typeof mod === "object" || typeof mod === "function") {
     for (let key of __getOwnPropNames(mod))
       if (!__hasOwnProp.call(to, key))
@@ -467,10 +467,10 @@ var require_ast = __commonJS(function(exports) {
   }
   var OperationTypeNode;
   exports.OperationTypeNode = OperationTypeNode;
-  (function(OperationTypeNode2) {
-    OperationTypeNode2["QUERY"] = "query";
-    OperationTypeNode2["MUTATION"] = "mutation";
-    OperationTypeNode2["SUBSCRIPTION"] = "subscription";
+  (function(OperationTypeNode) {
+    OperationTypeNode["QUERY"] = "query";
+    OperationTypeNode["MUTATION"] = "mutation";
+    OperationTypeNode["SUBSCRIPTION"] = "subscription";
   })(OperationTypeNode || (exports.OperationTypeNode = OperationTypeNode = {}));
 });
 
@@ -482,26 +482,26 @@ var require_directiveLocation = __commonJS(function(exports) {
   exports.DirectiveLocation = undefined;
   var DirectiveLocation;
   exports.DirectiveLocation = DirectiveLocation;
-  (function(DirectiveLocation2) {
-    DirectiveLocation2["QUERY"] = "QUERY";
-    DirectiveLocation2["MUTATION"] = "MUTATION";
-    DirectiveLocation2["SUBSCRIPTION"] = "SUBSCRIPTION";
-    DirectiveLocation2["FIELD"] = "FIELD";
-    DirectiveLocation2["FRAGMENT_DEFINITION"] = "FRAGMENT_DEFINITION";
-    DirectiveLocation2["FRAGMENT_SPREAD"] = "FRAGMENT_SPREAD";
-    DirectiveLocation2["INLINE_FRAGMENT"] = "INLINE_FRAGMENT";
-    DirectiveLocation2["VARIABLE_DEFINITION"] = "VARIABLE_DEFINITION";
-    DirectiveLocation2["SCHEMA"] = "SCHEMA";
-    DirectiveLocation2["SCALAR"] = "SCALAR";
-    DirectiveLocation2["OBJECT"] = "OBJECT";
-    DirectiveLocation2["FIELD_DEFINITION"] = "FIELD_DEFINITION";
-    DirectiveLocation2["ARGUMENT_DEFINITION"] = "ARGUMENT_DEFINITION";
-    DirectiveLocation2["INTERFACE"] = "INTERFACE";
-    DirectiveLocation2["UNION"] = "UNION";
-    DirectiveLocation2["ENUM"] = "ENUM";
-    DirectiveLocation2["ENUM_VALUE"] = "ENUM_VALUE";
-    DirectiveLocation2["INPUT_OBJECT"] = "INPUT_OBJECT";
-    DirectiveLocation2["INPUT_FIELD_DEFINITION"] = "INPUT_FIELD_DEFINITION";
+  (function(DirectiveLocation) {
+    DirectiveLocation["QUERY"] = "QUERY";
+    DirectiveLocation["MUTATION"] = "MUTATION";
+    DirectiveLocation["SUBSCRIPTION"] = "SUBSCRIPTION";
+    DirectiveLocation["FIELD"] = "FIELD";
+    DirectiveLocation["FRAGMENT_DEFINITION"] = "FRAGMENT_DEFINITION";
+    DirectiveLocation["FRAGMENT_SPREAD"] = "FRAGMENT_SPREAD";
+    DirectiveLocation["INLINE_FRAGMENT"] = "INLINE_FRAGMENT";
+    DirectiveLocation["VARIABLE_DEFINITION"] = "VARIABLE_DEFINITION";
+    DirectiveLocation["SCHEMA"] = "SCHEMA";
+    DirectiveLocation["SCALAR"] = "SCALAR";
+    DirectiveLocation["OBJECT"] = "OBJECT";
+    DirectiveLocation["FIELD_DEFINITION"] = "FIELD_DEFINITION";
+    DirectiveLocation["ARGUMENT_DEFINITION"] = "ARGUMENT_DEFINITION";
+    DirectiveLocation["INTERFACE"] = "INTERFACE";
+    DirectiveLocation["UNION"] = "UNION";
+    DirectiveLocation["ENUM"] = "ENUM";
+    DirectiveLocation["ENUM_VALUE"] = "ENUM_VALUE";
+    DirectiveLocation["INPUT_OBJECT"] = "INPUT_OBJECT";
+    DirectiveLocation["INPUT_FIELD_DEFINITION"] = "INPUT_FIELD_DEFINITION";
   })(DirectiveLocation || (exports.DirectiveLocation = DirectiveLocation = {}));
 });
 
@@ -513,55 +513,55 @@ var require_kinds = __commonJS(function(exports) {
   exports.Kind = undefined;
   var Kind;
   exports.Kind = Kind;
-  (function(Kind2) {
-    Kind2["NAME"] = "Name";
-    Kind2["DOCUMENT"] = "Document";
-    Kind2["OPERATION_DEFINITION"] = "OperationDefinition";
-    Kind2["VARIABLE_DEFINITION"] = "VariableDefinition";
-    Kind2["SELECTION_SET"] = "SelectionSet";
-    Kind2["FIELD"] = "Field";
-    Kind2["ARGUMENT"] = "Argument";
-    Kind2["FRAGMENT_SPREAD"] = "FragmentSpread";
-    Kind2["INLINE_FRAGMENT"] = "InlineFragment";
-    Kind2["FRAGMENT_DEFINITION"] = "FragmentDefinition";
-    Kind2["VARIABLE"] = "Variable";
-    Kind2["INT"] = "IntValue";
-    Kind2["FLOAT"] = "FloatValue";
-    Kind2["STRING"] = "StringValue";
-    Kind2["BOOLEAN"] = "BooleanValue";
-    Kind2["NULL"] = "NullValue";
-    Kind2["ENUM"] = "EnumValue";
-    Kind2["LIST"] = "ListValue";
-    Kind2["OBJECT"] = "ObjectValue";
-    Kind2["OBJECT_FIELD"] = "ObjectField";
-    Kind2["DIRECTIVE"] = "Directive";
-    Kind2["NAMED_TYPE"] = "NamedType";
-    Kind2["LIST_TYPE"] = "ListType";
-    Kind2["NON_NULL_TYPE"] = "NonNullType";
-    Kind2["SCHEMA_DEFINITION"] = "SchemaDefinition";
-    Kind2["OPERATION_TYPE_DEFINITION"] = "OperationTypeDefinition";
-    Kind2["SCALAR_TYPE_DEFINITION"] = "ScalarTypeDefinition";
-    Kind2["OBJECT_TYPE_DEFINITION"] = "ObjectTypeDefinition";
-    Kind2["FIELD_DEFINITION"] = "FieldDefinition";
-    Kind2["INPUT_VALUE_DEFINITION"] = "InputValueDefinition";
-    Kind2["INTERFACE_TYPE_DEFINITION"] = "InterfaceTypeDefinition";
-    Kind2["UNION_TYPE_DEFINITION"] = "UnionTypeDefinition";
-    Kind2["ENUM_TYPE_DEFINITION"] = "EnumTypeDefinition";
-    Kind2["ENUM_VALUE_DEFINITION"] = "EnumValueDefinition";
-    Kind2["INPUT_OBJECT_TYPE_DEFINITION"] = "InputObjectTypeDefinition";
-    Kind2["DIRECTIVE_DEFINITION"] = "DirectiveDefinition";
-    Kind2["SCHEMA_EXTENSION"] = "SchemaExtension";
-    Kind2["SCALAR_TYPE_EXTENSION"] = "ScalarTypeExtension";
-    Kind2["OBJECT_TYPE_EXTENSION"] = "ObjectTypeExtension";
-    Kind2["INTERFACE_TYPE_EXTENSION"] = "InterfaceTypeExtension";
-    Kind2["UNION_TYPE_EXTENSION"] = "UnionTypeExtension";
-    Kind2["ENUM_TYPE_EXTENSION"] = "EnumTypeExtension";
-    Kind2["INPUT_OBJECT_TYPE_EXTENSION"] = "InputObjectTypeExtension";
-    Kind2["TYPE_COORDINATE"] = "TypeCoordinate";
-    Kind2["MEMBER_COORDINATE"] = "MemberCoordinate";
-    Kind2["ARGUMENT_COORDINATE"] = "ArgumentCoordinate";
-    Kind2["DIRECTIVE_COORDINATE"] = "DirectiveCoordinate";
-    Kind2["DIRECTIVE_ARGUMENT_COORDINATE"] = "DirectiveArgumentCoordinate";
+  (function(Kind) {
+    Kind["NAME"] = "Name";
+    Kind["DOCUMENT"] = "Document";
+    Kind["OPERATION_DEFINITION"] = "OperationDefinition";
+    Kind["VARIABLE_DEFINITION"] = "VariableDefinition";
+    Kind["SELECTION_SET"] = "SelectionSet";
+    Kind["FIELD"] = "Field";
+    Kind["ARGUMENT"] = "Argument";
+    Kind["FRAGMENT_SPREAD"] = "FragmentSpread";
+    Kind["INLINE_FRAGMENT"] = "InlineFragment";
+    Kind["FRAGMENT_DEFINITION"] = "FragmentDefinition";
+    Kind["VARIABLE"] = "Variable";
+    Kind["INT"] = "IntValue";
+    Kind["FLOAT"] = "FloatValue";
+    Kind["STRING"] = "StringValue";
+    Kind["BOOLEAN"] = "BooleanValue";
+    Kind["NULL"] = "NullValue";
+    Kind["ENUM"] = "EnumValue";
+    Kind["LIST"] = "ListValue";
+    Kind["OBJECT"] = "ObjectValue";
+    Kind["OBJECT_FIELD"] = "ObjectField";
+    Kind["DIRECTIVE"] = "Directive";
+    Kind["NAMED_TYPE"] = "NamedType";
+    Kind["LIST_TYPE"] = "ListType";
+    Kind["NON_NULL_TYPE"] = "NonNullType";
+    Kind["SCHEMA_DEFINITION"] = "SchemaDefinition";
+    Kind["OPERATION_TYPE_DEFINITION"] = "OperationTypeDefinition";
+    Kind["SCALAR_TYPE_DEFINITION"] = "ScalarTypeDefinition";
+    Kind["OBJECT_TYPE_DEFINITION"] = "ObjectTypeDefinition";
+    Kind["FIELD_DEFINITION"] = "FieldDefinition";
+    Kind["INPUT_VALUE_DEFINITION"] = "InputValueDefinition";
+    Kind["INTERFACE_TYPE_DEFINITION"] = "InterfaceTypeDefinition";
+    Kind["UNION_TYPE_DEFINITION"] = "UnionTypeDefinition";
+    Kind["ENUM_TYPE_DEFINITION"] = "EnumTypeDefinition";
+    Kind["ENUM_VALUE_DEFINITION"] = "EnumValueDefinition";
+    Kind["INPUT_OBJECT_TYPE_DEFINITION"] = "InputObjectTypeDefinition";
+    Kind["DIRECTIVE_DEFINITION"] = "DirectiveDefinition";
+    Kind["SCHEMA_EXTENSION"] = "SchemaExtension";
+    Kind["SCALAR_TYPE_EXTENSION"] = "ScalarTypeExtension";
+    Kind["OBJECT_TYPE_EXTENSION"] = "ObjectTypeExtension";
+    Kind["INTERFACE_TYPE_EXTENSION"] = "InterfaceTypeExtension";
+    Kind["UNION_TYPE_EXTENSION"] = "UnionTypeExtension";
+    Kind["ENUM_TYPE_EXTENSION"] = "EnumTypeExtension";
+    Kind["INPUT_OBJECT_TYPE_EXTENSION"] = "InputObjectTypeExtension";
+    Kind["TYPE_COORDINATE"] = "TypeCoordinate";
+    Kind["MEMBER_COORDINATE"] = "MemberCoordinate";
+    Kind["ARGUMENT_COORDINATE"] = "ArgumentCoordinate";
+    Kind["DIRECTIVE_COORDINATE"] = "DirectiveCoordinate";
+    Kind["DIRECTIVE_ARGUMENT_COORDINATE"] = "DirectiveArgumentCoordinate";
   })(Kind || (exports.Kind = Kind = {}));
 });
 
@@ -712,30 +712,30 @@ var require_tokenKind = __commonJS(function(exports) {
   exports.TokenKind = undefined;
   var TokenKind;
   exports.TokenKind = TokenKind;
-  (function(TokenKind2) {
-    TokenKind2["SOF"] = "<SOF>";
-    TokenKind2["EOF"] = "<EOF>";
-    TokenKind2["BANG"] = "!";
-    TokenKind2["DOLLAR"] = "$";
-    TokenKind2["AMP"] = "&";
-    TokenKind2["PAREN_L"] = "(";
-    TokenKind2["PAREN_R"] = ")";
-    TokenKind2["DOT"] = ".";
-    TokenKind2["SPREAD"] = "...";
-    TokenKind2["COLON"] = ":";
-    TokenKind2["EQUALS"] = "=";
-    TokenKind2["AT"] = "@";
-    TokenKind2["BRACKET_L"] = "[";
-    TokenKind2["BRACKET_R"] = "]";
-    TokenKind2["BRACE_L"] = "{";
-    TokenKind2["PIPE"] = "|";
-    TokenKind2["BRACE_R"] = "}";
-    TokenKind2["NAME"] = "Name";
-    TokenKind2["INT"] = "Int";
-    TokenKind2["FLOAT"] = "Float";
-    TokenKind2["STRING"] = "String";
-    TokenKind2["BLOCK_STRING"] = "BlockString";
-    TokenKind2["COMMENT"] = "Comment";
+  (function(TokenKind) {
+    TokenKind["SOF"] = "<SOF>";
+    TokenKind["EOF"] = "<EOF>";
+    TokenKind["BANG"] = "!";
+    TokenKind["DOLLAR"] = "$";
+    TokenKind["AMP"] = "&";
+    TokenKind["PAREN_L"] = "(";
+    TokenKind["PAREN_R"] = ")";
+    TokenKind["DOT"] = ".";
+    TokenKind["SPREAD"] = "...";
+    TokenKind["COLON"] = ":";
+    TokenKind["EQUALS"] = "=";
+    TokenKind["AT"] = "@";
+    TokenKind["BRACKET_L"] = "[";
+    TokenKind["BRACKET_R"] = "]";
+    TokenKind["BRACE_L"] = "{";
+    TokenKind["PIPE"] = "|";
+    TokenKind["BRACE_R"] = "}";
+    TokenKind["NAME"] = "Name";
+    TokenKind["INT"] = "Int";
+    TokenKind["FLOAT"] = "Float";
+    TokenKind["STRING"] = "String";
+    TokenKind["BLOCK_STRING"] = "BlockString";
+    TokenKind["COMMENT"] = "Comment";
   })(TokenKind || (exports.TokenKind = TokenKind = {}));
 });
 
@@ -1321,9 +1321,9 @@ var require_instanceOf = __commonJS(function(exports) {
   exports.instanceOf = undefined;
   var _inspect = require_inspect();
   var isProduction = globalThis.process && true;
-  var instanceOf = isProduction ? function instanceOf2(value, constructor) {
+  var instanceOf = isProduction ? function instanceOf(value, constructor) {
     return value instanceof constructor;
-  } : function instanceOf2(value, constructor) {
+  } : function instanceOf(value, constructor) {
     if (value instanceof constructor) {
       return true;
     }
@@ -3846,7 +3846,7 @@ var require_definition = __commonJS(function(exports) {
     }
     serialize(outputValue) {
       if (this._valueLookup === null) {
-        this._valueLookup = new Map(this.getValues().map((enumValue2) => [enumValue2.value, enumValue2]));
+        this._valueLookup = new Map(this.getValues().map((enumValue) => [enumValue.value, enumValue]));
       }
       const enumValue = this._valueLookup.get(outputValue);
       if (enumValue === undefined) {
@@ -4939,15 +4939,15 @@ In some cases, you need to provide options to alter GraphQL's execution behavior
   exports.__EnumValue = __EnumValue;
   var TypeKind;
   exports.TypeKind = TypeKind;
-  (function(TypeKind2) {
-    TypeKind2["SCALAR"] = "SCALAR";
-    TypeKind2["OBJECT"] = "OBJECT";
-    TypeKind2["INTERFACE"] = "INTERFACE";
-    TypeKind2["UNION"] = "UNION";
-    TypeKind2["ENUM"] = "ENUM";
-    TypeKind2["INPUT_OBJECT"] = "INPUT_OBJECT";
-    TypeKind2["LIST"] = "LIST";
-    TypeKind2["NON_NULL"] = "NON_NULL";
+  (function(TypeKind) {
+    TypeKind["SCALAR"] = "SCALAR";
+    TypeKind["OBJECT"] = "OBJECT";
+    TypeKind["INTERFACE"] = "INTERFACE";
+    TypeKind["UNION"] = "UNION";
+    TypeKind["ENUM"] = "ENUM";
+    TypeKind["INPUT_OBJECT"] = "INPUT_OBJECT";
+    TypeKind["LIST"] = "LIST";
+    TypeKind["NON_NULL"] = "NON_NULL";
   })(TypeKind || (exports.TypeKind = TypeKind = {}));
   var __TypeKind = new _definition.GraphQLEnumType({
     name: "__TypeKind",
@@ -12305,33 +12305,33 @@ var require_findBreakingChanges = __commonJS(function(exports) {
   var _sortValueNode = require_sortValueNode();
   var BreakingChangeType;
   exports.BreakingChangeType = BreakingChangeType;
-  (function(BreakingChangeType2) {
-    BreakingChangeType2["TYPE_REMOVED"] = "TYPE_REMOVED";
-    BreakingChangeType2["TYPE_CHANGED_KIND"] = "TYPE_CHANGED_KIND";
-    BreakingChangeType2["TYPE_REMOVED_FROM_UNION"] = "TYPE_REMOVED_FROM_UNION";
-    BreakingChangeType2["VALUE_REMOVED_FROM_ENUM"] = "VALUE_REMOVED_FROM_ENUM";
-    BreakingChangeType2["REQUIRED_INPUT_FIELD_ADDED"] = "REQUIRED_INPUT_FIELD_ADDED";
-    BreakingChangeType2["IMPLEMENTED_INTERFACE_REMOVED"] = "IMPLEMENTED_INTERFACE_REMOVED";
-    BreakingChangeType2["FIELD_REMOVED"] = "FIELD_REMOVED";
-    BreakingChangeType2["FIELD_CHANGED_KIND"] = "FIELD_CHANGED_KIND";
-    BreakingChangeType2["REQUIRED_ARG_ADDED"] = "REQUIRED_ARG_ADDED";
-    BreakingChangeType2["ARG_REMOVED"] = "ARG_REMOVED";
-    BreakingChangeType2["ARG_CHANGED_KIND"] = "ARG_CHANGED_KIND";
-    BreakingChangeType2["DIRECTIVE_REMOVED"] = "DIRECTIVE_REMOVED";
-    BreakingChangeType2["DIRECTIVE_ARG_REMOVED"] = "DIRECTIVE_ARG_REMOVED";
-    BreakingChangeType2["REQUIRED_DIRECTIVE_ARG_ADDED"] = "REQUIRED_DIRECTIVE_ARG_ADDED";
-    BreakingChangeType2["DIRECTIVE_REPEATABLE_REMOVED"] = "DIRECTIVE_REPEATABLE_REMOVED";
-    BreakingChangeType2["DIRECTIVE_LOCATION_REMOVED"] = "DIRECTIVE_LOCATION_REMOVED";
+  (function(BreakingChangeType) {
+    BreakingChangeType["TYPE_REMOVED"] = "TYPE_REMOVED";
+    BreakingChangeType["TYPE_CHANGED_KIND"] = "TYPE_CHANGED_KIND";
+    BreakingChangeType["TYPE_REMOVED_FROM_UNION"] = "TYPE_REMOVED_FROM_UNION";
+    BreakingChangeType["VALUE_REMOVED_FROM_ENUM"] = "VALUE_REMOVED_FROM_ENUM";
+    BreakingChangeType["REQUIRED_INPUT_FIELD_ADDED"] = "REQUIRED_INPUT_FIELD_ADDED";
+    BreakingChangeType["IMPLEMENTED_INTERFACE_REMOVED"] = "IMPLEMENTED_INTERFACE_REMOVED";
+    BreakingChangeType["FIELD_REMOVED"] = "FIELD_REMOVED";
+    BreakingChangeType["FIELD_CHANGED_KIND"] = "FIELD_CHANGED_KIND";
+    BreakingChangeType["REQUIRED_ARG_ADDED"] = "REQUIRED_ARG_ADDED";
+    BreakingChangeType["ARG_REMOVED"] = "ARG_REMOVED";
+    BreakingChangeType["ARG_CHANGED_KIND"] = "ARG_CHANGED_KIND";
+    BreakingChangeType["DIRECTIVE_REMOVED"] = "DIRECTIVE_REMOVED";
+    BreakingChangeType["DIRECTIVE_ARG_REMOVED"] = "DIRECTIVE_ARG_REMOVED";
+    BreakingChangeType["REQUIRED_DIRECTIVE_ARG_ADDED"] = "REQUIRED_DIRECTIVE_ARG_ADDED";
+    BreakingChangeType["DIRECTIVE_REPEATABLE_REMOVED"] = "DIRECTIVE_REPEATABLE_REMOVED";
+    BreakingChangeType["DIRECTIVE_LOCATION_REMOVED"] = "DIRECTIVE_LOCATION_REMOVED";
   })(BreakingChangeType || (exports.BreakingChangeType = BreakingChangeType = {}));
   var DangerousChangeType;
   exports.DangerousChangeType = DangerousChangeType;
-  (function(DangerousChangeType2) {
-    DangerousChangeType2["VALUE_ADDED_TO_ENUM"] = "VALUE_ADDED_TO_ENUM";
-    DangerousChangeType2["TYPE_ADDED_TO_UNION"] = "TYPE_ADDED_TO_UNION";
-    DangerousChangeType2["OPTIONAL_INPUT_FIELD_ADDED"] = "OPTIONAL_INPUT_FIELD_ADDED";
-    DangerousChangeType2["OPTIONAL_ARG_ADDED"] = "OPTIONAL_ARG_ADDED";
-    DangerousChangeType2["IMPLEMENTED_INTERFACE_ADDED"] = "IMPLEMENTED_INTERFACE_ADDED";
-    DangerousChangeType2["ARG_DEFAULT_VALUE_CHANGE"] = "ARG_DEFAULT_VALUE_CHANGE";
+  (function(DangerousChangeType) {
+    DangerousChangeType["VALUE_ADDED_TO_ENUM"] = "VALUE_ADDED_TO_ENUM";
+    DangerousChangeType["TYPE_ADDED_TO_UNION"] = "TYPE_ADDED_TO_UNION";
+    DangerousChangeType["OPTIONAL_INPUT_FIELD_ADDED"] = "OPTIONAL_INPUT_FIELD_ADDED";
+    DangerousChangeType["OPTIONAL_ARG_ADDED"] = "OPTIONAL_ARG_ADDED";
+    DangerousChangeType["IMPLEMENTED_INTERFACE_ADDED"] = "IMPLEMENTED_INTERFACE_ADDED";
+    DangerousChangeType["ARG_DEFAULT_VALUE_CHANGE"] = "ARG_DEFAULT_VALUE_CHANGE";
   })(DangerousChangeType || (exports.DangerousChangeType = DangerousChangeType = {}));
   function findBreakingChanges(oldSchema, newSchema) {
     return findSchemaChanges(oldSchema, newSchema).filter((change) => (change.type in BreakingChangeType));
@@ -14993,8 +14993,8 @@ var require_graphql_armor_max_tokens_cjs_prod = __commonJS(function(exports) {
   }
   function maxTokensPlugin(config) {
     function parseWithTokenLimit(source, options) {
-      const parser2 = new MaxTokensParserWLexer(source, Object.assign({}, options, config));
-      return parser2.parseDocument();
+      const parser = new MaxTokensParserWLexer(source, Object.assign({}, options, config));
+      return parser.parseDocument();
     }
     return {
       onParse({
@@ -15354,8 +15354,8 @@ var require_graphql_armor_cjs_prod = __commonJS(function(exports) {
       onPluginInit({
         addPlugin
       }) {
-        for (const plugin2 of enhancements.plugins) {
-          addPlugin(plugin2);
+        for (const plugin of enhancements.plugins) {
+          addPlugin(plugin);
         }
       }
     };
@@ -17275,18 +17275,18 @@ ${fieldDefs}
   `,
     plans: {
       Query: {
-        observer: EXPORTABLE((context2, lambda2, allFields2) => function observer() {
-          const $observer = context2().get("observer");
-          return lambda2($observer, (observer2) => {
-            if (!observer2)
+        observer: EXPORTABLE((context, lambda, allFields) => function observer() {
+          const $observer = context().get("observer");
+          return lambda($observer, (observer) => {
+            if (!observer)
               return null;
             const result = {};
-            for (const field of allFields2) {
+            for (const field of allFields) {
               const key = field.contextKey ?? field.name;
               if (key === "rowId") {
-                result[key] = observer2.id;
+                result[key] = observer.id;
               } else {
-                result[key] = observer2[key];
+                result[key] = observer[key];
               }
             }
             return result;
@@ -17299,8 +17299,8 @@ ${fieldDefs}
 // src/graphql/organizations.ts
 var createOrganizationsPlugin = (config) => {
   return {
-    onContextBuilding({ extendContext, context: context2 }) {
-      const accessToken = context2.request.headers.get("authorization")?.split("Bearer ")[1];
+    onContextBuilding({ extendContext, context }) {
+      const accessToken = context.request.headers.get("authorization")?.split("Bearer ")[1];
       if (!accessToken) {
         extendContext({
           organizations: []

@@ -17,7 +17,7 @@ var __toESM = (mod, isNodeMode, target) => {
       return cached;
   }
   target = mod != null ? __create(__getProtoOf(mod)) : {};
-  const to = isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target;
+  const to = isNodeMode || !mod || !mod.__esModule || !__hasOwnProp.call(mod, "default") ? __defProp(target, "default", { value: mod, enumerable: true }) : target;
   if (mod && typeof mod === "object" || typeof mod === "function") {
     for (let key of __getOwnPropNames(mod))
       if (!__hasOwnProp.call(to, key))
@@ -31,20 +31,17 @@ var __toESM = (mod, isNodeMode, target) => {
   return to;
 };
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
-var __returnValue = (v) => v;
-function __exportSetter(name, newValue) {
-  this[name] = __returnValue.bind(null, newValue);
-}
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, {
-      get: all[name],
-      enumerable: true,
-      configurable: true,
-      set: __exportSetter.bind(all, name)
-    });
+var __esm = (fn, res, err) => () => {
+  if (fn)
+    try {
+      res = fn(fn = 0);
+    } catch (e) {
+      err = [e];
+    }
+  if (err)
+    throw err[0];
+  return res;
 };
-var __esm = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
 var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);
 
 // node_modules/ajv/dist/compile/codegen/code.js
@@ -214,9 +211,9 @@ var require_scope = __commonJS(function(exports) {
     }
   }
   var UsedValueState;
-  (function(UsedValueState2) {
-    UsedValueState2[UsedValueState2["Started"] = 0] = "Started";
-    UsedValueState2[UsedValueState2["Completed"] = 1] = "Completed";
+  (function(UsedValueState) {
+    UsedValueState[UsedValueState["Started"] = 0] = "Started";
+    UsedValueState[UsedValueState["Completed"] = 1] = "Completed";
   })(UsedValueState || (exports.UsedValueState = UsedValueState = {}));
   exports.varKinds = {
     const: new code_1.Name("const"),
@@ -1198,9 +1195,9 @@ var require_util = __commonJS(function(exports) {
   }
   exports.useFunc = useFunc;
   var Type;
-  (function(Type2) {
-    Type2[Type2["Num"] = 0] = "Num";
-    Type2[Type2["Str"] = 1] = "Str";
+  (function(Type) {
+    Type[Type["Num"] = 0] = "Num";
+    Type[Type["Str"] = 1] = "Str";
   })(Type || (exports.Type = Type = {}));
   function getErrorPath(dataProp, dataPropType, jsPropertySyntax) {
     if (dataProp instanceof codegen_1.Name) {
@@ -1470,9 +1467,9 @@ var require_dataType = __commonJS(function(exports) {
   var codegen_1 = require_codegen();
   var util_1 = require_util();
   var DataType;
-  (function(DataType2) {
-    DataType2[DataType2["Correct"] = 0] = "Correct";
-    DataType2[DataType2["Wrong"] = 1] = "Wrong";
+  (function(DataType) {
+    DataType[DataType["Correct"] = 0] = "Correct";
+    DataType[DataType["Wrong"] = 1] = "Wrong";
   })(DataType || (exports.DataType = DataType = {}));
   function getSchemaTypes(schema) {
     const types = getJSONTypes(schema.type);
@@ -1868,8 +1865,8 @@ var require_keyword = __commonJS(function(exports) {
       gen.assign(valid, (0, codegen_1._)`${_await}${(0, code_1.callValidateCode)(cxt, validateRef, passCxt, passSchema)}`, def.modifying);
     }
     function reportErrs(errors) {
-      var _a2;
-      gen.if((0, codegen_1.not)((_a2 = def.valid) !== null && _a2 !== undefined ? _a2 : valid), errors);
+      var _a;
+      gen.if((0, codegen_1.not)((_a = def.valid) !== null && _a !== undefined ? _a : valid), errors);
     }
   }
   exports.funcKeywordCode = funcKeywordCode;
@@ -4204,11 +4201,11 @@ var require_core = __commonJS(function(exports) {
   Ajv.ValidationError = validation_error_1.default;
   Ajv.MissingRefError = ref_error_1.default;
   exports.default = Ajv;
-  function checkOptions(checkOpts, options, msg, log2 = "error") {
+  function checkOptions(checkOpts, options, msg, log = "error") {
     for (const key in checkOpts) {
       const opt = key;
       if (opt in options)
-        this.logger[log2](`${msg}: option ${key}. ${checkOpts[opt]}`);
+        this.logger[log](`${msg}: option ${key}. ${checkOpts[opt]}`);
     }
   }
   function getSchEnv(keyRef) {
@@ -5903,9 +5900,9 @@ var require_types = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.DiscrError = undefined;
   var DiscrError;
-  (function(DiscrError2) {
-    DiscrError2["Tag"] = "tag";
-    DiscrError2["Mapping"] = "mapping";
+  (function(DiscrError) {
+    DiscrError["Tag"] = "tag";
+    DiscrError["Mapping"] = "mapping";
   })(DiscrError || (exports.DiscrError = DiscrError = {}));
 });
 
@@ -7011,7 +7008,7 @@ var require_node = __commonJS(function(exports, module) {
   var tty = __require("tty");
   var util = __require("util");
   exports.init = init;
-  exports.log = log2;
+  exports.log = log;
   exports.formatArgs = formatArgs;
   exports.save = save;
   exports.load = load;
@@ -7124,8 +7121,8 @@ var require_node = __commonJS(function(exports, module) {
     return "colors" in exports.inspectOpts ? Boolean(exports.inspectOpts.colors) : tty.isatty(process.stderr.fd);
   }
   function formatArgs(args) {
-    const { namespace: name, useColors: useColors2 } = this;
-    if (useColors2) {
+    const { namespace: name, useColors } = this;
+    if (useColors) {
       const c = this.color;
       const colorCode = "\x1B[3" + (c < 8 ? c : "8;5;" + c);
       const prefix = `  ${colorCode};1m${name} \x1B[0m`;
@@ -7143,7 +7140,7 @@ var require_node = __commonJS(function(exports, module) {
     }
     return new Date().toISOString() + " ";
   }
-  function log2(...args) {
+  function log(...args) {
     return process.stderr.write(util.formatWithOptions(exports.inspectOpts, ...args) + `
 `);
   }
@@ -7194,7 +7191,6 @@ var init_client_debug = __esm(() => {
 });
 
 // node_modules/@iggy.rs/sdk/dist/client/client.utils.js
-var { Transform } = __require("node:stream");
 var handleResponse = (r) => {
   const status = r.readUint32LE(0);
   const length = r.readUint32LE(4);
@@ -7204,17 +7200,7 @@ var handleResponse = (r) => {
     length,
     data: r.subarray(8)
   };
-}, handleResponseTransform = () => new Transform({
-  transform(chunk, encoding, cb) {
-    try {
-      const r = handleResponse(chunk);
-      debug("response::", r);
-      return cb(null, r.data);
-    } catch (err) {
-      return cb(new Error("handleResponseTransform error", { cause: err }), null);
-    }
-  }
-}), deserializeVoidResponse = (r) => r.status === 0 && r.data.length === 0, COMMAND_LENGTH = 4, serializeCommand = (command, payload) => {
+}, deserializeVoidResponse = (r) => r.status === 0 && r.data.length === 0, COMMAND_LENGTH = 4, serializeCommand = (command, payload) => {
   const payloadSize = payload.length + COMMAND_LENGTH;
   const head = Buffer.allocUnsafe(8);
   head.writeUint32LE(payloadSize, 0);
@@ -7482,10 +7468,6 @@ var serializeHeaderValue = (header) => {
   if (!headers)
     return EMPTY_HEADERS;
   return Buffer.concat(Object.keys(headers).map((c) => serializeHeader(c, createHeaderValue(headers[c]))));
-}, mapHeaderKind = (k) => {
-  if (!ReverseHeaderKind[k])
-    throw new Error(`unknow header kind: ${k}`);
-  return ReverseHeaderKind[k];
 }, deserializeHeaderValue = (kind, value) => {
   switch (kind) {
     case HeaderKind.Int128:
@@ -7543,84 +7525,14 @@ var serializeHeaderValue = (header) => {
     pos += bytesRead;
   }
   return headers;
-}, Raw = (value) => ({
-  kind: HeaderKind.Raw,
-  value
-}), String2 = (value) => ({
-  kind: HeaderKind.String,
-  value
-}), Bool = (value) => ({
-  kind: HeaderKind.Bool,
-  value
-}), Int8 = (value) => ({
-  kind: HeaderKind.Int8,
-  value
-}), Int16 = (value) => ({
-  kind: HeaderKind.Int16,
-  value
-}), Int32 = (value) => ({
-  kind: HeaderKind.Int32,
-  value
-}), Int64 = (value) => ({
-  kind: HeaderKind.Int64,
-  value
-}), Int128 = (value) => ({
-  kind: HeaderKind.Int128,
-  value
-}), Uint8 = (value) => ({
-  kind: HeaderKind.Uint8,
-  value
-}), Uint16 = (value) => ({
-  kind: HeaderKind.Uint16,
-  value
-}), Uint32 = (value) => ({
-  kind: HeaderKind.Uint32,
-  value
-}), Uint64 = (value) => ({
-  kind: HeaderKind.Uint64,
-  value
-}), Uint128 = (value) => ({
-  kind: HeaderKind.Uint128,
-  value
-}), Float = (value) => ({
-  kind: HeaderKind.Float,
-  value
-}), Double = (value) => ({
-  kind: HeaderKind.Double,
-  value
-}), getKind = (h) => mapHeaderKind(h.kind), getValue = (h) => h.value, HeaderValue;
+};
 var init_header_utils = __esm(() => {
   init_header_type();
   EMPTY_HEADERS = Buffer.alloc(0);
-  HeaderValue = {
-    Raw,
-    String: String2,
-    Bool,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Uint8,
-    Uint16,
-    Uint32,
-    Uint64,
-    Uint128,
-    Float,
-    Double,
-    getKind,
-    getValue
-  };
 });
 
 // node_modules/@iggy.rs/sdk/dist/wire/message/poll.utils.js
-var PollingStrategyKind, Next, First, Last, Offset = (n) => ({
-  kind: PollingStrategyKind.Offset,
-  value: n
-}), Timestamp = (n) => ({
-  kind: PollingStrategyKind.Timestamp,
-  value: n
-}), PollingStrategy, serializePollMessages = (streamId, topicId, consumer, partitionId, pollingStrategy, count = 10, autocommit = false) => {
+var PollingStrategyKind, Next, First, Last, serializePollMessages = (streamId, topicId, consumer, partitionId, pollingStrategy, count = 10, autocommit = false) => {
   const b = Buffer.allocUnsafe(14);
   b.writeUInt8(pollingStrategy.kind, 0);
   b.writeBigUInt64LE(pollingStrategy.value, 1);
@@ -7699,13 +7611,6 @@ var init_poll_utils = __esm(() => {
   Last = {
     kind: PollingStrategyKind.Last,
     value: 0n
-  };
-  PollingStrategy = {
-    Next,
-    First,
-    Last,
-    Offset,
-    Timestamp
   };
   MessageState = {
     Available: 1,
@@ -8519,15 +8424,6 @@ var init_token = __esm(() => {
 });
 
 // node_modules/@iggy.rs/sdk/dist/wire/topic/topic.utils.js
-var exports_topic_utils = {};
-__export(exports_topic_utils, {
-  CompressionAlgorithmKind: () => CompressionAlgorithmKind,
-  deserializeBaseTopic: () => deserializeBaseTopic,
-  deserializePartition: () => deserializePartition,
-  deserializeTopic: () => deserializeTopic,
-  deserializeTopics: () => deserializeTopics,
-  isValidCompressionAlgorithm: () => isValidCompressionAlgorithm
-});
 var CompressionAlgorithmKind, isValidCompressionAlgorithm = (ca) => Object.values(CompressionAlgorithmKind).includes(ca), deserializeBaseTopic = (p, pos = 0) => {
   const id = p.readUInt32LE(pos);
   const createdAt = toDate(p.readBigUint64LE(pos + 4));
@@ -8574,9 +8470,9 @@ var CompressionAlgorithmKind, isValidCompressionAlgorithm = (ca) => Object.value
   const partitions = [];
   const end = p.length;
   while (pos < end) {
-    const { bytesRead: bytesRead2, data: data2 } = deserializePartition(p, pos);
-    partitions.push(data2);
-    pos += bytesRead2;
+    const { bytesRead, data } = deserializePartition(p, pos);
+    partitions.push(data);
+    pos += bytesRead;
   }
   return { bytesRead: pos - start, data: { ...data, partitions } };
 }, deserializeTopics = (p, pos = 0) => {
@@ -8841,9 +8737,9 @@ var toBool = (u) => u === 1, boolToByte = (b) => b ? 1 : 0, deserializeGlobalPer
     let read = true;
     pos += 1;
     while (read) {
-      const { bytesRead, topicId, permissions: permissions2 } = deserializeTopicPermissions(p, pos);
+      const { bytesRead, topicId, permissions } = deserializeTopicPermissions(p, pos);
       pos += bytesRead;
-      topics.push({ topicId, permissions: permissions2 });
+      topics.push({ topicId, permissions });
       if (p.readUInt8(pos) === 0)
         read = false;
     }
@@ -8882,9 +8778,9 @@ var toBool = (u) => u === 1, boolToByte = (b) => b ? 1 : 0, deserializeGlobalPer
     let readStream = true;
     pos += 1;
     while (readStream) {
-      const { bytesRead: bytesRead2, streamId, permissions, topics } = deserializeStreamPermissions(p, pos);
+      const { bytesRead, streamId, permissions, topics } = deserializeStreamPermissions(p, pos);
       streams.push({ streamId, permissions, topics });
-      pos += bytesRead2;
+      pos += bytesRead;
       if (p.readUInt8(pos) === 0)
         readStream = false;
     }
@@ -8958,9 +8854,9 @@ var UserStatus, statusString = (t) => {
 };
 var init_user_utils = __esm(() => {
   init_permissions_utils();
-  (function(UserStatus2) {
-    UserStatus2[UserStatus2["Active"] = 1] = "Active";
-    UserStatus2[UserStatus2["Inactive"] = 2] = "Inactive";
+  (function(UserStatus) {
+    UserStatus[UserStatus["Active"] = 1] = "Active";
+    UserStatus[UserStatus["Inactive"] = 2] = "Inactive";
   })(UserStatus || (UserStatus = {}));
 });
 
@@ -9105,8 +9001,8 @@ var init_user = __esm(() => {
 // node_modules/@iggy.rs/sdk/dist/wire/command-set.js
 class AbstractAPI {
   clientProvider;
-  constructor(getClient2) {
-    this.clientProvider = getClient2;
+  constructor(getClient) {
+    this.clientProvider = getClient;
   }
 }
 var userAPI = (c) => ({
@@ -9357,14 +9253,14 @@ var require_Deferred = __commonJS(function(exports, module) {
 // node_modules/generic-pool/lib/errors.js
 var require_errors2 = __commonJS(function(exports, module) {
   class ExtendableError extends Error {
-    constructor(message2) {
-      super(message2);
+    constructor(message) {
+      super(message);
       this.name = this.constructor.name;
-      this.message = message2;
+      this.message = message;
       if (typeof Error.captureStackTrace === "function") {
         Error.captureStackTrace(this, this.constructor);
       } else {
-        this.stack = new Error(message2).stack;
+        this.stack = new Error(message).stack;
       }
     }
   }
@@ -9827,7 +9723,7 @@ var require_Pool = __commonJS(function(exports, module) {
   var FACTORY_DESTROY_ERROR = "factoryDestroyError";
 
   class Pool extends EventEmitter {
-    constructor(Evictor, Deque2, PriorityQueue2, factory, options) {
+    constructor(Evictor, Deque, PriorityQueue, factory, options) {
       super();
       factoryValidator(factory);
       this._config = new PoolOptions(options);
@@ -9835,10 +9731,10 @@ var require_Pool = __commonJS(function(exports, module) {
       this._factory = factory;
       this._draining = false;
       this._started = false;
-      this._waitingClientsQueue = new PriorityQueue2(this._config.priorityRange);
+      this._waitingClientsQueue = new PriorityQueue(this._config.priorityRange);
       this._factoryCreateOperations = new Set;
       this._factoryDestroyOperations = new Set;
-      this._availableObjects = new Deque2;
+      this._availableObjects = new Deque;
       this._testOnBorrowResources = new Set;
       this._testOnReturnResources = new Set;
       this._validationOperations = new Set;
@@ -10483,10 +10379,10 @@ var init_client_socket = __esm(() => {
       const cmd = serializeCommand(command, payload);
       return this._socket.write(cmd);
     }
-    sendCommand(command, payload, handleResponse2 = true) {
+    sendCommand(command, payload, handleResponse = true) {
       return new Promise((resolve, reject) => {
         this._execQueue.push({ command, payload, resolve, reject });
-        this._processQueue(handleResponse2);
+        this._processQueue(handleResponse);
       });
     }
     async authenticate(creds) {
@@ -10505,7 +10401,7 @@ var init_client_socket = __esm(() => {
       const logr = await this.sendCommand(LOGIN_WITH_TOKEN.code, pl);
       return LOGIN_WITH_TOKEN.deserialize(logr);
     }
-    async _processQueue(handleResponse2 = true) {
+    async _processQueue(handleResponse = true) {
       if (this.busy)
         return;
       this.busy = true;
@@ -10515,7 +10411,7 @@ var init_client_socket = __esm(() => {
           break;
         const { command, payload, resolve, reject } = next;
         try {
-          resolve(await this._processNext(command, payload, handleResponse2));
+          resolve(await this._processNext(command, payload, handleResponse));
         } catch (err) {
           reject(err);
         }
@@ -10624,10 +10520,10 @@ var import_generic_pool, rawClientGetter = (config) => {
   create: function() {
     return rawClientGetter(config);
   },
-  destroy: async function(client2) {
-    return client2.destroy();
+  destroy: async function(client) {
+    return client.destroy();
   }
-}), Client, SingleClient, SimpleClient;
+}), Client;
 var init_client2 = __esm(() => {
   init_command_set();
   init_tcp_client();
@@ -10664,37 +10560,10 @@ var init_client2 = __esm(() => {
       };
     }
   };
-  SingleClient = class SingleClient extends CommandAPI {
-    _config;
-    destroy;
-    constructor(config) {
-      const cliP = rawClientGetter(config);
-      const init = async () => {
-        const c = await cliP;
-        if (!c.isAuthenticated)
-          await c.authenticate(config.credentials);
-        return c;
-      };
-      super(init);
-      this._config = config;
-      this.destroy = async () => {
-        const s = await this.clientProvider();
-        s.destroy();
-      };
-    }
-  };
-  SimpleClient = class SimpleClient extends CommandAPI {
-    constructor(client2) {
-      super(() => Promise.resolve(client2));
-    }
-  };
 });
 
 // node_modules/@iggy.rs/sdk/dist/client/client.type.js
-var Transports;
-var init_client_type = __esm(() => {
-  Transports = ["TCP", "TLS"];
-});
+var init_client_type = () => {};
 
 // node_modules/@iggy.rs/sdk/dist/client/index.js
 var init_client3 = __esm(() => {
@@ -10707,56 +10576,6 @@ var init_client3 = __esm(() => {
 });
 
 // node_modules/@iggy.rs/sdk/dist/stream/consumer-stream.js
-var { Readable, pipeline, PassThrough } = __require("node:stream");
-async function* genAutoCommitedPoll(c, poll, interval = 1000) {
-  const state = new Map;
-  while (true) {
-    const r = await c.message.poll(poll);
-    yield r;
-    const k = `${r.partitionId}`;
-    let part = state.get(k) || 0;
-    part = r.messageCount;
-    state.set(k, part);
-    if (Array.from(state).every(([, last]) => last === 0)) {
-      await wait(interval);
-    }
-  }
-}
-async function* genPoll(c, poll) {
-  const pl = POLL_MESSAGES.serialize(poll);
-  yield await c.sendCommand(POLL_MESSAGES.code, pl, false);
-}
-var wait = (interval, cb) => new Promise((resolve) => {
-  setTimeout(() => resolve(cb ? cb() : undefined), interval);
-}), singleConsumerStream = (config) => async (poll) => {
-  const c = await rawClientGetter(config);
-  if (!c.isAuthenticated)
-    await c.authenticate(config.credentials);
-  const ps = Readable.from(genPoll(c, poll), { objectMode: true });
-  return pipeline(ps, new PassThrough({ objectMode: true }), (err) => console.error("pipeline error", err));
-}, groupConsumerStream = (config) => async function groupConsumerStream2({ groupId, streamId, topicId, pollingStrategy, count, interval = 1000, autocommit = true }) {
-  const c = await rawClientGetter(config);
-  const s = new SimpleClient(c);
-  if (!c.isAuthenticated)
-    await c.authenticate(config.credentials);
-  try {
-    await s.group.get({ streamId, topicId, groupId });
-  } catch (err) {
-    await s.group.create({ streamId, topicId, groupId, name: `auto-${groupId}` });
-  }
-  await s.group.join({ streamId, topicId, groupId });
-  const poll = {
-    streamId,
-    topicId,
-    consumer: { kind: ConsumerKind.Group, id: groupId },
-    partitionId: 0,
-    pollingStrategy,
-    count,
-    autocommit
-  };
-  const ps = Readable.from(genAutoCommitedPoll(s, poll, interval), { objectMode: true });
-  return ps;
-};
 var init_consumer_stream = __esm(() => {
   init_client2();
   init_poll_messages_command();
@@ -10769,27 +10588,6 @@ var init_stream2 = __esm(() => {
 });
 
 // node_modules/@iggy.rs/sdk/dist/index.js
-var exports_dist = {};
-__export(exports_dist, {
-  Client: () => Client,
-  CommandResponseStream: () => CommandResponseStream,
-  ConsumerKind: () => ConsumerKind,
-  HeaderValue: () => HeaderValue,
-  Partitioning: () => Partitioning,
-  PollingStrategy: () => PollingStrategy,
-  SimpleClient: () => SimpleClient,
-  SingleClient: () => SingleClient,
-  TcpClient: () => TcpClient,
-  TlsClient: () => TlsClient,
-  Transports: () => Transports,
-  deserializeVoidResponse: () => deserializeVoidResponse,
-  groupConsumerStream: () => groupConsumerStream,
-  handleResponse: () => handleResponse,
-  handleResponseTransform: () => handleResponseTransform,
-  serializeCommand: () => serializeCommand,
-  singleConsumerStream: () => singleConsumerStream,
-  wrapSocket: () => wrapSocket
-});
 var init_dist = __esm(() => {
   init_wire();
   init_client3();
@@ -11215,7 +11013,7 @@ class IggyEventsProvider {
     this.partitionCount = config.partitionCount ?? DEFAULT_PARTITION_COUNT;
   }
   async emit(event) {
-    const client3 = await this.#requireClient();
+    const client = await this.#requireClient();
     const topicName = event.organizationId ?? this.config.organizationId ?? "system";
     await this.#ensureTopic(topicName);
     const eventId = crypto.randomUUID();
@@ -11235,13 +11033,13 @@ class IggyEventsProvider {
         traceparent: generateTraceparent()
       }
     };
-    const { Partitioning: Partitioning2 } = await Promise.resolve().then(() => (init_dist(), exports_dist));
-    const partition2 = event.subject ? Partitioning2.MessageKey(event.subject) : Partitioning2.Balanced;
-    await client3.message.send({
+    await Promise.resolve().then(() => init_dist());
+    const partition = event.subject ? Partitioning.MessageKey(event.subject) : Partitioning.Balanced;
+    await client.message.send({
       streamId: STREAM_ID,
       topicId: topicName,
       messages: [{ payload: Buffer.from(JSON.stringify(envelope)) }],
-      partition: partition2
+      partition
     });
     log("info", "events", "event published to Iggy", {
       eventId,
@@ -11286,8 +11084,8 @@ class IggyEventsProvider {
   async#requireClient() {
     if (this.client)
       return this.client;
-    const { Client: Client2 } = await Promise.resolve().then(() => (init_dist(), exports_dist));
-    this.client = new Client2({
+    await Promise.resolve().then(() => init_dist());
+    this.client = new Client({
       transport: "TCP",
       options: { host: this.config.host, port: this.port },
       credentials: {
@@ -11303,11 +11101,11 @@ class IggyEventsProvider {
     return this.client;
   }
   async#ensureStream() {
-    const client3 = this.client;
+    const client = this.client;
     try {
-      await client3.stream.get({ streamId: STREAM_ID });
+      await client.stream.get({ streamId: STREAM_ID });
     } catch {
-      await client3.stream.create({
+      await client.stream.create({
         streamId: STREAM_ID,
         name: this.streamName
       });
@@ -11320,17 +11118,17 @@ class IggyEventsProvider {
   async#ensureTopic(name) {
     if (this.knownTopics.has(name))
       return;
-    const client3 = await this.#requireClient();
-    const { CompressionAlgorithmKind: CompressionAlgorithmKind2 } = await Promise.resolve().then(() => (init_topic_utils(), exports_topic_utils));
+    const client = await this.#requireClient();
+    await Promise.resolve().then(() => init_topic_utils());
     try {
-      await client3.topic.get({ streamId: STREAM_ID, topicId: name });
+      await client.topic.get({ streamId: STREAM_ID, topicId: name });
     } catch {
-      await client3.topic.create({
+      await client.topic.create({
         streamId: STREAM_ID,
         topicId: 0,
         name,
         partitionCount: this.partitionCount,
-        compressionAlgorithm: CompressionAlgorithmKind2.None,
+        compressionAlgorithm: CompressionAlgorithmKind.None,
         messageExpiry: BigInt(RETENTION_SECONDS)
       });
       log("info", "events", "created Iggy topic", {
