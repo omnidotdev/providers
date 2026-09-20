@@ -168,7 +168,7 @@ class HeraldNotificationProvider {
       body: JSON.stringify(body)
     });
     if (!response.ok) {
-      const detail = await response.json().then((data2) => data2.error).catch(() => {
+      const detail = await response.json().then((data) => data.error).catch(() => {
         return;
       });
       throw new HeraldHttpError(`Herald responded ${response.status}${detail ? `: ${detail}` : ""}`, response.status);

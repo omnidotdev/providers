@@ -1,19 +1,14 @@
-var __defProp = Object.defineProperty;
-var __returnValue = (v) => v;
-function __exportSetter(name, newValue) {
-  this[name] = __returnValue.bind(null, newValue);
-}
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, {
-      get: all[name],
-      enumerable: true,
-      configurable: true,
-      set: __exportSetter.bind(all, name)
-    });
+var __esm = (fn, res, err) => () => {
+  if (fn)
+    try {
+      res = fn(fn = 0);
+    } catch (e) {
+      err = [e];
+    }
+  if (err)
+    throw err[0];
+  return res;
 };
-var __esm = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
-var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);
 
 // node_modules/jose/dist/webapi/lib/buffer_utils.js
 function concat(...buffers) {
@@ -1525,8 +1520,8 @@ async function flattenedDecrypt(jwe, key, options) {
   let parsedProt;
   if (jwe.protected) {
     try {
-      const protectedHeader2 = decode(jwe.protected);
-      parsedProt = JSON.parse(decoder.decode(protectedHeader2));
+      const protectedHeader = decode(jwe.protected);
+      parsedProt = JSON.parse(decoder.decode(protectedHeader));
     } catch {
       throw new JWEInvalid("JWE Protected Header is invalid");
     }
@@ -1583,7 +1578,7 @@ async function flattenedDecrypt(jwe, key, options) {
     cek = generateCek(enc);
   }
   let iv;
-  let tag2;
+  let tag;
   if (jwe.iv !== undefined) {
     try {
       iv = decode(jwe.iv);
@@ -1593,7 +1588,7 @@ async function flattenedDecrypt(jwe, key, options) {
   }
   if (jwe.tag !== undefined) {
     try {
-      tag2 = decode(jwe.tag);
+      tag = decode(jwe.tag);
     } catch {
       throw new JWEInvalid("Failed to base64url decode the tag");
     }
@@ -1611,7 +1606,7 @@ async function flattenedDecrypt(jwe, key, options) {
   } catch {
     throw new JWEInvalid("Failed to base64url decode the ciphertext");
   }
-  const plaintext = await decrypt(enc, cek, ciphertext, iv, tag2, additionalData);
+  const plaintext = await decrypt(enc, cek, ciphertext, iv, tag, additionalData);
   const result = { plaintext };
   if (jwe.protected !== undefined) {
     result.protectedHeader = parsedProt;
@@ -1654,7 +1649,7 @@ async function compactDecrypt(jwe, key, options) {
   if (typeof jwe !== "string") {
     throw new JWEInvalid("Compact JWE must be a string or Uint8Array");
   }
-  const { 0: protectedHeader, 1: encryptedKey, 2: iv, 3: ciphertext, 4: tag2, length } = jwe.split(".");
+  const { 0: protectedHeader, 1: encryptedKey, 2: iv, 3: ciphertext, 4: tag, length } = jwe.split(".");
   if (length !== 5) {
     throw new JWEInvalid("Invalid Compact JWE");
   }
@@ -1662,7 +1657,7 @@ async function compactDecrypt(jwe, key, options) {
     ciphertext,
     iv: iv || undefined,
     protected: protectedHeader,
-    tag: tag2 || undefined,
+    tag: tag || undefined,
     encrypted_key: encryptedKey || undefined
   }, key, options);
   const result = { plaintext: decrypted.plaintext, protectedHeader: decrypted.protectedHeader };
@@ -1943,15 +1938,15 @@ class FlattenedEncrypt {
     } else {
       additionalData = protectedHeaderB;
     }
-    const { ciphertext, tag: tag2, iv } = await encrypt2(enc, this.#plaintext, cek, this.#iv, additionalData);
+    const { ciphertext, tag, iv } = await encrypt2(enc, this.#plaintext, cek, this.#iv, additionalData);
     const jwe = {
       ciphertext: encode2(ciphertext)
     };
     if (iv) {
       jwe.iv = encode2(iv);
     }
-    if (tag2) {
-      jwe.tag = encode2(tag2);
+    if (tag) {
+      jwe.tag = encode2(tag);
     }
     if (encryptedKey) {
       jwe.encrypted_key = encode2(encryptedKey);
@@ -2632,34 +2627,34 @@ class LocalJWKSet {
   async getKey(protectedHeader, token) {
     const { alg, kid } = { ...protectedHeader, ...token?.header };
     const kty = getKtyFromAlg(alg);
-    const candidates = this.#jwks.keys.filter((jwk2) => {
-      let candidate = kty === jwk2.kty;
+    const candidates = this.#jwks.keys.filter((jwk) => {
+      let candidate = kty === jwk.kty;
       if (candidate && typeof kid === "string") {
-        candidate = kid === jwk2.kid;
+        candidate = kid === jwk.kid;
       }
-      if (candidate && (typeof jwk2.alg === "string" || kty === "AKP")) {
-        candidate = alg === jwk2.alg;
+      if (candidate && (typeof jwk.alg === "string" || kty === "AKP")) {
+        candidate = alg === jwk.alg;
       }
-      if (candidate && typeof jwk2.use === "string") {
-        candidate = jwk2.use === "sig";
+      if (candidate && typeof jwk.use === "string") {
+        candidate = jwk.use === "sig";
       }
-      if (candidate && Array.isArray(jwk2.key_ops)) {
-        candidate = jwk2.key_ops.includes("verify");
+      if (candidate && Array.isArray(jwk.key_ops)) {
+        candidate = jwk.key_ops.includes("verify");
       }
       if (candidate) {
         switch (alg) {
           case "ES256":
-            candidate = jwk2.crv === "P-256";
+            candidate = jwk.crv === "P-256";
             break;
           case "ES384":
-            candidate = jwk2.crv === "P-384";
+            candidate = jwk.crv === "P-384";
             break;
           case "ES512":
-            candidate = jwk2.crv === "P-521";
+            candidate = jwk.crv === "P-521";
             break;
           case "Ed25519":
           case "EdDSA":
-            candidate = jwk2.crv === "Ed25519";
+            candidate = jwk.crv === "Ed25519";
             break;
         }
       }
@@ -2673,9 +2668,9 @@ class LocalJWKSet {
       const error = new JWKSMultipleMatchingKeys;
       const _cached = this.#cached;
       error[Symbol.asyncIterator] = async function* () {
-        for (const jwk2 of candidates) {
+        for (const jwk of candidates) {
           try {
-            yield await importWithAlgCache(_cached, jwk2, alg);
+            yield await importWithAlgCache(_cached, jwk, alg);
           } catch {}
         }
       };
@@ -2684,8 +2679,8 @@ class LocalJWKSet {
     return importWithAlgCache(this.#cached, jwk, alg);
   }
 }
-async function importWithAlgCache(cache2, jwk, alg) {
-  const cached = cache2.get(jwk) || cache2.set(jwk, {}).get(jwk);
+async function importWithAlgCache(cache, jwk, alg) {
+  const cached = cache.get(jwk) || cache.set(jwk, {}).get(jwk);
   if (cached[alg] === undefined) {
     const key = await importJWK({ ...jwk, ext: true }, alg);
     if (key instanceof Uint8Array || key.type !== "public") {
@@ -2890,10 +2885,6 @@ var init_webapi = __esm(() => {
 });
 
 // src/auth/jwt.ts
-var exports_jwt = {};
-__export(exports_jwt, {
-  verifyAccessToken: () => verifyAccessToken
-});
 function getJWKS(authBaseUrl) {
   let jwks = jwksCache2.get(authBaseUrl);
   if (!jwks) {
@@ -2922,13 +2913,13 @@ var init_jwt = __esm(() => {
 init_webapi();
 var COOKIE_TTL_SECONDS = 60 * 60 * 24 * 7;
 async function deriveKeyFromSecret(secret, salt, info) {
-  const encoder2 = new TextEncoder;
-  const keyMaterial = await crypto.subtle.importKey("raw", encoder2.encode(secret), "HKDF", false, ["deriveBits"]);
+  const encoder = new TextEncoder;
+  const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(secret), "HKDF", false, ["deriveBits"]);
   return new Uint8Array(await crypto.subtle.deriveBits({
     name: "HKDF",
     hash: "SHA-256",
-    salt: encoder2.encode(salt),
-    info: encoder2.encode(info)
+    salt: encoder.encode(salt),
+    info: encoder.encode(info)
   }, keyMaterial, 256));
 }
 function parseCachePayload(payload) {
@@ -2948,14 +2939,14 @@ function createAuthCache(config) {
       throw new Error("AUTH_SECRET not configured");
     return deriveKeyFromSecret(AUTH_SECRET, salt, "encryption-key");
   }
-  async function encrypt3(data) {
+  async function encrypt(data) {
     const key = await getKey();
     return new EncryptJWT({
       ...data.rowId !== undefined ? { rowId: data.rowId } : {},
       identityProviderId: data.identityProviderId
     }).setProtectedHeader({ alg: "dir", enc: "A256GCM" }).setIssuedAt().setExpirationTime(`${COOKIE_TTL_SECONDS}s`).encrypt(key);
   }
-  async function decrypt3(encrypted) {
+  async function decrypt(encrypted) {
     try {
       const key = await getKey();
       const { payload } = await jwtDecrypt(encrypted, key);
@@ -2973,8 +2964,8 @@ function createAuthCache(config) {
     }
   }
   return {
-    encrypt: encrypt3,
-    decrypt: decrypt3,
+    encrypt,
+    decrypt,
     cookieName,
     cookieTtlSeconds: COOKIE_TTL_SECONDS
   };
@@ -2988,8 +2979,8 @@ var extractOrgClaims = (claims) => readOrgClaims(claims) ?? [];
 // src/auth/gatekeeperOrg.ts
 class GatekeeperOrgError extends Error {
   status;
-  constructor(message2, status) {
-    super(message2);
+  constructor(message, status) {
+    super(message);
     this.name = "GatekeeperOrgError";
     this.status = status;
   }
@@ -3283,8 +3274,8 @@ function createGetAuth(config) {
     const forward = await resolveForwarder();
     if (!forward)
       return;
-    for (const setCookie2 of setCookies) {
-      forward(setCookie2);
+    for (const setCookie of setCookies) {
+      forward(setCookie);
     }
   };
   const orgCache = new Map;
@@ -3509,7 +3500,7 @@ var JWKS_TTL = 60 * 60 * 1000;
 function createOidcClient(config) {
   let discoveryCache = null;
   let discoveryExpiry = 0;
-  let jwksCache3 = null;
+  let jwksCache = null;
   let jwksExpiry = 0;
   async function getDiscovery() {
     const now = Date.now();
@@ -3532,19 +3523,19 @@ function createOidcClient(config) {
   }
   async function getJwks() {
     const now = Date.now();
-    if (jwksCache3 && now < jwksExpiry)
-      return jwksCache3;
+    if (jwksCache && now < jwksExpiry)
+      return jwksCache;
     const discovery = await getDiscovery();
     const jwksUrl = new URL(discovery.jwks_uri);
     const baseUrl = new URL(config.authBaseUrl);
     jwksUrl.protocol = baseUrl.protocol;
     jwksUrl.host = baseUrl.host;
-    jwksCache3 = createRemoteJWKSet(jwksUrl, {
+    jwksCache = createRemoteJWKSet(jwksUrl, {
       timeoutDuration: 15000,
       cooldownDuration: 30000
     });
     jwksExpiry = now + JWKS_TTL;
-    return jwksCache3;
+    return jwksCache;
   }
   async function verifyIdToken(token) {
     const [discovery, jwks] = await Promise.all([getDiscovery(), getJwks()]);
@@ -3574,7 +3565,7 @@ function createOidcClient(config) {
   function clearCache() {
     discoveryCache = null;
     discoveryExpiry = 0;
-    jwksCache3 = null;
+    jwksCache = null;
     jwksExpiry = 0;
   }
   return { verifyIdToken, fetchUserInfo, getDiscovery, getJwks, clearCache };
@@ -3593,8 +3584,8 @@ async function fetchUserInfo(token, userinfoUrl) {
 async function resolveAccessToken(token, config) {
   const isJwt = token.split(".").length === 3;
   if (isJwt) {
-    const { verifyAccessToken: verifyAccessToken2 } = await Promise.resolve().then(() => (init_jwt(), exports_jwt));
-    await verifyAccessToken2(token, config);
+    await Promise.resolve().then(() => init_jwt());
+    await verifyAccessToken(token, config);
   }
   return fetchUserInfo(token, config.userinfoUrl);
 }

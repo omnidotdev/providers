@@ -64,6 +64,14 @@ const entries = [
     external: [] as string[],
   },
   {
+    entrypoint: "./src/ecosystem/index.ts",
+    outdir: "./build/ecosystem",
+    // Transport-agnostic broker + injected connections; safe in both browser
+    // and server consumers
+    target: "browser" as const,
+    external: [] as string[],
+  },
+  {
     entrypoint: "./src/events/index.ts",
     outdir: "./build/events",
     target: "node" as const,

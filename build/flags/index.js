@@ -17,7 +17,7 @@ var __toESM = (mod, isNodeMode, target) => {
       return cached;
   }
   target = mod != null ? __create(__getProtoOf(mod)) : {};
-  const to = isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target;
+  const to = isNodeMode || !mod || !mod.__esModule || !__hasOwnProp.call(mod, "default") ? __defProp(target, "default", { value: mod, enumerable: true }) : target;
   if (mod && typeof mod === "object" || typeof mod === "function") {
     for (let key of __getOwnPropNames(mod))
       if (!__hasOwnProp.call(to, key))
@@ -31,20 +31,17 @@ var __toESM = (mod, isNodeMode, target) => {
   return to;
 };
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
-var __returnValue = (v) => v;
-function __exportSetter(name, newValue) {
-  this[name] = __returnValue.bind(null, newValue);
-}
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, {
-      get: all[name],
-      enumerable: true,
-      configurable: true,
-      set: __exportSetter.bind(all, name)
-    });
+var __esm = (fn, res, err) => () => {
+  if (fn)
+    try {
+      res = fn(fn = 0);
+    } catch (e) {
+      err = [e];
+    }
+  if (err)
+    throw err[0];
+  return res;
 };
-var __esm = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
 var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);
 
 // node_modules/unleash-client/lib/events.js
@@ -53,19 +50,19 @@ var require_events = __commonJS(function(exports) {
   exports.UnleashEvents = undefined;
   exports.createImpressionEvent = createImpressionEvent;
   var UnleashEvents;
-  (function(UnleashEvents2) {
-    UnleashEvents2["Ready"] = "ready";
-    UnleashEvents2["Error"] = "error";
-    UnleashEvents2["Warn"] = "warn";
-    UnleashEvents2["Unchanged"] = "unchanged";
-    UnleashEvents2["Changed"] = "changed";
-    UnleashEvents2["Synchronized"] = "synchronized";
-    UnleashEvents2["Count"] = "count";
-    UnleashEvents2["CountVariant"] = "countVariant";
-    UnleashEvents2["Sent"] = "sent";
-    UnleashEvents2["Registered"] = "registered";
-    UnleashEvents2["Impression"] = "impression";
-    UnleashEvents2["Mode"] = "mode";
+  (function(UnleashEvents) {
+    UnleashEvents["Ready"] = "ready";
+    UnleashEvents["Error"] = "error";
+    UnleashEvents["Warn"] = "warn";
+    UnleashEvents["Unchanged"] = "unchanged";
+    UnleashEvents["Changed"] = "changed";
+    UnleashEvents["Synchronized"] = "synchronized";
+    UnleashEvents["Count"] = "count";
+    UnleashEvents["CountVariant"] = "countVariant";
+    UnleashEvents["Sent"] = "sent";
+    UnleashEvents["Registered"] = "registered";
+    UnleashEvents["Impression"] = "impression";
+    UnleashEvents["Mode"] = "mode";
   })(UnleashEvents || (exports.UnleashEvents = UnleashEvents = {}));
   function createImpressionEvent(evt) {
     return evt;
@@ -473,10 +470,10 @@ var require_helpers = __commonJS(function(exports) {
   });
   var __importStar = exports && exports.__importStar || function() {
     var ownKeys = function(o) {
-      ownKeys = Object.getOwnPropertyNames || function(o2) {
+      ownKeys = Object.getOwnPropertyNames || function(o) {
         var ar = [];
-        for (var k in o2)
-          if (Object.prototype.hasOwnProperty.call(o2, k))
+        for (var k in o)
+          if (Object.prototype.hasOwnProperty.call(o, k))
             ar[ar.length] = k;
         return ar;
       };
@@ -565,10 +562,10 @@ var require_util = __commonJS(function(exports) {
   });
   var __importStar = exports && exports.__importStar || function() {
     var ownKeys = function(o) {
-      ownKeys = Object.getOwnPropertyNames || function(o2) {
+      ownKeys = Object.getOwnPropertyNames || function(o) {
         var ar = [];
-        for (var k in o2)
-          if (Object.prototype.hasOwnProperty.call(o2, k))
+        for (var k in o)
+          if (Object.prototype.hasOwnProperty.call(o, k))
             ar[ar.length] = k;
         return ar;
       };
@@ -615,11 +612,11 @@ var require_variant = __commonJS(function(exports) {
   var helpers_1 = require_helpers();
   var util_1 = require_util();
   var PayloadType;
-  (function(PayloadType2) {
-    PayloadType2["STRING"] = "string";
-    PayloadType2["JSON"] = "json";
-    PayloadType2["CSV"] = "csv";
-    PayloadType2["NUMBER"] = "number";
+  (function(PayloadType) {
+    PayloadType["STRING"] = "string";
+    PayloadType["JSON"] = "json";
+    PayloadType["CSV"] = "csv";
+    PayloadType["NUMBER"] = "number";
   })(PayloadType || (exports.PayloadType = PayloadType = {}));
   exports.defaultVariant = {
     name: "disabled",
@@ -1873,7 +1870,7 @@ var require_node = __commonJS(function(exports, module) {
   var tty = __require("tty");
   var util = __require("util");
   exports.init = init;
-  exports.log = log2;
+  exports.log = log;
   exports.formatArgs = formatArgs;
   exports.save = save;
   exports.load = load;
@@ -1986,8 +1983,8 @@ var require_node = __commonJS(function(exports, module) {
     return "colors" in exports.inspectOpts ? Boolean(exports.inspectOpts.colors) : tty.isatty(process.stderr.fd);
   }
   function formatArgs(args) {
-    const { namespace: name, useColors: useColors2 } = this;
-    if (useColors2) {
+    const { namespace: name, useColors } = this;
+    if (useColors) {
       const c = this.color;
       const colorCode = "\x1B[3" + (c < 8 ? c : "8;5;" + c);
       const prefix = `  ${colorCode};1m${name} \x1B[0m`;
@@ -2005,7 +2002,7 @@ var require_node = __commonJS(function(exports, module) {
     }
     return new Date().toISOString() + " ";
   }
-  function log2(...args) {
+  function log(...args) {
     return process.stderr.write(util.formatWithOptions(exports.inspectOpts, ...args) + `
 `);
   }
@@ -2110,12 +2107,12 @@ var require_helpers2 = __commonJS(function(exports) {
   exports.json = json;
   function req(url, opts = {}) {
     const href = typeof url === "string" ? url : url.href;
-    const req2 = (href.startsWith("https:") ? https : http).request(url, opts);
+    const req = (href.startsWith("https:") ? https : http).request(url, opts);
     const promise = new Promise((resolve, reject) => {
-      req2.once("response", resolve).once("error", reject).end();
+      req.once("response", resolve).once("error", reject).end();
     });
-    req2.then = promise.then.bind(promise);
-    return req2;
+    req.then = promise.then.bind(promise);
+    return req;
   }
   exports.req = req;
 });
@@ -2746,7 +2743,7 @@ var require_node2 = __commonJS(function(exports, module) {
   var tty = __require("tty");
   var util = __require("util");
   exports.init = init;
-  exports.log = log2;
+  exports.log = log;
   exports.formatArgs = formatArgs;
   exports.save = save;
   exports.load = load;
@@ -2859,8 +2856,8 @@ var require_node2 = __commonJS(function(exports, module) {
     return "colors" in exports.inspectOpts ? Boolean(exports.inspectOpts.colors) : tty.isatty(process.stderr.fd);
   }
   function formatArgs(args) {
-    const { namespace: name, useColors: useColors2 } = this;
-    if (useColors2) {
+    const { namespace: name, useColors } = this;
+    if (useColors) {
       const c = this.color;
       const colorCode = "\x1B[3" + (c < 8 ? c : "8;5;" + c);
       const prefix = `  ${colorCode};1m${name} \x1B[0m`;
@@ -2878,7 +2875,7 @@ var require_node2 = __commonJS(function(exports, module) {
     }
     return new Date().toISOString() + " ";
   }
-  function log2(...args) {
+  function log(...args) {
     return process.stderr.write(util.formatWithOptions(exports.inspectOpts, ...args) + `
 `);
   }
@@ -3551,7 +3548,7 @@ var require_commonjs = __commonJS(function(exports) {
       return dest;
     }
     unpipe(dest) {
-      const p = this[PIPES].find((p2) => p2.dest === dest);
+      const p = this[PIPES].find((p) => p.dest === dest);
       if (p) {
         if (this[PIPES].length === 1) {
           if (this[FLOWING] && this[DATALISTENERS] === 0) {
@@ -3637,23 +3634,23 @@ var require_commonjs = __commonJS(function(exports) {
         this[CLOSED] = true;
         if (!this[EMITTED_END] && !this[DESTROYED])
           return false;
-        const ret2 = super.emit("close");
+        const ret = super.emit("close");
         this.removeAllListeners("close");
-        return ret2;
+        return ret;
       } else if (ev === "error") {
         this[EMITTED_ERROR] = data;
         super.emit(ERROR, data);
-        const ret2 = !this[SIGNAL] || this.listeners("error").length ? super.emit("error", data) : false;
+        const ret = !this[SIGNAL] || this.listeners("error").length ? super.emit("error", data) : false;
         this[MAYBE_EMIT_END]();
-        return ret2;
+        return ret;
       } else if (ev === "resume") {
-        const ret2 = super.emit("resume");
+        const ret = super.emit("resume");
         this[MAYBE_EMIT_END]();
-        return ret2;
+        return ret;
       } else if (ev === "finish" || ev === "prefinish") {
-        const ret2 = super.emit(ev);
+        const ret = super.emit(ev);
         this.removeAllListeners(ev);
-        return ret2;
+        return ret;
       }
       const ret = super.emit(ev, ...args);
       this[MAYBE_EMIT_END]();
@@ -3762,9 +3759,9 @@ var require_commonjs = __commonJS(function(exports) {
           resolve({ done: true, value: undefined });
         };
         const ondestroy = () => onerr(new Error("stream destroyed"));
-        return new Promise((res2, rej) => {
+        return new Promise((res, rej) => {
           reject = rej;
-          resolve = res2;
+          resolve = res;
           this.once(DESTROYED, ondestroy);
           this.once("error", onerr);
           this.once("end", onend);
@@ -3963,13 +3960,13 @@ var require_commonjs2 = __commonJS(function(exports) {
   var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
     if (k2 === undefined)
       k2 = k;
-    var desc2 = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc2 || ("get" in desc2 ? !m.__esModule : desc2.writable || desc2.configurable)) {
-      desc2 = { enumerable: true, get: function() {
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() {
         return m[k];
       } };
     }
-    Object.defineProperty(o, k2, desc2);
+    Object.defineProperty(o, k2, desc);
   } : function(o, m, k, k2) {
     if (k2 === undefined)
       k2 = k;
@@ -3982,10 +3979,10 @@ var require_commonjs2 = __commonJS(function(exports) {
   });
   var __importStar = exports && exports.__importStar || function() {
     var ownKeys = function(o) {
-      ownKeys = Object.getOwnPropertyNames || function(o2) {
+      ownKeys = Object.getOwnPropertyNames || function(o) {
         var ar = [];
-        for (var k in o2)
-          if (Object.prototype.hasOwnProperty.call(o2, k))
+        for (var k in o)
+          if (Object.prototype.hasOwnProperty.call(o, k))
             ar[ar.length] = k;
         return ar;
       };
@@ -5209,25 +5206,25 @@ var require_utf7 = __commonJS(function(exports) {
     var lastI = 0;
     var inBase64 = this.inBase64;
     var base64Accum = this.base64Accum;
-    for (var i2 = 0;i2 < buf.length; i2++) {
+    for (var i = 0;i < buf.length; i++) {
       if (!inBase64) {
-        if (buf[i2] == plusChar) {
-          res += this.iconv.decode(buf.slice(lastI, i2), "ascii");
-          lastI = i2 + 1;
+        if (buf[i] == plusChar) {
+          res += this.iconv.decode(buf.slice(lastI, i), "ascii");
+          lastI = i + 1;
           inBase64 = true;
         }
       } else {
-        if (!base64Chars[buf[i2]]) {
-          if (i2 == lastI && buf[i2] == minusChar) {
+        if (!base64Chars[buf[i]]) {
+          if (i == lastI && buf[i] == minusChar) {
             res += "+";
           } else {
-            var b64str = base64Accum + this.iconv.decode(buf.slice(lastI, i2), "ascii");
+            var b64str = base64Accum + this.iconv.decode(buf.slice(lastI, i), "ascii");
             res += this.iconv.decode(Buffer2.from(b64str, "base64"), "utf16-be");
           }
-          if (buf[i2] != minusChar) {
-            i2--;
+          if (buf[i] != minusChar) {
+            i--;
           }
-          lastI = i2 + 1;
+          lastI = i + 1;
           inBase64 = false;
           base64Accum = "";
         }
@@ -5274,8 +5271,8 @@ var require_utf7 = __commonJS(function(exports) {
     var base64AccumIdx = this.base64AccumIdx;
     var buf = Buffer2.alloc(str.length * 5 + 10);
     var bufIdx = 0;
-    for (var i2 = 0;i2 < str.length; i2++) {
-      var uChar = str.charCodeAt(i2);
+    for (var i = 0;i < str.length; i++) {
+      var uChar = str.charCodeAt(i);
       if (uChar >= 32 && uChar <= 126) {
         if (inBase64) {
           if (base64AccumIdx > 0) {
@@ -5335,25 +5332,25 @@ var require_utf7 = __commonJS(function(exports) {
     var lastI = 0;
     var inBase64 = this.inBase64;
     var base64Accum = this.base64Accum;
-    for (var i2 = 0;i2 < buf.length; i2++) {
+    for (var i = 0;i < buf.length; i++) {
       if (!inBase64) {
-        if (buf[i2] == andChar) {
-          res += this.iconv.decode(buf.slice(lastI, i2), "ascii");
-          lastI = i2 + 1;
+        if (buf[i] == andChar) {
+          res += this.iconv.decode(buf.slice(lastI, i), "ascii");
+          lastI = i + 1;
           inBase64 = true;
         }
       } else {
-        if (!base64IMAPChars[buf[i2]]) {
-          if (i2 == lastI && buf[i2] == minusChar) {
+        if (!base64IMAPChars[buf[i]]) {
+          if (i == lastI && buf[i] == minusChar) {
             res += "&";
           } else {
-            var b64str = base64Accum + this.iconv.decode(buf.slice(lastI, i2), "ascii").replace(/,/g, "/");
+            var b64str = base64Accum + this.iconv.decode(buf.slice(lastI, i), "ascii").replace(/,/g, "/");
             res += this.iconv.decode(Buffer2.from(b64str, "base64"), "utf16-be");
           }
-          if (buf[i2] != minusChar) {
-            i2--;
+          if (buf[i] != minusChar) {
+            i--;
           }
-          lastI = i2 + 1;
+          lastI = i + 1;
           inBase64 = false;
           base64Accum = "";
         }
@@ -6071,8 +6068,8 @@ var require_dbcs_codec = __commonJS(function(exports) {
     this.decodeTables = [];
     this.decodeTables[0] = UNASSIGNED_NODE.slice(0);
     this.decodeTableSeq = [];
-    for (var i2 = 0;i2 < mappingTable.length; i2++) {
-      this._addDecodeChunk(mappingTable[i2]);
+    for (var i = 0;i < mappingTable.length; i++) {
+      this._addDecodeChunk(mappingTable[i]);
     }
     if (typeof codecOptions.gb18030 === "function") {
       this.gb18030 = codecOptions.gb18030();
@@ -6081,8 +6078,8 @@ var require_dbcs_codec = __commonJS(function(exports) {
       var commonFourthByteNodeIdx = this.decodeTables.length;
       this.decodeTables.push(UNASSIGNED_NODE.slice(0));
       var firstByteNode = this.decodeTables[0];
-      for (var i2 = 129;i2 <= 254; i2++) {
-        var secondByteNode = this.decodeTables[NODE_START - firstByteNode[i2]];
+      for (var i = 129;i <= 254; i++) {
+        var secondByteNode = this.decodeTables[NODE_START - firstByteNode[i]];
         for (var j = 48;j <= 57; j++) {
           if (secondByteNode[j] === UNASSIGNED) {
             secondByteNode[j] = NODE_START - commonThirdByteNodeIdx;
@@ -6113,8 +6110,8 @@ var require_dbcs_codec = __commonJS(function(exports) {
     this.encodeTableSeq = [];
     var skipEncodeChars = {};
     if (codecOptions.encodeSkipVals) {
-      for (var i2 = 0;i2 < codecOptions.encodeSkipVals.length; i2++) {
-        var val = codecOptions.encodeSkipVals[i2];
+      for (var i = 0;i < codecOptions.encodeSkipVals.length; i++) {
+        var val = codecOptions.encodeSkipVals[i];
         if (typeof val === "number") {
           skipEncodeChars[val] = true;
         } else {
@@ -6149,10 +6146,10 @@ var require_dbcs_codec = __commonJS(function(exports) {
       bytes.push(0);
     }
     var node = this.decodeTables[0];
-    for (var i2 = bytes.length - 1;i2 > 0; i2--) {
-      var val = node[bytes[i2]];
+    for (var i = bytes.length - 1;i > 0; i--) {
+      var val = node[bytes[i]];
       if (val == UNASSIGNED) {
-        node[bytes[i2]] = NODE_START - this.decodeTables.length;
+        node[bytes[i]] = NODE_START - this.decodeTables.length;
         this.decodeTables.push(node = UNASSIGNED_NODE.slice(0));
       } else if (val <= NODE_START) {
         node = this.decodeTables[NODE_START - val];
@@ -6251,9 +6248,9 @@ var require_dbcs_codec = __commonJS(function(exports) {
     var node = this.decodeTables[nodeIdx];
     var hasValues = false;
     var subNodeEmpty = {};
-    for (var i2 = 0;i2 < 256; i2++) {
-      var uCode = node[i2];
-      var mbCode = prefix + i2;
+    for (var i = 0;i < 256; i++) {
+      var uCode = node[i];
+      var mbCode = prefix + i;
       if (skipEncodeChars[mbCode]) {
         continue;
       }
@@ -6290,13 +6287,13 @@ var require_dbcs_codec = __commonJS(function(exports) {
     var leadSurrogate = this.leadSurrogate;
     var seqObj = this.seqObj;
     var nextChar = -1;
-    var i2 = 0;
+    var i = 0;
     var j = 0;
     while (true) {
       if (nextChar === -1) {
-        if (i2 == str.length)
+        if (i == str.length)
           break;
-        var uCode = str.charCodeAt(i2++);
+        var uCode = str.charCodeAt(i++);
       } else {
         var uCode = nextChar;
         nextChar = -1;
@@ -6426,17 +6423,17 @@ var require_dbcs_codec = __commonJS(function(exports) {
     var prevOffset = this.prevBytes.length;
     var seqStart = -this.prevBytes.length;
     var uCode;
-    for (var i2 = 0, j = 0;i2 < buf.length; i2++) {
-      var curByte = i2 >= 0 ? buf[i2] : prevBytes[i2 + prevOffset];
+    for (var i = 0, j = 0;i < buf.length; i++) {
+      var curByte = i >= 0 ? buf[i] : prevBytes[i + prevOffset];
       var uCode = this.decodeTables[nodeIdx][curByte];
       if (uCode >= 0) {} else if (uCode === UNASSIGNED) {
         uCode = this.defaultCharUnicode.charCodeAt(0);
-        i2 = seqStart;
+        i = seqStart;
       } else if (uCode === GB18030_CODE) {
-        if (i2 >= 3) {
-          var ptr = (buf[i2 - 3] - 129) * 12600 + (buf[i2 - 2] - 48) * 1260 + (buf[i2 - 1] - 129) * 10 + (curByte - 48);
+        if (i >= 3) {
+          var ptr = (buf[i - 3] - 129) * 12600 + (buf[i - 2] - 48) * 1260 + (buf[i - 1] - 129) * 10 + (curByte - 48);
         } else {
-          var ptr = (prevBytes[i2 - 3 + prevOffset] - 129) * 12600 + ((i2 - 2 >= 0 ? buf[i2 - 2] : prevBytes[i2 - 2 + prevOffset]) - 48) * 1260 + ((i2 - 1 >= 0 ? buf[i2 - 1] : prevBytes[i2 - 1 + prevOffset]) - 129) * 10 + (curByte - 48);
+          var ptr = (prevBytes[i - 3 + prevOffset] - 129) * 12600 + ((i - 2 >= 0 ? buf[i - 2] : prevBytes[i - 2 + prevOffset]) - 48) * 1260 + ((i - 1 >= 0 ? buf[i - 1] : prevBytes[i - 1 + prevOffset]) - 129) * 10 + (curByte - 48);
         }
         var idx = findIdx(this.gb18030.gbChars, ptr);
         uCode = this.gb18030.uChars[idx] + ptr - this.gb18030.gbChars[idx];
@@ -6464,7 +6461,7 @@ var require_dbcs_codec = __commonJS(function(exports) {
       newBuf[j++] = uCode & 255;
       newBuf[j++] = uCode >> 8;
       nodeIdx = 0;
-      seqStart = i2 + 1;
+      seqStart = i + 1;
     }
     this.nodeIdx = nodeIdx;
     this.prevBytes = seqStart >= 0 ? Array.prototype.slice.call(buf, seqStart) : prevBytes.slice(seqStart + prevOffset).concat(Array.prototype.slice.call(buf));
@@ -8123,11 +8120,11 @@ var require_lib = __commonJS(function(exports, module) {
     }
     return decoder;
   };
-  exports.enableStreamingAPI = function enableStreamingAPI(streamModule2) {
+  exports.enableStreamingAPI = function enableStreamingAPI(streamModule) {
     if (exports.supportsStreams) {
       return;
     }
-    var streams = require_streams()(streamModule2);
+    var streams = require_streams()(streamModule);
     exports.IconvLiteEncoderStream = streams.IconvLiteEncoderStream;
     exports.IconvLiteDecoderStream = streams.IconvLiteDecoderStream;
     exports.encodeStream = function encodeStream(encoding, options) {
@@ -9152,9 +9149,9 @@ var require_lib2 = __commonJS(function(exports, module) {
         }
         if (codings === "deflate" || codings === "x-deflate") {
           res.once("data", (chunk) => {
-            const decoder2 = (chunk[0] & 15) === 8 ? new zlib.Inflate : new zlib.InflateRaw;
-            body.on("error", (er) => decoder2.emit("error", er)).pipe(decoder2);
-            response = new Response(decoder2, responseOptions);
+            const decoder = (chunk[0] & 15) === 8 ? new zlib.Inflate : new zlib.InflateRaw;
+            body.on("error", (er) => decoder.emit("error", er)).pipe(decoder);
+            response = new Response(decoder, responseOptions);
             resolve(response);
           });
           return;
@@ -9853,7 +9850,7 @@ var require_encoding = __commonJS(function(exports, module) {
   }
   function preferredEncodings(accept, provided, preferred) {
     var accepts = parseAcceptEncoding(accept || "");
-    var comparator = preferred ? function comparator2(a, b) {
+    var comparator = preferred ? function comparator(a, b) {
       if (a.q !== b.q) {
         return b.q - a.q;
       }
@@ -11082,7 +11079,7 @@ var require_minipass = __commonJS(function(exports, module) {
       return dest;
     }
     unpipe(dest) {
-      const p = this.pipes.find((p2) => p2.dest === dest);
+      const p = this.pipes.find((p) => p.dest === dest);
       if (p) {
         this.pipes.splice(this.pipes.indexOf(p), 1);
         p.unpipe();
@@ -11133,22 +11130,22 @@ var require_minipass = __commonJS(function(exports, module) {
         this[CLOSED] = true;
         if (!this[EMITTED_END] && !this[DESTROYED])
           return;
-        const ret2 = super.emit("close");
+        const ret = super.emit("close");
         this.removeAllListeners("close");
-        return ret2;
+        return ret;
       } else if (ev === "error") {
         this[EMITTED_ERROR] = data;
-        const ret2 = super.emit("error", data);
+        const ret = super.emit("error", data);
         this[MAYBE_EMIT_END]();
-        return ret2;
+        return ret;
       } else if (ev === "resume") {
-        const ret2 = super.emit("resume");
+        const ret = super.emit("resume");
         this[MAYBE_EMIT_END]();
-        return ret2;
+        return ret;
       } else if (ev === "finish" || ev === "prefinish") {
-        const ret2 = super.emit(ev);
+        const ret = super.emit(ev);
         this.removeAllListeners(ev);
-        return ret2;
+        return ret;
       }
       const ret = super.emit(ev, data, ...extra);
       this[MAYBE_EMIT_END]();
@@ -11238,9 +11235,9 @@ var require_minipass = __commonJS(function(exports, module) {
           resolve({ done: true });
         };
         const ondestroy = () => onerr(new Error("stream destroyed"));
-        return new Promise((res2, rej) => {
+        return new Promise((res, rej) => {
           reject = rej;
-          resolve = res2;
+          resolve = res;
           this.once(DESTROYED, ondestroy);
           this.once("error", onerr);
           this.once("end", onend);
@@ -11694,7 +11691,7 @@ var require_minipass2 = __commonJS(function(exports, module) {
       return dest;
     }
     unpipe(dest) {
-      const p = this.pipes.find((p2) => p2.dest === dest);
+      const p = this.pipes.find((p) => p.dest === dest);
       if (p) {
         this.pipes.splice(this.pipes.indexOf(p), 1);
         p.unpipe();
@@ -11745,22 +11742,22 @@ var require_minipass2 = __commonJS(function(exports, module) {
         this[CLOSED] = true;
         if (!this[EMITTED_END] && !this[DESTROYED])
           return;
-        const ret2 = super.emit("close");
+        const ret = super.emit("close");
         this.removeAllListeners("close");
-        return ret2;
+        return ret;
       } else if (ev === "error") {
         this[EMITTED_ERROR] = data;
-        const ret2 = super.emit("error", data);
+        const ret = super.emit("error", data);
         this[MAYBE_EMIT_END]();
-        return ret2;
+        return ret;
       } else if (ev === "resume") {
-        const ret2 = super.emit("resume");
+        const ret = super.emit("resume");
         this[MAYBE_EMIT_END]();
-        return ret2;
+        return ret;
       } else if (ev === "finish" || ev === "prefinish") {
-        const ret2 = super.emit(ev);
+        const ret = super.emit(ev);
         this.removeAllListeners(ev);
-        return ret2;
+        return ret;
       }
       const ret = super.emit(ev, data, ...extra);
       this[MAYBE_EMIT_END]();
@@ -11850,9 +11847,9 @@ var require_minipass2 = __commonJS(function(exports, module) {
           resolve({ done: true });
         };
         const ondestroy = () => onerr(new Error("stream destroyed"));
-        return new Promise((res2, rej) => {
+        return new Promise((res, rej) => {
           reject = rej;
-          resolve = res2;
+          resolve = res;
           this.once(DESTROYED, ondestroy);
           this.once("error", onerr);
           this.once("end", onend);
@@ -14634,12 +14631,6 @@ var require_lib6 = __commonJS(function(exports, module) {
 });
 
 // node_modules/p-map/index.js
-var exports_p_map = {};
-__export(exports_p_map, {
-  default: () => pMap,
-  pMapIterable: () => pMapIterable,
-  pMapSkip: () => pMapSkip
-});
 async function pMap(iterable, mapper, {
   concurrency = Number.POSITIVE_INFINITY,
   stopOnError = true,
@@ -14706,8 +14697,8 @@ async function pMap(iterable, mapper, {
             return;
           }
           const pureResult = [];
-          for (const [index2, value] of result.entries()) {
-            if (skippedIndexesMap.get(index2) === pMapSkip) {
+          for (const [index, value] of result.entries()) {
+            if (skippedIndexesMap.get(index) === pMapSkip) {
               continue;
             }
             pureResult.push(value);
@@ -14738,8 +14729,8 @@ async function pMap(iterable, mapper, {
             resolvingCount--;
             try {
               await next();
-            } catch (error2) {
-              reject(error2);
+            } catch (error) {
+              reject(error);
             }
           }
         }
@@ -14759,79 +14750,6 @@ async function pMap(iterable, mapper, {
       }
     })();
   });
-}
-function pMapIterable(iterable, mapper, {
-  concurrency = Number.POSITIVE_INFINITY,
-  backpressure = concurrency
-} = {}) {
-  if (iterable[Symbol.iterator] === undefined && iterable[Symbol.asyncIterator] === undefined) {
-    throw new TypeError(`Expected \`input\` to be either an \`Iterable\` or \`AsyncIterable\`, got (${typeof iterable})`);
-  }
-  if (typeof mapper !== "function") {
-    throw new TypeError("Mapper function is required");
-  }
-  if (!(Number.isSafeInteger(concurrency) && concurrency >= 1 || concurrency === Number.POSITIVE_INFINITY)) {
-    throw new TypeError(`Expected \`concurrency\` to be an integer from 1 and up or \`Infinity\`, got \`${concurrency}\` (${typeof concurrency})`);
-  }
-  if (!(Number.isSafeInteger(backpressure) && backpressure >= concurrency || backpressure === Number.POSITIVE_INFINITY)) {
-    throw new TypeError(`Expected \`backpressure\` to be an integer from \`concurrency\` (${concurrency}) and up or \`Infinity\`, got \`${backpressure}\` (${typeof backpressure})`);
-  }
-  return {
-    async* [Symbol.asyncIterator]() {
-      const iterator = iterable[Symbol.asyncIterator] === undefined ? iterable[Symbol.iterator]() : iterable[Symbol.asyncIterator]();
-      const promises = [];
-      let pendingPromisesCount = 0;
-      let isDone = false;
-      let index = 0;
-      function trySpawn() {
-        if (isDone || !(pendingPromisesCount < concurrency && promises.length < backpressure)) {
-          return;
-        }
-        pendingPromisesCount++;
-        const promise = (async () => {
-          const { done, value } = await iterator.next();
-          if (done) {
-            pendingPromisesCount--;
-            return { done: true };
-          }
-          trySpawn();
-          try {
-            const returnValue = await mapper(await value, index++);
-            pendingPromisesCount--;
-            if (returnValue === pMapSkip) {
-              const index2 = promises.indexOf(promise);
-              if (index2 > 0) {
-                promises.splice(index2, 1);
-              }
-            }
-            trySpawn();
-            return { done: false, value: returnValue };
-          } catch (error) {
-            pendingPromisesCount--;
-            isDone = true;
-            return { error };
-          }
-        })();
-        promises.push(promise);
-      }
-      trySpawn();
-      while (promises.length > 0) {
-        const { error, done, value } = await promises[0];
-        promises.shift();
-        if (error) {
-          throw error;
-        }
-        if (done) {
-          return;
-        }
-        trySpawn();
-        if (value === pMapSkip) {
-          continue;
-        }
-        yield value;
-      }
-    }
-  };
 }
 var pMapSkip;
 var init_p_map = __esm(() => {
@@ -14883,8 +14801,8 @@ var require_entry_index = __commonJS(function(exports, module) {
     const newIndex = `
 ` + newEntries.map((entry) => {
       const stringified = JSON.stringify(entry);
-      const hash2 = hashEntry(stringified);
-      return `${hash2}	${stringified}`;
+      const hash = hashEntry(stringified);
+      return `${hash}	${stringified}`;
     }).join(`
 `);
     const setup = async () => {
@@ -14895,16 +14813,16 @@ var require_entry_index = __commonJS(function(exports, module) {
         moved: false
       };
     };
-    const teardown = async (tmp2) => {
-      if (!tmp2.moved) {
-        return rm(tmp2.target, { recursive: true, force: true });
+    const teardown = async (tmp) => {
+      if (!tmp.moved) {
+        return rm(tmp.target, { recursive: true, force: true });
       }
     };
-    const write = async (tmp2) => {
-      await writeFile(tmp2.target, newIndex, { flag: "wx" });
+    const write = async (tmp) => {
+      await writeFile(tmp.target, newIndex, { flag: "wx" });
       await mkdir(path.dirname(bucket), { recursive: true });
-      await moveFile(tmp2.target, bucket);
-      tmp2.moved = true;
+      await moveFile(tmp.target, bucket);
+      tmp.moved = true;
     };
     const tmp = await setup();
     try {
@@ -14971,24 +14889,24 @@ ${hashEntry(stringified)}	${stringified}`);
     const indexDir = bucketDir(cache);
     const stream = new Minipass({ objectMode: true });
     Promise.resolve().then(async () => {
-      const { default: pMap2 } = await Promise.resolve().then(() => (init_p_map(), exports_p_map));
+      await Promise.resolve().then(() => init_p_map());
       const buckets = await readdirOrEmpty(indexDir);
-      await pMap2(buckets, async (bucket) => {
-        const bucketPath2 = path.join(indexDir, bucket);
-        const subbuckets = await readdirOrEmpty(bucketPath2);
-        await pMap2(subbuckets, async (subbucket) => {
-          const subbucketPath = path.join(bucketPath2, subbucket);
+      await pMap(buckets, async (bucket) => {
+        const bucketPath = path.join(indexDir, bucket);
+        const subbuckets = await readdirOrEmpty(bucketPath);
+        await pMap(subbuckets, async (subbucket) => {
+          const subbucketPath = path.join(bucketPath, subbucket);
           const subbucketEntries = await readdirOrEmpty(subbucketPath);
-          await pMap2(subbucketEntries, async (entry) => {
+          await pMap(subbucketEntries, async (entry) => {
             const entryPath = path.join(subbucketPath, entry);
             try {
               const entries = await bucketEntries(entryPath);
-              const reduced = entries.reduce((acc, entry2) => {
-                acc.set(entry2.key, entry2);
+              const reduced = entries.reduce((acc, entry) => {
+                acc.set(entry.key, entry);
                 return acc;
               }, new Map);
-              for (const entry2 of reduced.values()) {
-                const formatted = formatEntry(cache, entry2);
+              for (const entry of reduced.values()) {
+                const formatted = formatEntry(cache, entry);
                 if (formatted) {
                   stream.write(formatted);
                 }
@@ -16143,16 +16061,16 @@ var require_read = __commonJS(function(exports, module) {
   var MAX_SINGLE_READ_SIZE = 64 * 1024 * 1024;
   async function read(cache, integrity, opts = {}) {
     const { size } = opts;
-    const { stat, cpath, sri } = await withContentSri(cache, integrity, async (cpath2, sri2) => {
-      const stat2 = size ? { size } : await fs.stat(cpath2);
-      return { stat: stat2, cpath: cpath2, sri: sri2 };
+    const { stat: stat2, cpath, sri } = await withContentSri(cache, integrity, async (cpath, sri) => {
+      const stat2 = size ? { size } : await fs.stat(cpath);
+      return { stat: stat2, cpath, sri };
     });
-    if (stat.size > MAX_SINGLE_READ_SIZE) {
-      return readPipeline(cpath, stat.size, sri, new Pipeline).concat();
+    if (stat2.size > MAX_SINGLE_READ_SIZE) {
+      return readPipeline(cpath, stat2.size, sri, new Pipeline).concat();
     }
     const data = await fs.readFile(cpath, { encoding: null });
-    if (stat.size !== data.length) {
-      throw sizeError(stat.size, data.length);
+    if (stat2.size !== data.length) {
+      throw sizeError(stat2.size, data.length);
     }
     if (!ssri.checkData(data, sri)) {
       throw integrityError(sri, cpath);
@@ -16175,11 +16093,11 @@ var require_read = __commonJS(function(exports, module) {
     const { size } = opts;
     const stream = new Pipeline;
     Promise.resolve().then(async () => {
-      const { stat, cpath, sri } = await withContentSri(cache, integrity, async (cpath2, sri2) => {
-        const stat2 = size ? { size } : await fs.stat(cpath2);
-        return { stat: stat2, cpath: cpath2, sri: sri2 };
+      const { stat: stat2, cpath, sri } = await withContentSri(cache, integrity, async (cpath, sri) => {
+        const stat2 = size ? { size } : await fs.stat(cpath);
+        return { stat: stat2, cpath, sri };
       });
-      return readPipeline(cpath, stat.size, sri, stream);
+      return readPipeline(cpath, stat2.size, sri, stream);
     }).catch((err) => stream.emit("error", err));
     return stream;
   }
@@ -16196,8 +16114,8 @@ var require_read = __commonJS(function(exports, module) {
     }
     try {
       return await withContentSri(cache, integrity, async (cpath, sri) => {
-        const stat = await fs.stat(cpath);
-        return { size: stat.size, sri, stat };
+        const stat2 = await fs.stat(cpath);
+        return { size: stat2.size, sri, stat: stat2 };
       });
     } catch (err) {
       if (err.code === "ENOENT") {
@@ -16488,12 +16406,12 @@ var require_write = __commonJS(function(exports, module) {
       flags: "wx"
     });
     if (opts.integrityEmitter) {
-      const [integrity2, size2] = await Promise.all([
+      const [integrity, size] = await Promise.all([
         events.once(opts.integrityEmitter, "integrity").then((res) => res[0]),
         events.once(opts.integrityEmitter, "size").then((res) => res[0]),
         new Pipeline(inputStream, outStream).promise()
       ]);
-      return { integrity: integrity2, size: size2 };
+      return { integrity, size };
     }
     let integrity;
     let size;
@@ -17484,7 +17402,7 @@ globstar while`, t, d, e, u, m), this.matchOne(t.slice(d), e.slice(u), s))
     Wt.LRUCache = undefined;
     var er = typeof performance == "object" && performance && typeof performance.now == "function" ? performance : Date, as = new Set, ge = typeof process == "object" && process ? process : {}, ls = (n, t, e, s) => {
       typeof ge.emitWarning == "function" ? ge.emitWarning(n, t, e, s) : console.error(`[${e}] ${t}: ${n}`);
-    }, Lt = globalThis.AbortController, os = globalThis.AbortSignal;
+    }, { AbortController: Lt, AbortSignal: os } = globalThis;
     if (typeof Lt > "u") {
       os = class {
         onabort;
@@ -20049,7 +19967,7 @@ var require_verify = __commonJS(function(exports, module) {
   }
   async function garbageCollect(cache, opts) {
     opts.log.silly("verify", "garbage collecting content");
-    const { default: pMap2 } = await Promise.resolve().then(() => (init_p_map(), exports_p_map));
+    await Promise.resolve().then(() => init_p_map());
     const indexStream = index.lsStream(cache);
     const liveContent = new Set;
     indexStream.on("data", (entry) => {
@@ -20064,8 +19982,8 @@ var require_verify = __commonJS(function(exports, module) {
     await new Promise((resolve, reject) => {
       indexStream.on("end", resolve).on("error", reject);
     });
-    const contentDir = contentPath.contentDir(cache);
-    const files = await glob(path.join(contentDir, "**"), {
+    const contentDir2 = contentPath.contentDir(cache);
+    const files = await glob(path.join(contentDir2, "**"), {
       follow: false,
       nodir: true,
       nosort: true
@@ -20077,7 +19995,7 @@ var require_verify = __commonJS(function(exports, module) {
       badContentCount: 0,
       keptSize: 0
     };
-    await pMap2(files, async (f) => {
+    await pMap(files, async (f) => {
       const split = f.split(/[/\\]/);
       const digest = split.slice(split.length - 3).join("");
       const algo = split[split.length - 4];
@@ -20123,7 +20041,7 @@ var require_verify = __commonJS(function(exports, module) {
   }
   async function rebuildIndex(cache, opts) {
     opts.log.silly("verify", "rebuilding index");
-    const { default: pMap2 } = await Promise.resolve().then(() => (init_p_map(), exports_p_map));
+    await Promise.resolve().then(() => init_p_map());
     const entries = await index.ls(cache);
     const stats = {
       missingContent: 0,
@@ -20148,7 +20066,7 @@ var require_verify = __commonJS(function(exports, module) {
         }
       }
     }
-    await pMap2(Object.keys(buckets), (key) => {
+    await pMap(Object.keys(buckets), (key) => {
       return rebuildBucket(cache, buckets[key], stats, opts);
     }, { concurrency: opts.concurrency });
     return stats;
@@ -20491,7 +20409,7 @@ var require_retry = __commonJS(function(exports) {
     for (var i = 0;i < methods.length; i++) {
       var method = methods[i];
       var original = obj[method];
-      obj[method] = function retryWrapper(original2) {
+      obj[method] = function retryWrapper(original) {
         var op = exports.operation(options);
         var args = Array.prototype.slice.call(arguments, 1);
         var callback = args.pop();
@@ -20505,7 +20423,7 @@ var require_retry = __commonJS(function(exports) {
           callback.apply(this, arguments);
         });
         op.attempt(function() {
-          original2.apply(obj, args);
+          original.apply(obj, args);
         });
       }.bind(obj, original);
       obj[method].options = options;
@@ -20518,17 +20436,17 @@ var require_lib9 = __commonJS(function(exports, module) {
   var retry = require_retry();
   var isRetryError = (err) => err?.code === "EPROMISERETRY" && Object.hasOwn(err, "retried");
   async function promiseRetry(fn, options = {}) {
-    const operation = retry.operation(options);
+    const operation2 = retry.operation(options);
     return new Promise(function(resolve, reject) {
-      operation.attempt(async (number) => {
+      operation2.attempt(async (number) => {
         try {
           const result = await fn((err) => {
             throw Object.assign(new Error("Retrying"), { code: "EPROMISERETRY", retried: err });
-          }, number, operation);
+          }, number, operation2);
           return resolve(result);
         } catch (err) {
           if (isRetryError(err)) {
-            if (operation.retry(err.retried || new Error)) {
+            if (operation2.retry(err.retried || new Error)) {
               return;
             }
             return reject(err.retried);
@@ -20713,7 +20631,7 @@ var require_dns = __commonJS(function(exports, module) {
     all = false,
     verbatim = undefined,
     ttl = 5 * 60 * 1000,
-    lookup = dns.lookup
+    lookup: lookup2 = dns.lookup
   }) => ({
     hints,
     lookup: (hostname, ...args) => {
@@ -20731,7 +20649,7 @@ var require_dns = __commonJS(function(exports, module) {
         const cached = cache.get(key);
         return process.nextTick(callback, null, ...cached);
       }
-      lookup(hostname, options, (err, ...result) => {
+      lookup2(hostname, options, (err, ...result) => {
         if (err) {
           return callback(err);
         }
@@ -21426,23 +21344,23 @@ var require_constants3 = __commonJS(function(exports) {
   };
   exports.SOCKS_INCOMING_PACKET_SIZES = SOCKS_INCOMING_PACKET_SIZES;
   var SocksCommand;
-  (function(SocksCommand2) {
-    SocksCommand2[SocksCommand2["connect"] = 1] = "connect";
-    SocksCommand2[SocksCommand2["bind"] = 2] = "bind";
-    SocksCommand2[SocksCommand2["associate"] = 3] = "associate";
+  (function(SocksCommand) {
+    SocksCommand[SocksCommand["connect"] = 1] = "connect";
+    SocksCommand[SocksCommand["bind"] = 2] = "bind";
+    SocksCommand[SocksCommand["associate"] = 3] = "associate";
   })(SocksCommand || (exports.SocksCommand = SocksCommand = {}));
   var Socks4Response;
-  (function(Socks4Response2) {
-    Socks4Response2[Socks4Response2["Granted"] = 90] = "Granted";
-    Socks4Response2[Socks4Response2["Failed"] = 91] = "Failed";
-    Socks4Response2[Socks4Response2["Rejected"] = 92] = "Rejected";
-    Socks4Response2[Socks4Response2["RejectedIdent"] = 93] = "RejectedIdent";
+  (function(Socks4Response) {
+    Socks4Response[Socks4Response["Granted"] = 90] = "Granted";
+    Socks4Response[Socks4Response["Failed"] = 91] = "Failed";
+    Socks4Response[Socks4Response["Rejected"] = 92] = "Rejected";
+    Socks4Response[Socks4Response["RejectedIdent"] = 93] = "RejectedIdent";
   })(Socks4Response || (exports.Socks4Response = Socks4Response = {}));
   var Socks5Auth;
-  (function(Socks5Auth2) {
-    Socks5Auth2[Socks5Auth2["NoAuth"] = 0] = "NoAuth";
-    Socks5Auth2[Socks5Auth2["GSSApi"] = 1] = "GSSApi";
-    Socks5Auth2[Socks5Auth2["UserPass"] = 2] = "UserPass";
+  (function(Socks5Auth) {
+    Socks5Auth[Socks5Auth["NoAuth"] = 0] = "NoAuth";
+    Socks5Auth[Socks5Auth["GSSApi"] = 1] = "GSSApi";
+    Socks5Auth[Socks5Auth["UserPass"] = 2] = "UserPass";
   })(Socks5Auth || (exports.Socks5Auth = Socks5Auth = {}));
   var SOCKS5_CUSTOM_AUTH_START = 128;
   exports.SOCKS5_CUSTOM_AUTH_START = SOCKS5_CUSTOM_AUTH_START;
@@ -21451,38 +21369,38 @@ var require_constants3 = __commonJS(function(exports) {
   var SOCKS5_NO_ACCEPTABLE_AUTH = 255;
   exports.SOCKS5_NO_ACCEPTABLE_AUTH = SOCKS5_NO_ACCEPTABLE_AUTH;
   var Socks5Response;
-  (function(Socks5Response2) {
-    Socks5Response2[Socks5Response2["Granted"] = 0] = "Granted";
-    Socks5Response2[Socks5Response2["Failure"] = 1] = "Failure";
-    Socks5Response2[Socks5Response2["NotAllowed"] = 2] = "NotAllowed";
-    Socks5Response2[Socks5Response2["NetworkUnreachable"] = 3] = "NetworkUnreachable";
-    Socks5Response2[Socks5Response2["HostUnreachable"] = 4] = "HostUnreachable";
-    Socks5Response2[Socks5Response2["ConnectionRefused"] = 5] = "ConnectionRefused";
-    Socks5Response2[Socks5Response2["TTLExpired"] = 6] = "TTLExpired";
-    Socks5Response2[Socks5Response2["CommandNotSupported"] = 7] = "CommandNotSupported";
-    Socks5Response2[Socks5Response2["AddressNotSupported"] = 8] = "AddressNotSupported";
+  (function(Socks5Response) {
+    Socks5Response[Socks5Response["Granted"] = 0] = "Granted";
+    Socks5Response[Socks5Response["Failure"] = 1] = "Failure";
+    Socks5Response[Socks5Response["NotAllowed"] = 2] = "NotAllowed";
+    Socks5Response[Socks5Response["NetworkUnreachable"] = 3] = "NetworkUnreachable";
+    Socks5Response[Socks5Response["HostUnreachable"] = 4] = "HostUnreachable";
+    Socks5Response[Socks5Response["ConnectionRefused"] = 5] = "ConnectionRefused";
+    Socks5Response[Socks5Response["TTLExpired"] = 6] = "TTLExpired";
+    Socks5Response[Socks5Response["CommandNotSupported"] = 7] = "CommandNotSupported";
+    Socks5Response[Socks5Response["AddressNotSupported"] = 8] = "AddressNotSupported";
   })(Socks5Response || (exports.Socks5Response = Socks5Response = {}));
   var Socks5HostType;
-  (function(Socks5HostType2) {
-    Socks5HostType2[Socks5HostType2["IPv4"] = 1] = "IPv4";
-    Socks5HostType2[Socks5HostType2["Hostname"] = 3] = "Hostname";
-    Socks5HostType2[Socks5HostType2["IPv6"] = 4] = "IPv6";
+  (function(Socks5HostType) {
+    Socks5HostType[Socks5HostType["IPv4"] = 1] = "IPv4";
+    Socks5HostType[Socks5HostType["Hostname"] = 3] = "Hostname";
+    Socks5HostType[Socks5HostType["IPv6"] = 4] = "IPv6";
   })(Socks5HostType || (exports.Socks5HostType = Socks5HostType = {}));
   var SocksClientState;
-  (function(SocksClientState2) {
-    SocksClientState2[SocksClientState2["Created"] = 0] = "Created";
-    SocksClientState2[SocksClientState2["Connecting"] = 1] = "Connecting";
-    SocksClientState2[SocksClientState2["Connected"] = 2] = "Connected";
-    SocksClientState2[SocksClientState2["SentInitialHandshake"] = 3] = "SentInitialHandshake";
-    SocksClientState2[SocksClientState2["ReceivedInitialHandshakeResponse"] = 4] = "ReceivedInitialHandshakeResponse";
-    SocksClientState2[SocksClientState2["SentAuthentication"] = 5] = "SentAuthentication";
-    SocksClientState2[SocksClientState2["ReceivedAuthenticationResponse"] = 6] = "ReceivedAuthenticationResponse";
-    SocksClientState2[SocksClientState2["SentFinalHandshake"] = 7] = "SentFinalHandshake";
-    SocksClientState2[SocksClientState2["ReceivedFinalResponse"] = 8] = "ReceivedFinalResponse";
-    SocksClientState2[SocksClientState2["BoundWaitingForConnection"] = 9] = "BoundWaitingForConnection";
-    SocksClientState2[SocksClientState2["Established"] = 10] = "Established";
-    SocksClientState2[SocksClientState2["Disconnected"] = 11] = "Disconnected";
-    SocksClientState2[SocksClientState2["Error"] = 99] = "Error";
+  (function(SocksClientState) {
+    SocksClientState[SocksClientState["Created"] = 0] = "Created";
+    SocksClientState[SocksClientState["Connecting"] = 1] = "Connecting";
+    SocksClientState[SocksClientState["Connected"] = 2] = "Connected";
+    SocksClientState[SocksClientState["SentInitialHandshake"] = 3] = "SentInitialHandshake";
+    SocksClientState[SocksClientState["ReceivedInitialHandshakeResponse"] = 4] = "ReceivedInitialHandshakeResponse";
+    SocksClientState[SocksClientState["SentAuthentication"] = 5] = "SentAuthentication";
+    SocksClientState[SocksClientState["ReceivedAuthenticationResponse"] = 6] = "ReceivedAuthenticationResponse";
+    SocksClientState[SocksClientState["SentFinalHandshake"] = 7] = "SentFinalHandshake";
+    SocksClientState[SocksClientState["ReceivedFinalResponse"] = 8] = "ReceivedFinalResponse";
+    SocksClientState[SocksClientState["BoundWaitingForConnection"] = 9] = "BoundWaitingForConnection";
+    SocksClientState[SocksClientState["Established"] = 10] = "Established";
+    SocksClientState[SocksClientState["Disconnected"] = 11] = "Disconnected";
+    SocksClientState[SocksClientState["Error"] = 99] = "Error";
   })(SocksClientState || (exports.SocksClientState = SocksClientState = {}));
 });
 
@@ -23691,7 +23609,7 @@ var require_node4 = __commonJS(function(exports, module) {
   var tty = __require("tty");
   var util = __require("util");
   exports.init = init;
-  exports.log = log2;
+  exports.log = log;
   exports.formatArgs = formatArgs;
   exports.save = save;
   exports.load = load;
@@ -23804,8 +23722,8 @@ var require_node4 = __commonJS(function(exports, module) {
     return "colors" in exports.inspectOpts ? Boolean(exports.inspectOpts.colors) : tty.isatty(process.stderr.fd);
   }
   function formatArgs(args) {
-    const { namespace: name, useColors: useColors2 } = this;
-    if (useColors2) {
+    const { namespace: name, useColors } = this;
+    if (useColors) {
       const c = this.color;
       const colorCode = "\x1B[3" + (c < 8 ? c : "8;5;" + c);
       const prefix = `  ${colorCode};1m${name} \x1B[0m`;
@@ -23823,7 +23741,7 @@ var require_node4 = __commonJS(function(exports, module) {
     }
     return new Date().toISOString() + " ";
   }
-  function log2(...args) {
+  function log(...args) {
     return process.stderr.write(util.formatWithOptions(exports.inspectOpts, ...args) + `
 `);
   }
@@ -24473,7 +24391,7 @@ var require_remote = __commonJS(function(exports, module) {
   var fetch = require_lib2();
   var { promiseRetry } = require_lib9();
   var ssri = require_lib3();
-  var { log: log2 } = require_lib10();
+  var { log } = require_lib10();
   var CachingMinipassPipeline = require_pipeline();
   var { getAgent } = require_lib11();
   var pkg = require_package3();
@@ -24509,16 +24427,16 @@ var require_remote = __commonJS(function(exports, module) {
       try {
         let res = await fetch(req, _opts);
         if (_opts.integrity && res.status === 200) {
-          const integrityStream = ssri.integrityStream({
+          const integrityStream2 = ssri.integrityStream({
             algorithms: _opts.algorithms,
             integrity: _opts.integrity,
             size: _opts.size
           });
           const pipeline = new CachingMinipassPipeline({
             events: ["integrity", "size"]
-          }, res.body, integrityStream);
-          integrityStream.on("integrity", (i) => pipeline.emit("integrity", i));
-          integrityStream.on("size", (s) => pipeline.emit("size", s));
+          }, res.body, integrityStream2);
+          integrityStream2.on("integrity", (i) => pipeline.emit("integrity", i));
+          integrityStream2.on("size", (s) => pipeline.emit("size", s));
           res = new fetch.Response(pipeline, res);
           res.body.hasIntegrityEmitter = true;
         }
@@ -24529,7 +24447,7 @@ var require_remote = __commonJS(function(exports, module) {
           if (typeof options.onRetry === "function") {
             options.onRetry(res);
           }
-          log2.http("fetch", `${req.method} ${req.url} attempt ${attemptNum} failed with ${res.status}`);
+          log.http("fetch", `${req.method} ${req.url} attempt ${attemptNum} failed with ${res.status}`);
           return retryHandler(res);
         }
         return res;
@@ -24542,7 +24460,7 @@ var require_remote = __commonJS(function(exports, module) {
         if (typeof options.onRetry === "function") {
           options.onRetry(err);
         }
-        log2.http("fetch", `${req.method} ${req.url} attempt ${attemptNum} failed with ${err.code}`);
+        log.http("fetch", `${req.method} ${req.url} attempt ${attemptNum} failed with ${err.code}`);
         return retryHandler(err);
       }
     }, options.retry).catch((err) => {
@@ -25678,17 +25596,17 @@ var require_eventsource = __commonJS(function(exports, module) {
             var lineLength = -1;
             var fieldLength = startingFieldLength;
             var c;
-            for (var i2 = startingPos;lineLength < 0 && i2 < length; ++i2) {
-              c = buf[i2];
+            for (var i = startingPos;lineLength < 0 && i < length; ++i) {
+              c = buf[i];
               if (c === colon) {
                 if (fieldLength < 0) {
-                  fieldLength = i2 - pos;
+                  fieldLength = i - pos;
                 }
               } else if (c === carriageReturn) {
                 discardTrailingNewline = true;
-                lineLength = i2 - pos;
+                lineLength = i - pos;
               } else if (c === lineFeed) {
-                lineLength = i2 - pos;
+                lineLength = i - pos;
               }
             }
             if (lineLength < 0) {
@@ -28653,22 +28571,22 @@ var require_strategy = __commonJS(function(exports) {
   var helpers_1 = require_helpers();
   var variant_1 = require_variant();
   var Operator;
-  (function(Operator2) {
-    Operator2["IN"] = "IN";
-    Operator2["NOT_IN"] = "NOT_IN";
-    Operator2["STR_ENDS_WITH"] = "STR_ENDS_WITH";
-    Operator2["STR_STARTS_WITH"] = "STR_STARTS_WITH";
-    Operator2["STR_CONTAINS"] = "STR_CONTAINS";
-    Operator2["NUM_EQ"] = "NUM_EQ";
-    Operator2["NUM_GT"] = "NUM_GT";
-    Operator2["NUM_GTE"] = "NUM_GTE";
-    Operator2["NUM_LT"] = "NUM_LT";
-    Operator2["NUM_LTE"] = "NUM_LTE";
-    Operator2["DATE_AFTER"] = "DATE_AFTER";
-    Operator2["DATE_BEFORE"] = "DATE_BEFORE";
-    Operator2["SEMVER_EQ"] = "SEMVER_EQ";
-    Operator2["SEMVER_GT"] = "SEMVER_GT";
-    Operator2["SEMVER_LT"] = "SEMVER_LT";
+  (function(Operator) {
+    Operator["IN"] = "IN";
+    Operator["NOT_IN"] = "NOT_IN";
+    Operator["STR_ENDS_WITH"] = "STR_ENDS_WITH";
+    Operator["STR_STARTS_WITH"] = "STR_STARTS_WITH";
+    Operator["STR_CONTAINS"] = "STR_CONTAINS";
+    Operator["NUM_EQ"] = "NUM_EQ";
+    Operator["NUM_GT"] = "NUM_GT";
+    Operator["NUM_GTE"] = "NUM_GTE";
+    Operator["NUM_LT"] = "NUM_LT";
+    Operator["NUM_LTE"] = "NUM_LTE";
+    Operator["DATE_AFTER"] = "DATE_AFTER";
+    Operator["DATE_BEFORE"] = "DATE_BEFORE";
+    Operator["SEMVER_EQ"] = "SEMVER_EQ";
+    Operator["SEMVER_GT"] = "SEMVER_GT";
+    Operator["SEMVER_LT"] = "SEMVER_LT";
   })(Operator || (exports.Operator = Operator = {}));
   var cleanValues = (values) => values.filter((v) => !!v).map((v) => v.trim());
   var isValidSemver = (version) => Boolean((0, semver_1.valid)(version)) && !version.startsWith("v");
@@ -29268,25 +29186,25 @@ var require_jsbn = __commonJS(function(exports, module) {
       return 0;
     }
     function nbits(x) {
-      var r = 1, t2;
-      if ((t2 = x >>> 16) != 0) {
-        x = t2;
+      var r = 1, t;
+      if ((t = x >>> 16) != 0) {
+        x = t;
         r += 16;
       }
-      if ((t2 = x >> 8) != 0) {
-        x = t2;
+      if ((t = x >> 8) != 0) {
+        x = t;
         r += 8;
       }
-      if ((t2 = x >> 4) != 0) {
-        x = t2;
+      if ((t = x >> 4) != 0) {
+        x = t;
         r += 4;
       }
-      if ((t2 = x >> 2) != 0) {
-        x = t2;
+      if ((t = x >> 2) != 0) {
+        x = t;
         r += 2;
       }
-      if ((t2 = x >> 1) != 0) {
-        x = t2;
+      if ((t = x >> 1) != 0) {
+        x = t;
         r += 1;
       }
       return r;
@@ -29438,23 +29356,23 @@ var require_jsbn = __commonJS(function(exports, module) {
         return;
       var yt = y0 * (1 << this.F1) + (ys > 1 ? y[ys - 2] >> this.F2 : 0);
       var d1 = this.FV / yt, d2 = (1 << this.F1) / yt, e = 1 << this.F2;
-      var i = r.t, j = i - ys, t2 = q == null ? nbi() : q;
-      y.dlShiftTo(j, t2);
-      if (r.compareTo(t2) >= 0) {
+      var i = r.t, j = i - ys, t = q == null ? nbi() : q;
+      y.dlShiftTo(j, t);
+      if (r.compareTo(t) >= 0) {
         r[r.t++] = 1;
-        r.subTo(t2, r);
+        r.subTo(t, r);
       }
-      BigInteger.ONE.dlShiftTo(ys, t2);
-      t2.subTo(y, y);
+      BigInteger.ONE.dlShiftTo(ys, t);
+      t.subTo(y, y);
       while (y.t < ys)
         y[y.t++] = 0;
       while (--j >= 0) {
         var qd = r[--i] == y0 ? this.DM : Math.floor(r[i] * d1 + (r[i - 1] + e) * d2);
         if ((r[i] += y.am(0, qd, r, j, 0, ys)) < qd) {
-          y.dlShiftTo(j, t2);
-          r.subTo(t2, r);
+          y.dlShiftTo(j, t);
+          r.subTo(t, r);
           while (r[i] < --qd)
-            r.subTo(t2, r);
+            r.subTo(t, r);
         }
       }
       if (q != null) {
@@ -29573,30 +29491,30 @@ var require_jsbn = __commonJS(function(exports, module) {
     function bnpIsEven() {
       return (this.t > 0 ? this[0] & 1 : this.s) == 0;
     }
-    function bnpExp(e, z2) {
+    function bnpExp(e, z) {
       if (e > 4294967295 || e < 1)
         return BigInteger.ONE;
-      var r = nbi(), r2 = nbi(), g = z2.convert(this), i = nbits(e) - 1;
+      var r = nbi(), r2 = nbi(), g = z.convert(this), i = nbits(e) - 1;
       g.copyTo(r);
       while (--i >= 0) {
-        z2.sqrTo(r, r2);
+        z.sqrTo(r, r2);
         if ((e & 1 << i) > 0)
-          z2.mulTo(r2, g, r);
+          z.mulTo(r2, g, r);
         else {
-          var t2 = r;
+          var t = r;
           r = r2;
-          r2 = t2;
+          r2 = t;
         }
       }
-      return z2.revert(r);
+      return z.revert(r);
     }
     function bnModPowInt(e, m) {
-      var z2;
+      var z;
       if (e < 256 || m.isEven())
-        z2 = new Classic(m);
+        z = new Classic(m);
       else
-        z2 = new Montgomery(m);
-      return this.exp(e, z2);
+        z = new Montgomery(m);
+      return this.exp(e, z);
     }
     BigInteger.prototype.copyTo = bnpCopyTo;
     BigInteger.prototype.fromInt = bnpFromInt;
@@ -29663,13 +29581,13 @@ var require_jsbn = __commonJS(function(exports, module) {
         return "0";
       var cs = this.chunkSize(b);
       var a = Math.pow(b, cs);
-      var d = nbv(a), y = nbi(), z2 = nbi(), r = "";
-      this.divRemTo(d, y, z2);
+      var d = nbv(a), y = nbi(), z = nbi(), r = "";
+      this.divRemTo(d, y, z);
       while (y.signum() > 0) {
-        r = (a + z2.intValue()).toString(b).substr(1) + r;
-        y.divRemTo(d, y, z2);
+        r = (a + z.intValue()).toString(b).substr(1) + r;
+        y.divRemTo(d, y, z);
       }
-      return z2.intValue().toString(b) + r;
+      return z.intValue().toString(b) + r;
     }
     function bnpFromRadix(s, b) {
       this.fromInt(0);
@@ -29716,11 +29634,11 @@ var require_jsbn = __commonJS(function(exports, module) {
           }
         }
       } else {
-        var x = new Array, t2 = a & 7;
+        var x = new Array, t = a & 7;
         x.length = (a >> 3) + 1;
         b.nextBytes(x);
-        if (t2 > 0)
-          x[0] &= (1 << t2) - 1;
+        if (t > 0)
+          x[0] &= (1 << t) - 1;
         else
           x[0] = 0;
         this.fromString(x, 256);
@@ -30079,7 +29997,7 @@ var require_jsbn = __commonJS(function(exports, module) {
     Barrett.prototype.mulTo = barrettMulTo;
     Barrett.prototype.sqrTo = barrettSqrTo;
     function bnModPow(e, m) {
-      var i = e.bitLength(), k, r = nbv(1), z2;
+      var i = e.bitLength(), k, r = nbv(1), z;
       if (i <= 0)
         return r;
       else if (i < 18)
@@ -30093,23 +30011,23 @@ var require_jsbn = __commonJS(function(exports, module) {
       else
         k = 6;
       if (i < 8)
-        z2 = new Classic(m);
+        z = new Classic(m);
       else if (m.isEven())
-        z2 = new Barrett(m);
+        z = new Barrett(m);
       else
-        z2 = new Montgomery(m);
+        z = new Montgomery(m);
       var g = new Array, n = 3, k1 = k - 1, km = (1 << k) - 1;
-      g[1] = z2.convert(this);
+      g[1] = z.convert(this);
       if (k > 1) {
         var g2 = nbi();
-        z2.sqrTo(g[1], g2);
+        z.sqrTo(g[1], g2);
         while (n <= km) {
           g[n] = nbi();
-          z2.mulTo(g2, g[n - 2], g[n]);
+          z.mulTo(g2, g[n - 2], g[n]);
           n += 2;
         }
       }
-      var j = e.t - 1, w, is1 = true, r2 = nbi(), t2;
+      var j = e.t - 1, w, is1 = true, r2 = nbi(), t;
       i = nbits(e[j]) - 1;
       while (j >= 0) {
         if (i >= k1)
@@ -30133,39 +30051,39 @@ var require_jsbn = __commonJS(function(exports, module) {
           is1 = false;
         } else {
           while (n > 1) {
-            z2.sqrTo(r, r2);
-            z2.sqrTo(r2, r);
+            z.sqrTo(r, r2);
+            z.sqrTo(r2, r);
             n -= 2;
           }
           if (n > 0)
-            z2.sqrTo(r, r2);
+            z.sqrTo(r, r2);
           else {
-            t2 = r;
+            t = r;
             r = r2;
-            r2 = t2;
+            r2 = t;
           }
-          z2.mulTo(r2, g[w], r);
+          z.mulTo(r2, g[w], r);
         }
         while (j >= 0 && (e[j] & 1 << i) == 0) {
-          z2.sqrTo(r, r2);
-          t2 = r;
+          z.sqrTo(r, r2);
+          t = r;
           r = r2;
-          r2 = t2;
+          r2 = t;
           if (--i < 0) {
             i = this.DB - 1;
             --j;
           }
         }
       }
-      return z2.revert(r);
+      return z.revert(r);
     }
     function bnGCD(a) {
       var x = this.s < 0 ? this.negate() : this.clone();
       var y = a.s < 0 ? a.negate() : a.clone();
       if (x.compareTo(y) < 0) {
-        var t2 = x;
+        var t = x;
         x = y;
-        y = t2;
+        y = t;
       }
       var i = x.getLowestSetBit(), g = y.getLowestSetBit();
       if (g < 0)
@@ -30263,7 +30181,7 @@ var require_jsbn = __commonJS(function(exports, module) {
     }
     var lowprimes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997];
     var lplim = (1 << 26) / lowprimes[lowprimes.length - 1];
-    function bnIsProbablePrime(t2) {
+    function bnIsProbablePrime(t) {
       var i, x = this.abs();
       if (x.t == 1 && x[0] <= lowprimes[lowprimes.length - 1]) {
         for (i = 0;i < lowprimes.length; ++i)
@@ -30283,19 +30201,19 @@ var require_jsbn = __commonJS(function(exports, module) {
           if (m % lowprimes[i++] == 0)
             return false;
       }
-      return x.millerRabin(t2);
+      return x.millerRabin(t);
     }
-    function bnpMillerRabin(t2) {
+    function bnpMillerRabin(t) {
       var n1 = this.subtract(BigInteger.ONE);
       var k = n1.getLowestSetBit();
       if (k <= 0)
         return false;
       var r = n1.shiftRight(k);
-      t2 = t2 + 1 >> 1;
-      if (t2 > lowprimes.length)
-        t2 = lowprimes.length;
+      t = t + 1 >> 1;
+      if (t > lowprimes.length)
+        t = lowprimes.length;
       var a = nbi();
-      for (var i = 0;i < t2; ++i) {
+      for (var i = 0;i < t; ++i) {
         a.fromInt(lowprimes[Math.floor(Math.random() * lowprimes.length)]);
         var y = a.modPow(r, this);
         if (y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
@@ -30421,27 +30339,27 @@ var require_jsbn = __commonJS(function(exports, module) {
       this.S = new Array;
     }
     function ARC4init(key) {
-      var i, j, t2;
+      var i, j, t;
       for (i = 0;i < 256; ++i)
         this.S[i] = i;
       j = 0;
       for (i = 0;i < 256; ++i) {
         j = j + this.S[i] + key[i % key.length] & 255;
-        t2 = this.S[i];
+        t = this.S[i];
         this.S[i] = this.S[j];
-        this.S[j] = t2;
+        this.S[j] = t;
       }
       this.i = 0;
       this.j = 0;
     }
     function ARC4next() {
-      var t2;
+      var t;
       this.i = this.i + 1 & 255;
       this.j = this.j + this.S[this.i] & 255;
-      t2 = this.S[this.i];
+      t = this.S[this.i];
       this.S[this.i] = this.S[this.j];
-      this.S[this.j] = t2;
-      return this.S[t2 + this.S[this.i] & 255];
+      this.S[this.j] = t;
+      return this.S[t + this.S[this.i] & 255];
     }
     Arcfour.prototype.init = ARC4init;
     Arcfour.prototype.next = ARC4next;
