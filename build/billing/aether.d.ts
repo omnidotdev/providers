@@ -1,4 +1,4 @@
-import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Subscription } from "./interface";
+import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Subscription } from "./interface";
 type AetherBillingProviderConfig = {
     /** Aether billing service base URL */
     baseUrl?: string;
@@ -59,6 +59,10 @@ declare class AetherBillingProvider implements BillingProvider {
         message?: string;
     }>;
     close(): Promise<void>;
+    getCreditBalance(entityType: string, entityId: string): Promise<CreditBalance | null>;
+    checkCredits(entityType: string, entityId: string, amount: number): Promise<CreditCheck>;
+    deductCredits(entityType: string, entityId: string, amount: number, options?: CreditWriteOptions): Promise<CreditDeductResult>;
+    addCredits(entityType: string, entityId: string, amount: number, type: CreditAddType, options?: CreditWriteOptions): Promise<CreditAddResult | null>;
     private serviceHeaders;
     /**
      * Fetch a read endpoint with a per-attempt timeout and retries on transient

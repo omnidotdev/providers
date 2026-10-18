@@ -121,6 +121,49 @@ type CheckoutWithWorkspaceResponse = {
     workspaceSlug: string;
     organizationId: string;
 };
+/** An entity's spendable credit balance (one shared pool per billing account). */
+type CreditBalance = {
+    billingAccountId: string;
+    balance: number;
+};
+/** Whether a balance covers a requested amount. */
+type CreditCheck = {
+    sufficient: boolean;
+    balance: number;
+};
+/** Credit types a caller may add (system flows own `debit`/`expiration`). */
+type CreditAddType = "purchase" | "grant" | "refund" | "adjustment";
+/** Optional metadata on a credit write. `idempotencyKey` dedupes a retried write. */
+type CreditWriteOptions = {
+    description?: string;
+    idempotencyKey?: string;
+    referenceType?: string;
+    referenceId?: string;
+    metadata?: Record<string, unknown>;
+};
+/**
+ * Result of a credit deduction. Fail-closed: only `success` means the spend was
+ * recorded. `insufficient` is the balance-too-low case (Aether's 402), and
+ * `unavailable` is a transport/service error, which a caller must treat as "do
+ * not allow the spend" rather than conflate with success.
+ */
+type CreditDeductResult = {
+    status: "success";
+    balance: number;
+    transactionId?: string;
+} | {
+    status: "insufficient";
+    balance: number;
+} | {
+    status: "unavailable";
+    error: string;
+};
+/** Result of adding credit. `duplicate` is true when the idempotency key replayed. */
+type CreditAddResult = {
+    balance: number;
+    transactionId: string;
+    duplicate: boolean;
+};
 /**
  * Billing provider interface.
  * Implementations check feature access and limits.
@@ -166,6 +209,21 @@ interface BillingProvider {
     cancelSubscription(entityType: string, entityId: string, accessToken: string): Promise<string>;
     /** Renew a subscription (remove scheduled cancellation) */
     renewSubscription(entityType: string, entityId: string, accessToken: string): Promise<void>;
+    /**
+     * Get an entity's spendable credit balance (one account-level pool, shared
+     * across products). Returns null when no billing account or on error.
+     */
+    getCreditBalance(entityType: string, entityId: string): Promise<CreditBalance | null>;
+    /** Check whether an entity's balance covers `amount`. Fails closed on error. */
+    checkCredits(entityType: string, entityId: string, amount: number): Promise<CreditCheck>;
+    /**
+     * Deduct credit from an entity's balance (atomic, fail-closed). Pass an
+     * `idempotencyKey` so a retried deduct is not double-charged. See
+     * {@link CreditDeductResult}: only `success` means the spend was recorded.
+     */
+    deductCredits(entityType: string, entityId: string, amount: number, options?: CreditWriteOptions): Promise<CreditDeductResult>;
+    /** Add credit to an entity's balance (purchase/grant/refund/adjustment). */
+    addCredits(entityType: string, entityId: string, amount: number, type: CreditAddType, options?: CreditWriteOptions): Promise<CreditAddResult | null>;
     /** Invalidate cached entitlements for an entity */
     invalidateCache?(entityType: string, entityId: string): void;
     /** Clear all cached entitlements */
@@ -178,4 +236,4 @@ interface BillingProvider {
     /** Close the provider connection (if stateful) */
     close?(): Promise<void>;
 }
-export type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, };
+export type { BillingProvider, CheckoutParams, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, };

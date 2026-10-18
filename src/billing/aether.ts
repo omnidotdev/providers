@@ -7,6 +7,12 @@ import type {
   CheckoutParams,
   CheckoutWithWorkspaceParams,
   CheckoutWithWorkspaceResponse,
+  CreditAddResult,
+  CreditAddType,
+  CreditBalance,
+  CreditCheck,
+  CreditDeductResult,
+  CreditWriteOptions,
   EntitlementsResponse,
   EntitlementsResult,
   PortalFlow,
@@ -411,6 +417,104 @@ class AetherBillingProvider implements BillingProvider {
   }
 
   async close(): Promise<void> {}
+
+  async getCreditBalance(
+    entityType: string,
+    entityId: string,
+  ): Promise<CreditBalance | null> {
+    const response = await this.resilientFetch(
+      `${this.config.baseUrl}/credits/${this.config.appId}/${entityType}/${entityId}/balance`,
+      { headers: this.serviceHeaders() },
+    );
+    if (!response.ok) return null;
+    return (await response.json()) as CreditBalance;
+  }
+
+  async checkCredits(
+    entityType: string,
+    entityId: string,
+    amount: number,
+  ): Promise<CreditCheck> {
+    const url = new URL(
+      `${this.config.baseUrl}/credits/${this.config.appId}/${entityType}/${entityId}/check`,
+    );
+    url.searchParams.set("amount", String(amount));
+    const response = await this.resilientFetch(url.toString(), {
+      headers: this.serviceHeaders(),
+    });
+    // Fail closed: an unreachable check must not read as "sufficient"
+    if (!response.ok) return { sufficient: false, balance: 0 };
+    return (await response.json()) as CreditCheck;
+  }
+
+  async deductCredits(
+    entityType: string,
+    entityId: string,
+    amount: number,
+    options: CreditWriteOptions = {},
+  ): Promise<CreditDeductResult> {
+    // A write, so it is not retried; an idempotencyKey makes a caller retry safe
+    try {
+      const response = await fetch(
+        `${this.config.baseUrl}/credits/${this.config.appId}/${entityType}/${entityId}/deduct`,
+        {
+          method: "POST",
+          headers: {
+            ...this.serviceHeaders(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ amount, ...options }),
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        },
+      );
+
+      if (response.status === 402) {
+        const data = (await response.json()) as { balance?: number };
+        return { status: "insufficient", balance: data.balance ?? 0 };
+      }
+      if (!response.ok) {
+        return { status: "unavailable", error: `HTTP ${response.status}` };
+      }
+
+      const data = (await response.json()) as {
+        balance: number;
+        transactionId?: string;
+      };
+      return {
+        status: "success",
+        balance: data.balance,
+        transactionId: data.transactionId,
+      };
+    } catch (error) {
+      return {
+        status: "unavailable",
+        error: error instanceof Error ? error.message : "deduct failed",
+      };
+    }
+  }
+
+  async addCredits(
+    entityType: string,
+    entityId: string,
+    amount: number,
+    type: CreditAddType,
+    options: CreditWriteOptions = {},
+  ): Promise<CreditAddResult | null> {
+    const response = await fetch(
+      `${this.config.baseUrl}/credits/${this.config.appId}/${entityType}/${entityId}/add`,
+      {
+        method: "POST",
+        headers: {
+          ...this.serviceHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ amount, type, ...options }),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      },
+    );
+    if (!response.ok) return null;
+    return (await response.json()) as CreditAddResult;
+  }
 
   private serviceHeaders(): Record<string, string> {
     if (this.config.serviceApiKey) {
