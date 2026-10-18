@@ -3027,7 +3027,7 @@ class GatekeeperOrgClient {
       body: JSON.stringify({ name: params.name, slug })
     });
     if (!response.ok) {
-      throw await this.parseError(response, "Failed to create organization");
+      throw await this.parseError(response, "Failed to create workspace");
     }
     return response.json();
   }
@@ -3169,7 +3169,7 @@ var validateInvitation = ({
   if (isExistingMember) {
     return {
       valid: false,
-      reason: "This email is already a member of the organization"
+      reason: "This email is already a member of the workspace"
     };
   }
   return { valid: true };

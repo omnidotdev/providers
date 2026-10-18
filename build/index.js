@@ -79204,7 +79204,7 @@ class GatekeeperOrgClient {
       body: JSON.stringify({ name: params.name, slug })
     });
     if (!response.ok) {
-      throw await this.parseError(response, "Failed to create organization");
+      throw await this.parseError(response, "Failed to create workspace");
     }
     return response.json();
   }

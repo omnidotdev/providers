@@ -308,7 +308,7 @@ describe("validateInvitation", () => {
     });
     expect(result).toEqual({
       valid: false,
-      reason: "This email is already a member of the organization",
+      reason: "This email is already a member of the workspace",
     });
   });
 
