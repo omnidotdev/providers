@@ -3,6 +3,12 @@ import type {
   CheckoutParams,
   CheckoutWithWorkspaceParams,
   CheckoutWithWorkspaceResponse,
+  CreditAddResult,
+  CreditAddType,
+  CreditBalance,
+  CreditCheck,
+  CreditDeductResult,
+  CreditWriteOptions,
   EntitlementsResponse,
   EntitlementsResult,
   PortalFlow,
@@ -103,6 +109,41 @@ class NoopBillingProvider implements BillingProvider {
     _entityId: string,
     _accessToken: string,
   ): Promise<void> {}
+
+  async getCreditBalance(
+    _entityType: string,
+    _entityId: string,
+  ): Promise<CreditBalance | null> {
+    return null;
+  }
+
+  async checkCredits(
+    _entityType: string,
+    _entityId: string,
+    _amount: number,
+  ): Promise<CreditCheck> {
+    // No billing configured: no spendable credit, so fail closed
+    return { sufficient: false, balance: 0 };
+  }
+
+  async deductCredits(
+    _entityType: string,
+    _entityId: string,
+    _amount: number,
+    _options?: CreditWriteOptions,
+  ): Promise<CreditDeductResult> {
+    return { status: "unavailable", error: "Billing is not configured" };
+  }
+
+  async addCredits(
+    _entityType: string,
+    _entityId: string,
+    _amount: number,
+    _type: CreditAddType,
+    _options?: CreditWriteOptions,
+  ): Promise<CreditAddResult | null> {
+    return null;
+  }
 
   invalidateCache(_entityType: string, _entityId: string): void {}
 

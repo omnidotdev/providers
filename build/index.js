@@ -80161,6 +80161,67 @@ class AetherBillingProvider {
     }
   }
   async close() {}
+  async getCreditBalance(entityType, entityId) {
+    const response = await this.resilientFetch(`${this.config.baseUrl}/credits/${this.config.appId}/${entityType}/${entityId}/balance`, { headers: this.serviceHeaders() });
+    if (!response.ok)
+      return null;
+    return await response.json();
+  }
+  async checkCredits(entityType, entityId, amount) {
+    const url = new URL(`${this.config.baseUrl}/credits/${this.config.appId}/${entityType}/${entityId}/check`);
+    url.searchParams.set("amount", String(amount));
+    const response = await this.resilientFetch(url.toString(), {
+      headers: this.serviceHeaders()
+    });
+    if (!response.ok)
+      return { sufficient: false, balance: 0 };
+    return await response.json();
+  }
+  async deductCredits(entityType, entityId, amount, options = {}) {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/credits/${this.config.appId}/${entityType}/${entityId}/deduct`, {
+        method: "POST",
+        headers: {
+          ...this.serviceHeaders(),
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ amount, ...options }),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS3)
+      });
+      if (response.status === 402) {
+        const data = await response.json();
+        return { status: "insufficient", balance: data.balance ?? 0 };
+      }
+      if (!response.ok) {
+        return { status: "unavailable", error: `HTTP ${response.status}` };
+      }
+      const data = await response.json();
+      return {
+        status: "success",
+        balance: data.balance,
+        transactionId: data.transactionId
+      };
+    } catch (error) {
+      return {
+        status: "unavailable",
+        error: error instanceof Error ? error.message : "deduct failed"
+      };
+    }
+  }
+  async addCredits(entityType, entityId, amount, type, options = {}) {
+    const response = await fetch(`${this.config.baseUrl}/credits/${this.config.appId}/${entityType}/${entityId}/add`, {
+      method: "POST",
+      headers: {
+        ...this.serviceHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ amount, type, ...options }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS3)
+    });
+    if (!response.ok)
+      return null;
+    return await response.json();
+  }
   serviceHeaders() {
     if (this.config.serviceApiKey) {
       return { "x-service-api-key": this.config.serviceApiKey };
@@ -80230,6 +80291,18 @@ class NoopBillingProvider {
     throw new Error("Billing is not configured");
   }
   async renewSubscription(_entityType, _entityId, _accessToken) {}
+  async getCreditBalance(_entityType, _entityId) {
+    return null;
+  }
+  async checkCredits(_entityType, _entityId, _amount) {
+    return { sufficient: false, balance: 0 };
+  }
+  async deductCredits(_entityType, _entityId, _amount, _options) {
+    return { status: "unavailable", error: "Billing is not configured" };
+  }
+  async addCredits(_entityType, _entityId, _amount, _type, _options) {
+    return null;
+  }
   invalidateCache(_entityType, _entityId) {}
   clearCache() {}
   async healthCheck() {
