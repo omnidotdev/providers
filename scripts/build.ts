@@ -57,6 +57,13 @@ const entries = [
     external: [] as string[],
   },
   {
+    entrypoint: "./src/invoicing/index.ts",
+    outdir: "./build/invoicing",
+    // Pure types + money math; safe in both browser and server consumers
+    target: "browser" as const,
+    external: [] as string[],
+  },
+  {
     entrypoint: "./src/catalog/index.ts",
     outdir: "./build/catalog",
     // Fetch + pure normalization; safe in both browser and server consumers

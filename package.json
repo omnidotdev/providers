@@ -59,6 +59,10 @@
       "import": "./build/flags/index.js",
       "types": "./build/flags/index.d.ts"
     },
+    "./invoicing": {
+      "import": "./build/invoicing/index.js",
+      "types": "./build/invoicing/index.d.ts"
+    },
     "./graphql": {
       "import": "./build/graphql/index.js",
       "types": "./build/graphql/index.d.ts"
