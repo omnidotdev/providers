@@ -36,49 +36,8 @@ var ManageTeamLink = ({
     children: children ?? "Manage team in Omni"
   });
 };
-// src/react/OrganizationProvider.tsx
-import { createContext as createContext2, use as use2, useMemo, useState } from "react";
-import { jsx as jsx3 } from "react/jsx-runtime";
-var OrganizationContext = createContext2(null);
-function getDefaultOrganization(organizations) {
-  const personalOrg = organizations.find((org) => org.type === "personal");
-  if (personalOrg)
-    return personalOrg;
-  return organizations[0];
-}
-var OrganizationProvider = ({
-  children,
-  organizations
-}) => {
-  const isDegradedMode = organizations.length === 0;
-  const defaultOrg = useMemo(() => getDefaultOrganization(organizations), [organizations]);
-  const [currentOrganization, setCurrentOrgState] = useState(defaultOrg);
-  const setCurrentOrganization = (orgId) => {
-    const org = organizations.find((o) => o.id === orgId);
-    if (org)
-      setCurrentOrgState(org);
-  };
-  const getOrganizationById = (orgId) => {
-    return organizations.find((o) => o.id === orgId);
-  };
-  const hasMultipleOrgs = organizations.length > 1;
-  return /* @__PURE__ */ jsx3(OrganizationContext, {
-    value: {
-      organizations,
-      currentOrganization,
-      setCurrentOrganization,
-      hasMultipleOrgs,
-      getOrganizationById,
-      isDegradedMode
-    },
-    children
-  });
-};
-var useOrganization = () => {
-  return use2(OrganizationContext);
-};
 // src/react/useCreateWorkspace.ts
-import { useCallback, useState as useState2 } from "react";
+import { useCallback, useState } from "react";
 
 // src/auth/gatekeeperOrg.ts
 var slugify = (name) => name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50);
@@ -111,8 +70,8 @@ var useCreateWorkspace = ({
   createWorkspace,
   refreshSession
 }) => {
-  const [status, setStatus] = useState2("idle");
-  const [error, setError] = useState2(null);
+  const [status, setStatus] = useState("idle");
+  const [error, setError] = useState(null);
   const create = useCallback(async ({ name, slug }) => {
     setStatus("creating");
     setError(null);
@@ -170,16 +129,59 @@ function useSessionRefresh(refreshFn, intervalMs = 4 * 60 * 1000) {
     };
   }, [refreshFn, intervalMs]);
 }
+// src/react/WorkspaceProvider.tsx
+import { createContext as createContext2, use as use2, useMemo, useState as useState2 } from "react";
+import { jsx as jsx3 } from "react/jsx-runtime";
+var WorkspaceContext = createContext2(null);
+function getDefaultWorkspace(workspaces) {
+  const personalWorkspace = workspaces.find((w) => w.type === "personal");
+  if (personalWorkspace)
+    return personalWorkspace;
+  return workspaces[0];
+}
+var WorkspaceProvider = ({
+  children,
+  workspaces
+}) => {
+  const isDegradedMode = workspaces.length === 0;
+  const defaultWorkspace = useMemo(() => getDefaultWorkspace(workspaces), [workspaces]);
+  const [currentWorkspace, setCurrentWorkspaceState] = useState2(defaultWorkspace);
+  const setCurrentWorkspace = (workspaceId) => {
+    const workspace = workspaces.find((w) => w.id === workspaceId);
+    if (workspace)
+      setCurrentWorkspaceState(workspace);
+  };
+  const getWorkspaceById = (workspaceId) => {
+    return workspaces.find((w) => w.id === workspaceId);
+  };
+  const hasMultipleWorkspaces = workspaces.length > 1;
+  return /* @__PURE__ */ jsx3(WorkspaceContext, {
+    value: {
+      workspaces,
+      currentWorkspace,
+      setCurrentWorkspace,
+      hasMultipleWorkspaces,
+      getWorkspaceById,
+      isDegradedMode
+    },
+    children
+  });
+};
+var useWorkspace = () => {
+  return use2(WorkspaceContext);
+};
 export {
   EventsProvider,
   ManageTeamLink,
-  OrganizationProvider,
+  WorkspaceProvider as OrganizationProvider,
+  WorkspaceProvider,
   accountUrl,
   createWorkspaceFlow,
   gatekeeperDashboardUrl,
   gatekeeperOrgManageUrl,
   useCreateWorkspace,
   useEvents,
-  useOrganization,
-  useSessionRefresh
+  useWorkspace as useOrganization,
+  useSessionRefresh,
+  useWorkspace
 };

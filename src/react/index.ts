@@ -7,10 +7,6 @@ export {
   gatekeeperOrgManageUrl,
 } from "./ManageTeamLink";
 export {
-  OrganizationProvider,
-  useOrganization,
-} from "./OrganizationProvider";
-export {
   type CreateWorkspaceFlowParams,
   type CreateWorkspaceStatus,
   type NamespaceAvailability,
@@ -20,3 +16,11 @@ export {
   useCreateWorkspace,
 } from "./useCreateWorkspace";
 export { useSessionRefresh } from "./useSessionRefresh";
+export {
+  type WorkspaceClaim,
+  WorkspaceProvider,
+  // deprecated aliases: prefer the Workspace-named exports
+  WorkspaceProvider as OrganizationProvider,
+  useWorkspace,
+  useWorkspace as useOrganization,
+} from "./WorkspaceProvider";
