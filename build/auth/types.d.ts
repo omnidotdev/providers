@@ -1,6 +1,11 @@
 import type { JWTPayload } from "jose";
 /** Claim namespace for organization claims in JWT */
 declare const OMNI_CLAIMS_NAMESPACE = "https://manifold.omni.dev/@omni/claims/organizations";
+/** A workspace (organization) identity link, e.g. a website or social URL */
+type WorkspaceLink = {
+    url: string;
+    title?: string | null;
+};
 /** Organization membership claim embedded in a JWT */
 type OrganizationClaim = {
     id: string;
@@ -8,6 +13,8 @@ type OrganizationClaim = {
     slug: string;
     /** Organization logo URL, if set */
     logo?: string | null;
+    /** Workspace links (website, socials, etc.), if any */
+    links?: WorkspaceLink[];
     type: "personal" | "team";
     roles: string[];
     teams: Array<{
