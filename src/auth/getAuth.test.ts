@@ -43,6 +43,10 @@ const makeConfig = (overrides: {
    * the rotated (chunked) account cookie Better Auth writes during rotation.
    */
   rotatedSetCookies?: string[];
+  /** Override the mocked Better Auth listUserAccounts (identityProviderId recovery). */
+  listUserAccountsImpl?: () => Promise<
+    Array<{ providerId: string; accountId: string }>
+  >;
 }) => {
   const setCookieCalls: Array<{ name: string; value: string }> = [];
   const encryptCalls: CachedAuthData[] = [];
@@ -65,6 +69,10 @@ const makeConfig = (overrides: {
     rotatedHeaders.append("set-cookie", raw);
   }
 
+  const listUserAccounts = mock(
+    async () => (await overrides.listUserAccountsImpl?.()) ?? [],
+  );
+
   const authApi = {
     getSession: mock(async () => overrides.session),
     getAccessToken: mock(async () => ({
@@ -76,6 +84,9 @@ const makeConfig = (overrides: {
       response: await refreshTokenImpl(),
     })),
     signOut: mock(async () => undefined),
+    // only attach the method when a test opts in, so the default harness mirrors
+    // a host that does not expose listUserAccounts (the method is optional)
+    ...(overrides.listUserAccountsImpl ? { listUserAccounts } : {}),
   } as unknown as BetterAuthApi;
 
   const oidc = {
@@ -101,7 +112,15 @@ const makeConfig = (overrides: {
     setCookieCalls.push({ name, value });
   };
 
-  return { authApi, oidc, authCache, setCookie, setCookieCalls, encryptCalls };
+  return {
+    authApi,
+    oidc,
+    authCache,
+    setCookie,
+    setCookieCalls,
+    encryptCalls,
+    listUserAccounts,
+  };
 };
 
 const request = new Request("https://app.example.com");
@@ -459,5 +478,78 @@ describe("createGetAuth rotated-cookie forwarding", () => {
 
     expect(result).not.toBeNull();
     expect(result?.accessToken).toBe("access-token");
+  });
+});
+
+describe("createGetAuth identityProviderId recovery", () => {
+  it("recovers identityProviderId from the OAuth account when no token supplies it (degraded session)", async () => {
+    // Degraded session: the token flow yields neither a cached id nor a fresh id
+    // token, so identityProviderId would be null and every id-dependent surface
+    // would break. It must be recovered from the persisted `omni` OAuth account.
+    const cfg = makeConfig({
+      session: makeSession({ organizations: [] }),
+      getAccessTokenImpl: async () => null,
+      listUserAccountsImpl: async () => [
+        { providerId: "credential", accountId: "ba-id" },
+        { providerId: "omni", accountId: "idp-sub-recovered" },
+      ],
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const result = await getAuth(request);
+
+    expect(cfg.listUserAccounts).toHaveBeenCalledTimes(1);
+    expect(result?.user.identityProviderId).toBe("idp-sub-recovered");
+    // the recovered id is cached so later requests skip the account lookup
+    expect(cfg.encryptCalls.at(-1)?.identityProviderId).toBe(
+      "idp-sub-recovered",
+    );
+  });
+
+  it("does not call listUserAccounts when a token already supplies identityProviderId", async () => {
+    const cfg = makeConfig({
+      // default getAccessTokenImpl returns an id token -> identityProviderId set
+      session: makeSession({ organizations: [] }),
+      listUserAccountsImpl: async () => [
+        { providerId: "omni", accountId: "should-not-be-used" },
+      ],
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const result = await getAuth(request);
+
+    expect(result?.user.identityProviderId).toBe("idp-sub-123");
+    expect(cfg.listUserAccounts).not.toHaveBeenCalled();
+  });
+
+  it("selects the account by the configured providerId", async () => {
+    const cfg = makeConfig({
+      session: makeSession({ organizations: [] }),
+      getAccessTokenImpl: async () => null,
+      listUserAccountsImpl: async () => [
+        { providerId: "omni", accountId: "omni-sub" },
+        { providerId: "custom", accountId: "custom-sub" },
+      ],
+    });
+
+    const getAuth = createGetAuth({ ...cfg, providerId: "custom" });
+    const result = await getAuth(request);
+
+    expect(result?.user.identityProviderId).toBe("custom-sub");
+  });
+
+  it("leaves identityProviderId null when the host does not expose listUserAccounts", async () => {
+    // No listUserAccountsImpl -> the method is absent from the mocked authApi, as
+    // for a host that does not expose it. Recovery must be skipped, not throw.
+    const cfg = makeConfig({
+      session: makeSession({ organizations: [] }),
+      getAccessTokenImpl: async () => null,
+    });
+
+    const getAuth = createGetAuth(cfg);
+    const result = await getAuth(request);
+
+    expect(result).not.toBeNull();
+    expect(result?.user.identityProviderId ?? null).toBeNull();
   });
 });

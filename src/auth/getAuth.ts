@@ -52,6 +52,19 @@ type BetterAuthApi = {
   getAccessToken: BetterAuthTokenFn;
   refreshToken: BetterAuthTokenFn;
   signOut: (opts: { headers: Headers }) => Promise<unknown>;
+  /**
+   * List the OAuth/credential accounts linked to the session user. OPTIONAL so a
+   * host that does not expose it still type-checks; when present, `getAuth` uses
+   * it to recover `identityProviderId` from the persisted OAuth account in a
+   * degraded session (see the recovery note below). Better Auth's
+   * `auth.api.listUserAccounts` matches this shape.
+   */
+  listUserAccounts?: (opts: {
+    headers: Headers;
+    // biome-ignore lint/suspicious/noExplicitAny: dynamic BA account fields
+  }) => Promise<
+    Array<{ providerId: string; accountId: string; [k: string]: any }>
+  >;
 };
 
 type SetCookieFn = (
@@ -112,10 +125,11 @@ type GetAuthConfig = {
    */
   forwardSetCookie?: (setCookieHeader: string) => void;
   /**
-   * @deprecated Unused since better-auth 1.7 rebuilt generic OAuth on the
-   * social-provider path: the account is now selected from its signed cookie
-   * (`useAccountCookie`), not by provider id. Still accepted so existing
-   * `createGetAuth` calls keep type-checking; it has no effect
+   * Provider id of the OAuth account to recover `identityProviderId` from when a
+   * degraded session has no fresh token to decode it out of (default `"omni"`,
+   * the Omni genericOAuth provider). The token flow still selects the account by
+   * its signed cookie (`useAccountCookie`), not this; it is used ONLY by the
+   * `listUserAccounts` fallback. Override only for a non-`omni` provider id.
    */
   providerId?: string;
   /** Log prefix for console output (default: "[getAuth]") */
@@ -203,6 +217,7 @@ function createGetAuth(config: GetAuthConfig) {
     forwardSetCookie,
     orgCacheTtlMs = 60_000,
     now = Date.now,
+    providerId = "omni",
   } = config;
 
   // Resolve the cookie forwarder ONCE. Prefer an explicit override; otherwise
@@ -544,6 +559,58 @@ function createGetAuth(config: GetAuthConfig) {
           );
         } else {
           console.error(`${logPrefix} Token fetch error:`, err);
+        }
+      }
+
+      // Recover identityProviderId from the persisted OAuth account when the
+      // token flow could not supply it. identityProviderId (the OIDC `sub`) is
+      // read from the auth-cache cookie or, failing that, a freshly decoded id
+      // token. A degraded session (refresh-grant failure above) mints no fresh
+      // token, so once the cache cookie expires the id is null and every
+      // id-dependent surface breaks fleet-wide (owner/admin controls hide,
+      // vote/comment ownership, profile links). Better Auth persists the `sub`
+      // as the OAuth account's `accountId`, readable from the session cookie
+      // alone (no access token), so read it back as the durable fallback. Then
+      // cache it so later requests skip the lookup and regain `hasCachedData`.
+      if (
+        !identityProviderId &&
+        typeof authApi.listUserAccounts === "function"
+      ) {
+        try {
+          const accounts = await authApi.listUserAccounts({
+            headers: request.headers,
+          });
+          const recoveredSub = accounts?.find(
+            (account) => account.providerId === providerId,
+          )?.accountId;
+          if (recoveredSub) {
+            identityProviderId = recoveredSub;
+            try {
+              const encrypted = await authCache.encrypt({
+                ...(rowId !== undefined ? { rowId } : {}),
+                identityProviderId,
+              });
+              setCookie(authCache.cookieName, encrypted, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+                maxAge: authCache.cookieTtlSeconds,
+              });
+            } catch (cacheErr) {
+              console.error(
+                `${logPrefix} Failed to cache recovered identityProviderId:`,
+                cacheErr instanceof Error ? cacheErr.message : String(cacheErr),
+              );
+            }
+          }
+        } catch (accountErr) {
+          console.error(
+            `${logPrefix} Failed to recover identityProviderId from account:`,
+            accountErr instanceof Error
+              ? accountErr.message
+              : String(accountErr),
+          );
         }
       }
 

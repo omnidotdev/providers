@@ -79370,7 +79370,8 @@ function createGetAuth(config) {
     resolveRowId,
     forwardSetCookie,
     orgCacheTtlMs = 60000,
-    now = Date.now
+    now = Date.now,
+    providerId = "omni"
   } = config;
   let forwarder;
   const resolveForwarder = async () => {
@@ -79550,6 +79551,34 @@ function createGetAuth(config) {
           console.warn(`${logPrefix} Token refresh failed (likely a rotation race); serving session without a fresh access token`);
         } else {
           console.error(`${logPrefix} Token fetch error:`, err);
+        }
+      }
+      if (!identityProviderId && typeof authApi.listUserAccounts === "function") {
+        try {
+          const accounts = await authApi.listUserAccounts({
+            headers: request.headers
+          });
+          const recoveredSub = accounts?.find((account) => account.providerId === providerId)?.accountId;
+          if (recoveredSub) {
+            identityProviderId = recoveredSub;
+            try {
+              const encrypted = await authCache.encrypt({
+                ...rowId !== undefined ? { rowId } : {},
+                identityProviderId
+              });
+              setCookie(authCache.cookieName, encrypted, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "lax",
+                path: "/",
+                maxAge: authCache.cookieTtlSeconds
+              });
+            } catch (cacheErr) {
+              console.error(`${logPrefix} Failed to cache recovered identityProviderId:`, cacheErr instanceof Error ? cacheErr.message : String(cacheErr));
+            }
+          }
+        } catch (accountErr) {
+          console.error(`${logPrefix} Failed to recover identityProviderId from account:`, accountErr instanceof Error ? accountErr.message : String(accountErr));
         }
       }
       return {

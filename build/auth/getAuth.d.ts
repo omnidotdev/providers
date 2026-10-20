@@ -56,6 +56,20 @@ type BetterAuthApi = {
     signOut: (opts: {
         headers: Headers;
     }) => Promise<unknown>;
+    /**
+     * List the OAuth/credential accounts linked to the session user. OPTIONAL so a
+     * host that does not expose it still type-checks; when present, `getAuth` uses
+     * it to recover `identityProviderId` from the persisted OAuth account in a
+     * degraded session (see the recovery note below). Better Auth's
+     * `auth.api.listUserAccounts` matches this shape.
+     */
+    listUserAccounts?: (opts: {
+        headers: Headers;
+    }) => Promise<Array<{
+        providerId: string;
+        accountId: string;
+        [k: string]: any;
+    }>>;
 };
 type SetCookieFn = (name: string, value: string, options: {
     httpOnly?: boolean;
@@ -112,10 +126,11 @@ type GetAuthConfig = {
      */
     forwardSetCookie?: (setCookieHeader: string) => void;
     /**
-     * @deprecated Unused since better-auth 1.7 rebuilt generic OAuth on the
-     * social-provider path: the account is now selected from its signed cookie
-     * (`useAccountCookie`), not by provider id. Still accepted so existing
-     * `createGetAuth` calls keep type-checking; it has no effect
+     * Provider id of the OAuth account to recover `identityProviderId` from when a
+     * degraded session has no fresh token to decode it out of (default `"omni"`,
+     * the Omni genericOAuth provider). The token flow still selects the account by
+     * its signed cookie (`useAccountCookie`), not this; it is used ONLY by the
+     * `listUserAccounts` fallback. Override only for a non-`omni` provider id.
      */
     providerId?: string;
     /** Log prefix for console output (default: "[getAuth]") */
