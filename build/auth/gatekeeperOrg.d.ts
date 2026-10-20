@@ -5,6 +5,11 @@ type GatekeeperOrganization = {
     slug: string;
     /** Organization logo URL, if set */
     logo?: string | null;
+    /** Workspace links (website, socials, etc.), if any */
+    links?: Array<{
+        url: string;
+        title?: string | null;
+    }>;
     type: "personal" | "team";
     createdAt: string;
 };
