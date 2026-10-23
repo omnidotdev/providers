@@ -20,6 +20,10 @@ export {
   isInvalidGrant,
 } from "./token";
 export { OMNI_CLAIMS_NAMESPACE } from "./types";
+export {
+  normalizeWorkspaceLinks,
+  publicWorkspaceLinks,
+} from "./workspaceLinks";
 
 export type { AuthCache, AuthCacheConfig, CachedAuthData } from "./cache";
 export type {
@@ -53,4 +57,6 @@ export type {
   OrganizationClaim,
   TokenPayload,
   UserInfoClaims,
+  WorkspaceLink,
+  WorkspaceLinkVisibility,
 } from "./types";

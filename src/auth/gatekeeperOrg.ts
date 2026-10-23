@@ -1,3 +1,7 @@
+import { normalizeWorkspaceLinks } from "./workspaceLinks";
+
+import type { WorkspaceLink } from "./types";
+
 /** Organization management types returned by Gatekeeper */
 type GatekeeperOrganization = {
   id: string;
@@ -5,8 +9,12 @@ type GatekeeperOrganization = {
   slug: string;
   /** Organization logo URL, if set */
   logo?: string | null;
-  /** Workspace links (website, socials, etc.), if any */
-  links?: Array<{ url: string; title?: string | null }>;
+  /**
+   * Workspace links (website, socials, etc.), if any. Always a parsed array:
+   * the fetch methods below run the raw response through `normalizeWorkspaceLinks`,
+   * because Gatekeeper's `get-full-organization` returns the stored JSON string.
+   */
+  links?: WorkspaceLink[];
   type: "personal" | "team";
   createdAt: string;
 };
@@ -251,7 +259,10 @@ class GatekeeperOrgClient {
         return null;
       }
 
-      return response.json() as Promise<GatekeeperOrganization>;
+      // `get-full-organization` returns the stored `links` JSON string verbatim;
+      // normalize so the resolved value matches the `WorkspaceLink[]` type
+      const org = (await response.json()) as GatekeeperOrganization;
+      return { ...org, links: normalizeWorkspaceLinks(org.links) };
     } catch {
       return null;
     }
@@ -276,7 +287,10 @@ class GatekeeperOrgClient {
       );
     }
 
-    return response.json() as Promise<GatekeeperOrganization>;
+    // The public endpoint already parses and public-filters links, but normalize
+    // defensively so this method's return always satisfies `WorkspaceLink[]`
+    const org = (await response.json()) as GatekeeperOrganization;
+    return { ...org, links: normalizeWorkspaceLinks(org.links) };
   }
 
   /**

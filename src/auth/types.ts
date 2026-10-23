@@ -4,10 +4,15 @@ import type { JWTPayload } from "jose";
 const OMNI_CLAIMS_NAMESPACE =
   "https://manifold.omni.dev/@omni/claims/organizations";
 
+/** Who may see a workspace link: everyone, or only workspace members */
+type WorkspaceLinkVisibility = "public" | "members";
+
 /** A workspace (organization) identity link, e.g. a website or social URL */
 type WorkspaceLink = {
   url: string;
   title?: string | null;
+  /** Defaults to "public" when absent (legacy links predate this field) */
+  visibility?: WorkspaceLinkVisibility | null;
 };
 
 /** Organization membership claim embedded in a JWT */
@@ -41,4 +46,10 @@ interface UserInfoClaims extends TokenPayload {
 
 export { OMNI_CLAIMS_NAMESPACE };
 
-export type { OrganizationClaim, TokenPayload, UserInfoClaims };
+export type {
+  OrganizationClaim,
+  TokenPayload,
+  UserInfoClaims,
+  WorkspaceLink,
+  WorkspaceLinkVisibility,
+};

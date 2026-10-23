@@ -1,5 +1,5 @@
 export { GatekeeperApiKeyProvider, NoopApiKeyProvider, createApiKeyProvider, } from "./apiKey";
-export { GatekeeperOrgClient, GatekeeperOrgError, OMNI_CLAIMS_NAMESPACE, createAuthCache, createGetAuth, createOidcClient, createOmniOAuthConfig, ensureFreshAccessToken, extractOrgClaims, fetchUserInfo, isInvalidGrant, resolveAccessToken, verifyAccessToken, } from "./auth";
+export { GatekeeperOrgClient, GatekeeperOrgError, OMNI_CLAIMS_NAMESPACE, createAuthCache, createGetAuth, createOidcClient, createOmniOAuthConfig, ensureFreshAccessToken, extractOrgClaims, fetchUserInfo, isInvalidGrant, normalizeWorkspaceLinks, publicWorkspaceLinks, resolveAccessToken, verifyAccessToken, } from "./auth";
 export { WARDEN_RELATIONS, WardenAuthzProvider, createAuthzProvider, } from "./authz";
 export { AetherBillingProvider, BILLING_WRITE_FAILED_EVENT, NoopBillingProvider, createBillingProvider, isPermissionError, isWithinLimit, probeWriteScope, safePaymentWrite, } from "./billing";
 export { OMNI_COMMUNITY_SOCIAL_LINKS, OMNI_SOCIALS, OMNI_SOCIAL_LINKS, } from "./brand";
@@ -14,7 +14,7 @@ export { NoopStorageProvider, S3StorageProvider, S3_CONNECTION_TIMEOUT_MS, S3_RE
 export { TtlCache } from "./util/cache";
 export { CircuitBreaker } from "./util/circuitBreaker";
 export type { ApiKeyInfo, ApiKeyProvider, ApiKeyProviderConfig, GatekeeperApiKeyProviderConfig, NoopApiKeyProviderConfig, } from "./apiKey";
-export type { AuthCache, AuthCacheConfig, BetterAuthApi, CachedAuthData, EnsureFreshTokenConfig, GatekeeperInvitation, GatekeeperMember, GatekeeperMemberRole, GatekeeperOrganization, GetAuthConfig, GetAuthSession, OidcClient, OidcClientConfig, OidcDiscovery, OmniOAuthConfig, OrganizationClaim, ResolveAccessTokenConfig, SetCookieFn, TokenPayload, TokenResult, UserInfoClaims, VerifyAccessTokenConfig, } from "./auth";
+export type { AuthCache, AuthCacheConfig, BetterAuthApi, CachedAuthData, EnsureFreshTokenConfig, GatekeeperInvitation, GatekeeperMember, GatekeeperMemberRole, GatekeeperOrganization, GetAuthConfig, GetAuthSession, OidcClient, OidcClientConfig, OidcDiscovery, OmniOAuthConfig, OrganizationClaim, ResolveAccessTokenConfig, SetCookieFn, TokenPayload, TokenResult, UserInfoClaims, VerifyAccessTokenConfig, WorkspaceLink, WorkspaceLinkVisibility, } from "./auth";
 export type { AuthzProvider, AuthzProviderConfig, AuthzTuple, PermissionCheck, PermissionCheckResult, TupleSyncResult, WardenAuthzProviderConfig, WardenRelation, WardenResourceType, } from "./authz";
 export type { AetherBillingProviderConfig, AlertEventsProvider, BillingProvider, BillingProviderConfig, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, NoopBillingProviderConfig, Price, Product, Recurring, SafePaymentWriteOptions, ScopeProbeResult, Subscription, } from "./billing";
 export type { OmniSocial } from "./brand";

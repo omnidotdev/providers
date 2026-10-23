@@ -2976,6 +2976,35 @@ var OMNI_CLAIMS_NAMESPACE = "https://manifold.omni.dev/@omni/claims/organization
 // src/auth/claims.ts
 var readOrgClaims = (claims) => claims[OMNI_CLAIMS_NAMESPACE];
 var extractOrgClaims = (claims) => readOrgClaims(claims) ?? [];
+// src/auth/workspaceLinks.ts
+var normalizeWorkspaceLinks = (raw) => {
+  let value = raw;
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(value))
+    return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object")
+      return [];
+    const { url, title, visibility } = entry;
+    if (typeof url !== "string")
+      return [];
+    return [
+      {
+        url,
+        title: typeof title === "string" ? title : null,
+        visibility: visibility === "members" ? "members" : "public"
+      }
+    ];
+  });
+};
+var publicWorkspaceLinks = (raw) => normalizeWorkspaceLinks(raw).filter((link) => link.visibility !== "members");
+
 // src/auth/gatekeeperOrg.ts
 class GatekeeperOrgError extends Error {
   status;
@@ -3083,7 +3112,8 @@ class GatekeeperOrgClient {
       if (!response.ok) {
         return null;
       }
-      return response.json();
+      const org = await response.json();
+      return { ...org, links: normalizeWorkspaceLinks(org.links) };
     } catch {
       return null;
     }
@@ -3096,7 +3126,8 @@ class GatekeeperOrgClient {
     if (!response.ok) {
       throw await this.parseError(response, "Failed to fetch organization by slug");
     }
-    return response.json();
+    const org = await response.json();
+    return { ...org, links: normalizeWorkspaceLinks(org.links) };
   }
   async listMembers(organizationId, accessToken) {
     const url = new URL(`${this.baseUrl}/organization/list-members`);
@@ -3635,6 +3666,8 @@ export {
   isIdTokenExpired,
   isInvalidGrant,
   isInvitationExpired,
+  normalizeWorkspaceLinks,
+  publicWorkspaceLinks,
   resolveAccessToken,
   validateInvitation,
   verifyAccessToken

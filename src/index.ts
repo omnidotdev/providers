@@ -18,6 +18,8 @@ export {
   extractOrgClaims,
   fetchUserInfo,
   isInvalidGrant,
+  normalizeWorkspaceLinks,
+  publicWorkspaceLinks,
   resolveAccessToken,
   verifyAccessToken,
 } from "./auth";
@@ -129,6 +131,8 @@ export type {
   TokenResult,
   UserInfoClaims,
   VerifyAccessTokenConfig,
+  WorkspaceLink,
+  WorkspaceLinkVisibility,
 } from "./auth";
 export type {
   AuthzProvider,

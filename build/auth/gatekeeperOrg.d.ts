@@ -1,3 +1,4 @@
+import type { WorkspaceLink } from "./types";
 /** Organization management types returned by Gatekeeper */
 type GatekeeperOrganization = {
     id: string;
@@ -5,11 +6,12 @@ type GatekeeperOrganization = {
     slug: string;
     /** Organization logo URL, if set */
     logo?: string | null;
-    /** Workspace links (website, socials, etc.), if any */
-    links?: Array<{
-        url: string;
-        title?: string | null;
-    }>;
+    /**
+     * Workspace links (website, socials, etc.), if any. Always a parsed array:
+     * the fetch methods below run the raw response through `normalizeWorkspaceLinks`,
+     * because Gatekeeper's `get-full-organization` returns the stored JSON string.
+     */
+    links?: WorkspaceLink[];
     type: "personal" | "team";
     createdAt: string;
 };
