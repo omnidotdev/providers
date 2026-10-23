@@ -150,6 +150,14 @@ const entries = [
     target: "node" as const,
     external: [] as string[],
   },
+  {
+    entrypoint: "./src/workspace-links/index.ts",
+    outdir: "./build/workspace-links",
+    // Pure parsing/normalization; safe in both browser and server consumers,
+    // and intentionally free of the auth bundle so client consumers stay light
+    target: "browser" as const,
+    external: [] as string[],
+  },
 ];
 
 for (const { entrypoint, outdir, target, external } of entries) {

@@ -94,6 +94,10 @@
     "./storage": {
       "import": "./build/storage/index.js",
       "types": "./build/storage/index.d.ts"
+    },
+    "./workspace-links": {
+      "import": "./build/workspace-links/index.js",
+      "types": "./build/workspace-links/index.d.ts"
     }
   },
   "files": [
