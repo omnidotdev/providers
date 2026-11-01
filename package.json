@@ -19,6 +19,10 @@
       "import": "./build/index.js",
       "types": "./build/index.d.ts"
     },
+    "./analytics": {
+      "import": "./build/analytics/index.js",
+      "types": "./build/analytics/index.d.ts"
+    },
     "./apiKey": {
       "import": "./build/apiKey/index.js",
       "types": "./build/apiKey/index.d.ts"

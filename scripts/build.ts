@@ -19,6 +19,14 @@ const entries = [
   // providers without pulling in the entire bundle (e.g. importing
   // billing won't bring in unleash-client's node:stream dependency)
   {
+    entrypoint: "./src/analytics/index.ts",
+    outdir: "./build/analytics",
+    // Dependency-free client + a React hook; safe in both browser and server
+    // consumers (SSR-guarded). React is externalized like the react entry.
+    target: "browser" as const,
+    external: ["react"],
+  },
+  {
     entrypoint: "./src/apiKey/index.ts",
     outdir: "./build/apiKey",
     target: "node" as const,
