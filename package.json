@@ -19,6 +19,10 @@
       "import": "./build/index.js",
       "types": "./build/index.d.ts"
     },
+    "./ai": {
+      "import": "./build/ai/index.js",
+      "types": "./build/ai/index.d.ts"
+    },
     "./analytics": {
       "import": "./build/analytics/index.js",
       "types": "./build/analytics/index.d.ts"
