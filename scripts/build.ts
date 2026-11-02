@@ -19,6 +19,12 @@ const entries = [
   // providers without pulling in the entire bundle (e.g. importing
   // billing won't bring in unleash-client's node:stream dependency)
   {
+    entrypoint: "./src/ai/index.ts",
+    outdir: "./build/ai",
+    // Dependency-free Synapse client (global fetch, no SDK); safe anywhere
+    target: "browser" as const,
+  },
+  {
     entrypoint: "./src/analytics/index.ts",
     outdir: "./build/analytics",
     // Dependency-free client + a React hook; safe in both browser and server
