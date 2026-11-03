@@ -49,7 +49,11 @@ const createBillingProvider = (
 export { createBillingProvider };
 
 export { AetherBillingProvider } from "./aether";
-export { isWithinLimit } from "./helpers";
+export {
+  DEFAULT_CREDIT_COGS_MARKUP,
+  creditsFromCostCents,
+  isWithinLimit,
+} from "./helpers";
 export { NoopBillingProvider } from "./noop";
 export {
   BILLING_WRITE_FAILED_EVENT,

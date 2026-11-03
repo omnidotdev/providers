@@ -33,8 +33,10 @@ export {
 export {
   AetherBillingProvider,
   BILLING_WRITE_FAILED_EVENT,
+  DEFAULT_CREDIT_COGS_MARKUP,
   NoopBillingProvider,
   createBillingProvider,
+  creditsFromCostCents,
   isPermissionError,
   isWithinLimit,
   probeWriteScope,
