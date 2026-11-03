@@ -522,6 +522,12 @@ var isWithinLimit = (entitlements, featureKey, currentCount, defaultLimits) => {
   }
   return true;
 };
+var DEFAULT_CREDIT_COGS_MARKUP = 2;
+var creditsFromCostCents = (costCents, markup = DEFAULT_CREDIT_COGS_MARKUP) => {
+  if (!(costCents > 0) || !(markup > 0))
+    return 0;
+  return Math.ceil(costCents * markup);
+};
 // src/billing/safePaymentWrite.ts
 var BILLING_WRITE_FAILED_EVENT = "billing.write.failed";
 async function safePaymentWrite(fn, opts) {
@@ -611,8 +617,10 @@ var createBillingProvider = (config) => {
 export {
   AetherBillingProvider,
   BILLING_WRITE_FAILED_EVENT,
+  DEFAULT_CREDIT_COGS_MARKUP,
   NoopBillingProvider,
   createBillingProvider,
+  creditsFromCostCents,
   isPermissionError,
   isWithinLimit,
   probeWriteScope,
