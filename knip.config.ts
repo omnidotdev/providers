@@ -21,5 +21,7 @@ export default {
     "@aws-sdk/s3-request-presigner",
     "@smithy/node-http-handler",
     "ajv",
+    "drizzle-orm",
+    "pg",
   ],
 };

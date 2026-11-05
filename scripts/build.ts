@@ -60,6 +60,19 @@ const entries = [
     external: [] as string[],
   },
   {
+    entrypoint: "./src/db/index.ts",
+    outdir: "./build/db",
+    target: "node" as const,
+    // drizzle-orm + pg are optional peers provided by the consuming service;
+    // externalize them so this entry uses the service's own installed copy
+    external: [
+      "drizzle-orm",
+      "drizzle-orm/node-postgres",
+      "drizzle-orm/node-postgres/migrator",
+      "pg",
+    ] as string[],
+  },
+  {
     entrypoint: "./src/billing/index.ts",
     outdir: "./build/billing",
     target: "browser" as const,
