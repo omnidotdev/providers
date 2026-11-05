@@ -38,6 +38,7 @@ export type {
 export type {
   BetterAuthApi,
   GetAuthConfig,
+  GetAuthOptions,
   GetAuthSession,
   ResolveRowIdFn,
   ResolveRowIdParams,
