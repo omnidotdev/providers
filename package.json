@@ -23,6 +23,10 @@
       "import": "./build/ai/index.js",
       "types": "./build/ai/index.d.ts"
     },
+    "./ai-client": {
+      "import": "./build/ai-client/index.js",
+      "types": "./build/ai-client/index.d.ts"
+    },
     "./analytics": {
       "import": "./build/analytics/index.js",
       "types": "./build/analytics/index.d.ts"

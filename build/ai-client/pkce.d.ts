@@ -1,0 +1,68 @@
+/**
+ * Pure OAuth 2.0 Authorization Code + PKCE request shaping for the managed
+ * AI-generation path, shared across Omni products.
+ *
+ * A product app (a static SPA, a Tauri desktop app, or any browser client) is a
+ * public, secretless OAuth client of Omni's Gatekeeper identity service. These
+ * helpers do no I/O so they are unit-tested directly; the browser plumbing
+ * (storage, redirect, token POST) lives in `session.ts`, which composes these.
+ */
+/** Scopes the managed path requests. userinfo (which product APIs call) needs openid. */
+export declare const OAUTH_SCOPE = "openid profile email";
+/** Base64url-encode bytes without padding (RFC 4648 url-safe alphabet). */
+export declare const base64UrlEncode: (bytes: Uint8Array) => string;
+/** A cryptographically-random base64url string from `byteLength` random bytes. */
+export declare const randomBase64Url: (byteLength: number) => string;
+/** The PKCE S256 code challenge for a verifier: base64url(sha256(verifier)). */
+export declare const codeChallengeS256: (verifier: string) => Promise<string>;
+interface AuthorizeUrlInput {
+    authBaseUrl: string;
+    clientId: string;
+    redirectUri: string;
+    scope: string;
+    state: string;
+    codeChallenge: string;
+    /**
+     * Optional OIDC `prompt`. Products pass "login" so Gatekeeper always shows the
+     * login screen instead of silently reusing an existing fleet SSO session,
+     * letting the user sign in as (or switch to) the account they want. Gatekeeper
+     * (Better Auth) does not implement `prompt=select_account` (its discovery doc
+     * advertises it but the authorize endpoint rejects it), so "login" is the
+     * supported way to let the user choose their account
+     */
+    prompt?: string;
+}
+/** Build the Gatekeeper authorize-redirect URL for a login attempt. */
+export declare const buildAuthorizeUrl: ({ authBaseUrl, clientId, redirectUri, scope, state, codeChallenge, prompt, }: AuthorizeUrlInput) => string;
+/** The result of parsing an OAuth redirect callback query string. */
+export type CallbackParams = {
+    ok: true;
+    code: string;
+    state: string;
+} | {
+    ok: false;
+    error: string;
+};
+/**
+ * Parse `code`+`state` (or an `error`) from a redirect callback query string.
+ * Accepts a leading `?`. A missing code or state is reported as an error so the
+ * caller never proceeds with a partial callback.
+ */
+export declare const parseCallbackParams: (search: string) => CallbackParams;
+interface TokenRequestInput {
+    clientId: string;
+    redirectUri: string;
+    code: string;
+    codeVerifier: string;
+}
+/** Build the form-urlencoded body for the token exchange (public client, no secret). */
+export declare const buildTokenRequestBody: ({ clientId, redirectUri, code, codeVerifier, }: TokenRequestInput) => string;
+/** A parsed token-endpoint response, or null when it carries no access token. */
+export interface ParsedTokenResponse {
+    accessToken: string;
+    /** Lifetime in seconds, when the endpoint reports it. */
+    expiresIn: number | null;
+}
+/** Pull the access token (and optional lifetime) out of a token-endpoint JSON body. */
+export declare const parseTokenResponse: (body: unknown) => ParsedTokenResponse | null;
+export {};
