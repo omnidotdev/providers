@@ -161,6 +161,17 @@ type GetAuthConfig = {
     /** Clock for the org cache, injectable for tests. Default `Date.now`. */
     now?: () => number;
 };
+/** Per-request options for a `getAuth` call. */
+type GetAuthOptions = {
+    /**
+     * Bypass the in-memory organization display cache and re-hydrate the org list
+     * live from userinfo for this request. Defaults to `false`. Use on surfaces
+     * that must show a workspace created out-of-band (e.g. in the account portal)
+     * without waiting out the cache TTL. The fresh result is written back, so the
+     * next normal request benefits too.
+     */
+    forceRefreshOrgs?: boolean;
+};
 type GetAuthSession = {
     accessToken?: string;
     organizations: OrganizationClaim[];
@@ -202,6 +213,6 @@ type GetAuthSession = {
  * @param config - Auth configuration
  * @returns `getAuth(request)` function that resolves to session or null
  */
-declare function createGetAuth(config: GetAuthConfig): (request: Request) => Promise<GetAuthSession | null>;
+declare function createGetAuth(config: GetAuthConfig): (request: Request, opts?: GetAuthOptions) => Promise<GetAuthSession | null>;
 export { createGetAuth };
-export type { BetterAuthApi, GetAuthConfig, GetAuthSession, ResolveRowIdFn, ResolveRowIdParams, SetCookieFn, };
+export type { BetterAuthApi, GetAuthConfig, GetAuthOptions, GetAuthSession, ResolveRowIdFn, ResolveRowIdParams, SetCookieFn, };

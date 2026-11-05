@@ -3312,7 +3312,8 @@ function createGetAuth(config) {
   };
   const orgCache = new Map;
   const refreshInFlight = new Map;
-  return async function getAuth(request) {
+  return async function getAuth(request, opts) {
+    const forceRefreshOrgs = opts?.forceRefreshOrgs ?? false;
     try {
       const session = await authApi.getSession({
         headers: request.headers
@@ -3381,7 +3382,7 @@ function createGetAuth(config) {
           if (!accessToken || typeof oidc.fetchUserInfo !== "function")
             return;
           const cacheKey = expectedSub ?? null;
-          const cached = cacheKey && orgCacheTtlMs > 0 ? orgCache.get(cacheKey) : undefined;
+          const cached = !forceRefreshOrgs && cacheKey && orgCacheTtlMs > 0 ? orgCache.get(cacheKey) : undefined;
           if (cached && cached.expiry > now())
             return cached.organizations;
           try {

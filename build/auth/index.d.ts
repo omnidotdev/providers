@@ -12,7 +12,7 @@ export { OMNI_CLAIMS_NAMESPACE } from "./types";
 export { normalizeWorkspaceLinks, publicWorkspaceLinks, } from "./workspaceLinks";
 export type { AuthCache, AuthCacheConfig, CachedAuthData } from "./cache";
 export type { GatekeeperInvitation, GatekeeperMember, GatekeeperMemberRole, GatekeeperOrganization, InvitationValidationResult, InviteTimeInfo, ValidateInvitationParams, } from "./gatekeeperOrg";
-export type { BetterAuthApi, GetAuthConfig, GetAuthSession, ResolveRowIdFn, ResolveRowIdParams, SetCookieFn, } from "./getAuth";
+export type { BetterAuthApi, GetAuthConfig, GetAuthOptions, GetAuthSession, ResolveRowIdFn, ResolveRowIdParams, SetCookieFn, } from "./getAuth";
 export type { IdpLogoutConfig } from "./idpLogout";
 export type { VerifyAccessTokenConfig } from "./jwt";
 export type { OmniOAuthConfig } from "./oauth";

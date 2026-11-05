@@ -161,6 +161,18 @@ type GetAuthConfig = {
   now?: () => number;
 };
 
+/** Per-request options for a `getAuth` call. */
+type GetAuthOptions = {
+  /**
+   * Bypass the in-memory organization display cache and re-hydrate the org list
+   * live from userinfo for this request. Defaults to `false`. Use on surfaces
+   * that must show a workspace created out-of-band (e.g. in the account portal)
+   * without waiting out the cache TTL. The fresh result is written back, so the
+   * next normal request benefits too.
+   */
+  forceRefreshOrgs?: boolean;
+};
+
 type GetAuthSession = {
   accessToken?: string;
   organizations: OrganizationClaim[];
@@ -288,7 +300,15 @@ function createGetAuth(config: GetAuthConfig) {
 
   return async function getAuth(
     request: Request,
+    opts?: GetAuthOptions,
   ): Promise<GetAuthSession | null> {
+    // Bypass the in-memory org cache for this request so the userinfo-hydrated
+    // organization list is re-fetched live. Used by list surfaces (e.g. a
+    // "Workspaces" page) that must reflect a workspace just created in the
+    // account portal, instead of waiting out the display cache's TTL. The fresh
+    // result is still written back to the cache, so a subsequent normal request
+    // reads the updated list rather than the stale one.
+    const forceRefreshOrgs = opts?.forceRefreshOrgs ?? false;
     try {
       const session = await authApi.getSession({
         headers: request.headers,
@@ -409,8 +429,12 @@ function createGetAuth(config: GetAuthConfig) {
             return undefined;
 
           const cacheKey = expectedSub ?? null;
+          // Skip the cache read when a live refresh was requested, but still
+          // fall through to fetch + write a fresh entry below.
           const cached =
-            cacheKey && orgCacheTtlMs > 0 ? orgCache.get(cacheKey) : undefined;
+            !forceRefreshOrgs && cacheKey && orgCacheTtlMs > 0
+              ? orgCache.get(cacheKey)
+              : undefined;
           if (cached && cached.expiry > now()) return cached.organizations;
 
           try {
@@ -636,6 +660,7 @@ export { createGetAuth };
 export type {
   BetterAuthApi,
   GetAuthConfig,
+  GetAuthOptions,
   GetAuthSession,
   ResolveRowIdFn,
   ResolveRowIdParams,

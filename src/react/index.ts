@@ -1,4 +1,4 @@
-export { accountUrl } from "./accountUrl";
+export { accountUrl, workspacesUrl } from "./accountUrl";
 export { EventsProvider, useEvents } from "./EventsProvider";
 export {
   ManageTeamLink,

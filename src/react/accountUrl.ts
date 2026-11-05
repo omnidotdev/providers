@@ -11,3 +11,19 @@
  */
 export const accountUrl = (accountBaseUrl: string | undefined): string =>
   accountBaseUrl ? accountBaseUrl.replace(/\/+$/, "") : "";
+
+/**
+ * Canonical workspaces console URL on the account hub
+ * (`${accountBaseUrl}/workspaces`).
+ *
+ * Creating and managing a workspace is an identity concern owned by ONE
+ * surface: the account hub's workspaces console, which lists, creates, and
+ * manages workspaces across the ecosystem. Products funnel users here instead
+ * of shipping their own creation dialogs, so the flow, limits, and copy live in
+ * one place and a change of destination happens here rather than in every app.
+ * Returns an empty string when no base is configured, so a missing optional env
+ * degrades to an inert link rather than a thrown render, mirroring
+ * {@link accountUrl}.
+ */
+export const workspacesUrl = (accountBaseUrl: string | undefined): string =>
+  accountBaseUrl ? `${accountBaseUrl.replace(/\/+$/, "")}/workspaces` : "";

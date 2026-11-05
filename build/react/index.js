@@ -1,5 +1,6 @@
 // src/react/accountUrl.ts
 var accountUrl = (accountBaseUrl) => accountBaseUrl ? accountBaseUrl.replace(/\/+$/, "") : "";
+var workspacesUrl = (accountBaseUrl) => accountBaseUrl ? `${accountBaseUrl.replace(/\/+$/, "")}/workspaces` : "";
 // src/react/EventsProvider.tsx
 import { createContext, use } from "react";
 import { jsx } from "react/jsx-runtime";
@@ -183,5 +184,6 @@ export {
   useEvents,
   useWorkspace as useOrganization,
   useSessionRefresh,
-  useWorkspace
+  useWorkspace,
+  workspacesUrl
 };

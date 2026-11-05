@@ -364,6 +364,38 @@ describe("createGetAuth userinfo org cache", () => {
 
     expect(fetchSpy(cfg)).toHaveBeenCalledTimes(2);
   });
+
+  it("bypasses the cache when forceRefreshOrgs is set (live refetch)", async () => {
+    const cfg = makeConfig({
+      session: makeSession({}),
+      idTokenClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: SLIM },
+      userInfoClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: ORGS },
+    });
+
+    const getAuth = createGetAuth(cfg);
+    // Warm the cache, then a forced request must refetch instead of serving it.
+    await getAuth(request);
+    const forced = await getAuth(request, { forceRefreshOrgs: true });
+
+    expect(forced?.organizations).toEqual(ORGS);
+    expect(fetchSpy(cfg)).toHaveBeenCalledTimes(2);
+  });
+
+  it("writes the fresh result back so the next normal request is served from cache", async () => {
+    const cfg = makeConfig({
+      session: makeSession({}),
+      idTokenClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: SLIM },
+      userInfoClaims: { sub: "idp-sub-123", [OMNI_CLAIMS_NAMESPACE]: ORGS },
+    });
+
+    const getAuth = createGetAuth(cfg);
+    await getAuth(request, { forceRefreshOrgs: true });
+    // The forced fetch repopulated the cache, so a following normal request
+    // must not trigger another userinfo round-trip.
+    await getAuth(request);
+
+    expect(fetchSpy(cfg)).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("createGetAuth concurrent refresh handling", () => {
