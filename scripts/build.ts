@@ -25,6 +25,15 @@ const entries = [
     target: "browser" as const,
   },
   {
+    entrypoint: "./src/ai-client/index.ts",
+    outdir: "./build/ai-client",
+    // Browser AI layer (PKCE auth shaping + managed-AI session + gateway client)
+    // plus a thin React hook; global fetch/crypto/storage only, no SDK. React is
+    // externalized like the react/analytics entries
+    target: "browser" as const,
+    external: ["react"],
+  },
+  {
     entrypoint: "./src/analytics/index.ts",
     outdir: "./build/analytics",
     // Dependency-free client + a React hook; safe in both browser and server
