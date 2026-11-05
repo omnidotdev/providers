@@ -1,3 +1,4 @@
+var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);
 // src/db/index.ts
 var { createHash } = __require("node:crypto");
 var { readFileSync } = __require("node:fs");

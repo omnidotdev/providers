@@ -278,6 +278,15 @@ const patchNodeInterop = async (bundlePath: string): Promise<void> => {
     `var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);`,
   );
 
+  // 4b. If step 2 converted plain-ESM `node:*` named imports into
+  //     `__require(...)` calls but Bun injected no `var __require` declaration
+  //     to seed step 4 (e.g. the db entry, whose only interop is node: builtins
+  //     it imports directly), define __require at the top so the calls resolve.
+  //     Same runtime-safe fallback as step 4.
+  if (/\b__require\(/.test(patched) && !/\bvar __require = /.test(patched)) {
+    patched = `var __require = typeof require !== "undefined" ? require : (await import("node:module")).createRequire(import.meta.url);\n${patched}`;
+  }
+
   // 5. Make the optional TanStack Start import UNFOLLOWABLE by bundlers.
   //    getAuth is server-only, but some consuming apps pull providers/auth
   //    into their client (browser) graph. A literal
