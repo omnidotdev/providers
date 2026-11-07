@@ -6,6 +6,13 @@ var { join } = __require("node:path");
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
+var DEFAULT_LOCK_TIMEOUT_MS = 1e4;
+var buildMigrationPoolConfig = (databaseUrl, lockTimeoutMs = DEFAULT_LOCK_TIMEOUT_MS) => {
+  const config = { connectionString: databaseUrl };
+  if (lockTimeoutMs > 0)
+    config.options = `-c lock_timeout=${lockTimeoutMs}`;
+  return config;
+};
 var ALREADY_EXISTS = new Set([
   "42710",
   "42P07",
@@ -75,7 +82,7 @@ var runMigrations = async (options = {}) => {
   if (!databaseUrl) {
     throw new Error("runMigrations: DATABASE_URL is not set");
   }
-  const pool = new Pool({ connectionString: databaseUrl });
+  const pool = new Pool(buildMigrationPoolConfig(databaseUrl, options.lockTimeoutMs));
   try {
     const db = drizzle({ client: pool, casing });
     log("[Migrate] Applying migrations...");
@@ -98,5 +105,7 @@ var runMigrations = async (options = {}) => {
   }
 };
 export {
+  DEFAULT_LOCK_TIMEOUT_MS,
+  buildMigrationPoolConfig,
   runMigrations
 };

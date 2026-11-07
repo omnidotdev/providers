@@ -28,9 +28,50 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
 
+import type { PoolConfig } from "pg";
+
+/**
+ * Default `lock_timeout` (milliseconds) applied to migration connections. A
+ * migration that cannot acquire a lock within this window fails fast instead of
+ * queuing a lock request that blocks other sessions on the same table.
+ */
+export const DEFAULT_LOCK_TIMEOUT_MS = 10_000;
+
+/**
+ * Build the `pg.Pool` config for the migration connection, setting a Postgres
+ * `lock_timeout` as a per-connection server option (`-c lock_timeout=<ms>`) so
+ * every statement a migration runs gives up waiting for a lock after the
+ * window rather than queuing.
+ *
+ * Why this matters: a plain `ALTER TABLE` takes an `ACCESS EXCLUSIVE` lock. If a
+ * long-running transaction holds any lock on the table (e.g. an abandoned
+ * `pg_dump` holding `ACCESS SHARE`), the `ALTER` queues, and because a pending
+ * `ACCESS EXCLUSIVE` request blocks every lock request behind it, new reads of
+ * that hot table head-of-line-block too. A short `lock_timeout` turns that
+ * silent, open-ended read outage into a fast, visible migration failure.
+ *
+ * A non-positive `lockTimeoutMs` disables the option (Postgres default: wait
+ * forever).
+ */
+export const buildMigrationPoolConfig = (
+  databaseUrl: string,
+  lockTimeoutMs: number = DEFAULT_LOCK_TIMEOUT_MS,
+): PoolConfig => {
+  const config: PoolConfig = { connectionString: databaseUrl };
+  if (lockTimeoutMs > 0) config.options = `-c lock_timeout=${lockTimeoutMs}`;
+  return config;
+};
+
 export interface RunMigrationsOptions {
   /** Postgres connection string. Defaults to `process.env.DATABASE_URL`. */
   databaseUrl?: string;
+  /**
+   * Postgres `lock_timeout` in milliseconds for the migration connection, so a
+   * migration waiting on a lock fails fast instead of queuing a lock request
+   * that blocks reads on the table. Defaults to {@link DEFAULT_LOCK_TIMEOUT_MS};
+   * pass `0` to disable (wait forever).
+   */
+  lockTimeoutMs?: number;
   /**
    * Folder holding the generated drizzle migrations and `meta/_journal.json`,
    * resolved from the current working directory. Defaults to
@@ -172,7 +213,9 @@ export const runMigrations = async (
     throw new Error("runMigrations: DATABASE_URL is not set");
   }
 
-  const pool = new Pool({ connectionString: databaseUrl });
+  const pool = new Pool(
+    buildMigrationPoolConfig(databaseUrl, options.lockTimeoutMs),
+  );
 
   try {
     const db = drizzle({ client: pool, casing });
