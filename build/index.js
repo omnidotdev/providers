@@ -81522,6 +81522,41 @@ var LEGAL_LINKS = [
   { label: "Sub-processors", href: LEGAL_URLS.subprocessors },
   { label: "Acceptable Use Policy", href: LEGAL_URLS.acceptableUse }
 ];
+// src/moderation/moderation.ts
+var DEFAULT_TIMEOUT_MS = 2000;
+var parseResponse = (payload) => ({
+  flagged: Boolean(payload?.result?.flagged)
+});
+var createModerator = (config) => {
+  const url = config?.url;
+  const failClosed = config?.failClosed ?? false;
+  const timeoutMs = config?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const fetchImpl = config?.fetchImpl ?? fetch;
+  const onFailure = (reason) => {
+    console.error(`[moderation] ${reason}; ${failClosed ? "blocking (fail closed)" : "allowing (fail open)"}`);
+    return { flagged: failClosed };
+  };
+  return {
+    async moderateText(text) {
+      if (!url || !text.trim())
+        return { flagged: false };
+      try {
+        const response = await fetchImpl(`${url}/check`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+          signal: AbortSignal.timeout(timeoutMs)
+        });
+        if (!response.ok) {
+          return onFailure(`Say Less returned ${response.status}`);
+        }
+        return parseResponse(await response.json());
+      } catch (error) {
+        return onFailure(`check failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  };
+};
 // src/notifications/herald.ts
 class HeraldHttpError extends Error {
   status;
@@ -81675,6 +81710,54 @@ var SECURITY_HEADERS = {
   "Referrer-Policy": "strict-origin-when-cross-origin"
 };
 var headers_default = SECURITY_HEADERS;
+// src/server/identity.ts
+var decodeJwtPayload = (token) => {
+  const segment = token.split(".")[1];
+  if (!segment)
+    return null;
+  try {
+    const json = Buffer.from(segment, "base64url").toString("utf8");
+    const payload = JSON.parse(json);
+    return payload && typeof payload === "object" ? payload : null;
+  } catch {
+    return null;
+  }
+};
+var firstCsv = (value) => {
+  const first = value?.split(",")[0]?.trim();
+  return first ? first : undefined;
+};
+var clientIp = ({
+  headers,
+  socketIp,
+  trustProxy = true
+}) => {
+  if (trustProxy) {
+    const forwarded = firstCsv(headers.get("x-forwarded-for"));
+    if (forwarded)
+      return forwarded;
+    const realIp = headers.get("x-real-ip")?.trim();
+    if (realIp)
+      return realIp;
+  }
+  const socket = socketIp?.trim();
+  if (socket)
+    return socket;
+  return "unknown";
+};
+var clientIpKey = (source) => `ip:${clientIp(source)}`;
+var identityKey = (source) => {
+  const auth = source.headers.get("authorization");
+  if (auth?.startsWith("Bearer ")) {
+    const token = auth.slice(7).trim();
+    if (token) {
+      const sub = decodeJwtPayload(token)?.sub;
+      if (typeof sub === "string" && sub.length > 0)
+        return `user:${sub}`;
+    }
+  }
+  return clientIpKey(source);
+};
 // src/social/gatekeeper.ts
 var REQUEST_TIMEOUT_MS8 = 5000;
 
@@ -81937,6 +82020,8 @@ export {
   WARDEN_RELATIONS,
   WardenAuthzProvider,
   buildResilientRequestHandler,
+  clientIp,
+  clientIpKey,
   createApiKeyProvider,
   createAuthCache,
   createAuthzProvider,
@@ -81944,6 +82029,7 @@ export {
   createEventsProvider,
   createFlagProvider,
   createGetAuth,
+  createModerator,
   createNotificationProvider,
   createOidcClient,
   createOmniOAuthConfig,
@@ -81956,6 +82042,7 @@ export {
   extractOrgClaims,
   fetchPublicCatalog,
   fetchUserInfo,
+  identityKey,
   isInvalidGrant,
   isPermissionError,
   isWithinLimit,
