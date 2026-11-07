@@ -218,6 +218,5 @@ const createPrismClient = (config: PrismClientConfig): PrismClient => {
   return { track, flush };
 };
 
-export { createPrismClient };
-
 export type { PrismClient, PrismClientConfig, PrismEvent };
+export { createPrismClient };

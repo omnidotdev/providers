@@ -21,5 +21,5 @@ declare class GatekeeperSocialProvider implements SocialProvider {
     getConnections(userId: string): Promise<SocialConnectionDTO[]>;
     getConnection(userId: string, platform: string): Promise<SocialConnectionDTO | null>;
 }
-export { GatekeeperSocialProvider };
 export type { GatekeeperSocialProviderConfig };
+export { GatekeeperSocialProvider };

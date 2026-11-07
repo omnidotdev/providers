@@ -155,6 +155,5 @@ class UnleashFlagProvider implements FlagProvider {
   }
 }
 
-export { UnleashFlagProvider };
-
 export type { UnleashFlagProviderConfig };
+export { UnleashFlagProvider };

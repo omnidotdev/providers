@@ -17,5 +17,5 @@ declare class NoopFlagProvider implements FlagProvider {
     }>;
     close(): Promise<void>;
 }
-export { NoopFlagProvider };
 export type { NoopFlagProviderConfig };
+export { NoopFlagProvider };

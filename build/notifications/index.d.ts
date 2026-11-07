@@ -17,10 +17,10 @@ type NotificationProviderConfig = ({
  * @throws When required config is missing for the chosen variant
  */
 declare const createNotificationProvider: (config: NotificationProviderConfig) => NotificationProvider;
-export { createNotificationProvider };
 export { HeraldNotificationProvider } from "./herald";
 export { NoopNotificationProvider } from "./noop";
-export type { NotificationProviderConfig };
 export type { HeraldNotificationProviderConfig } from "./herald";
 export type { EmailParams, EmailResult, NotificationProvider, } from "./interface";
 export type { NoopNotificationProviderConfig } from "./noop";
+export type { NotificationProviderConfig };
+export { createNotificationProvider };

@@ -18,12 +18,8 @@ const createAuthzProvider = (config: AuthzProviderConfig): AuthzProvider => {
   return new WardenAuthzProvider({ ...config, apiUrl: config.apiUrl });
 };
 
-export { createAuthzProvider };
-
 export { WARDEN_RELATIONS } from "./relations";
 export { WardenAuthzProvider } from "./warden";
-
-export type { AuthzProviderConfig };
 
 export type {
   AuthzProvider,
@@ -34,3 +30,5 @@ export type {
 } from "./interface";
 export type { WardenRelation, WardenResourceType } from "./relations";
 export type { WardenAuthzProviderConfig } from "./warden";
+export type { AuthzProviderConfig };
+export { createAuthzProvider };

@@ -46,5 +46,5 @@ declare class IggyEventsProvider implements EventsProvider {
     listSubscriptions(): Promise<Subscription[]>;
     close(): Promise<void>;
 }
-export { IggyEventsProvider };
 export type { IggyEventsProviderConfig };
+export { IggyEventsProvider };

@@ -92,6 +92,5 @@ class CircuitBreaker {
   }
 }
 
-export { CircuitBreaker };
-
 export type { CircuitBreakerConfig };
+export { CircuitBreaker };

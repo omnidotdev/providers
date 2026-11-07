@@ -20,7 +20,6 @@ type EventsProviderConfig = ({
  * @throws When required config is missing for the chosen variant
  */
 declare const createEventsProvider: (config: EventsProviderConfig) => EventsProvider;
-export { createEventsProvider };
 export { applicationSubmittedSchema, applicationSubmittedSchemaRegistration, submitApplication, } from "./application";
 export { EventBuffer } from "./buffer";
 export { eventMeta } from "./enrich";
@@ -32,9 +31,10 @@ export { SchemaCache, validateEventData } from "./validation";
 export type { ApplicationEmitter, ApplicationSubmission, ApplicationSubmittedData, } from "./application";
 export type { BufferConfig } from "./buffer";
 export type { EventActor } from "./enrich";
-export type { EventsProviderConfig };
 export type { HttpEventsProviderConfig } from "./http";
 export type { IggyEventsProviderConfig } from "./iggy";
 export type { EmitResult, EventInput, EventsProvider, EventsProviderStatus, RegisteredSchema, SchemaRegistration, Subscription, SubscriptionCreated, SubscriptionInput, } from "./interface";
 export type { NoopEventsProviderConfig } from "./noop";
 export type { ValidationResult } from "./validation";
+export type { EventsProviderConfig };
+export { createEventsProvider };

@@ -92,6 +92,5 @@ class TtlCache<T = unknown> {
   }
 }
 
-export { TtlCache };
-
 export type { TtlCacheConfig };
+export { TtlCache };

@@ -79,5 +79,5 @@ type ScopeProbeResult = {
 declare function probeWriteScope(probe: () => Promise<unknown>, opts?: {
     operation?: string;
 }): Promise<ScopeProbeResult>;
-export { BILLING_WRITE_FAILED_EVENT, isPermissionError, probeWriteScope, safePaymentWrite, };
 export type { AlertEventsProvider, SafePaymentWriteOptions, ScopeProbeResult };
+export { BILLING_WRITE_FAILED_EVENT, isPermissionError, probeWriteScope, safePaymentWrite, };

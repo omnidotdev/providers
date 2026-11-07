@@ -38,5 +38,5 @@ type AuthCache = {
  * @returns Auth cache with encrypt, decrypt, cookieName, cookieTtlSeconds
  */
 declare function createAuthCache(config: AuthCacheConfig): AuthCache;
-export { createAuthCache };
 export type { AuthCache, AuthCacheConfig, CachedAuthData };
+export { createAuthCache };

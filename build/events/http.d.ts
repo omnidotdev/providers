@@ -67,5 +67,5 @@ declare class HttpEventsProvider implements EventsProvider {
  * @param maxRetries - Maximum number of attempts
  */
 declare function retryWithBackoff<T>(fn: () => Promise<T>, maxRetries: number): Promise<T>;
-export { HttpEventsProvider, retryWithBackoff };
 export type { HttpEventsProviderConfig };
+export { HttpEventsProvider, retryWithBackoff };

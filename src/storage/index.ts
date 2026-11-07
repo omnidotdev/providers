@@ -40,8 +40,6 @@ const createStorageProvider = (
   throw new Error(`Unknown storage provider: ${_exhaustive}`);
 };
 
-export { createStorageProvider };
-
 export { NoopStorageProvider } from "./noop";
 export {
   S3_CONNECTION_TIMEOUT_MS,
@@ -50,8 +48,6 @@ export {
   createResilientS3Client,
 } from "./requestHandler";
 export { S3StorageProvider } from "./s3";
-
-export type { StorageProviderConfig };
 
 export type {
   PresignedParams,
@@ -62,3 +58,5 @@ export type {
 } from "./interface";
 export type { NoopStorageProviderConfig } from "./noop";
 export type { S3StorageProviderConfig } from "./s3";
+export type { StorageProviderConfig };
+export { createStorageProvider };

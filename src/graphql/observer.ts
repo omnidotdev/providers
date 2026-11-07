@@ -86,6 +86,5 @@ ${fieldDefs}
   });
 };
 
-export { createObserverPlugin };
-
 export type { ObserverField };
+export { createObserverPlugin };

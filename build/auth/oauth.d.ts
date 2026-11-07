@@ -49,5 +49,5 @@ declare function createOmniOAuthConfig(config: OmniOAuthConfig): {
         image: string;
     };
 };
-export { createOmniOAuthConfig };
 export type { OmniOAuthConfig };
+export { createOmniOAuthConfig };

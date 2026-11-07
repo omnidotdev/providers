@@ -73,5 +73,5 @@ declare class AetherBillingProvider implements BillingProvider {
     private resilientFetch;
     private backoff;
 }
-export { AetherBillingProvider };
 export type { AetherBillingProviderConfig };
+export { AetherBillingProvider };

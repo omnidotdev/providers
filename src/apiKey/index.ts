@@ -42,13 +42,11 @@ const createApiKeyProvider = (config: ApiKeyProviderConfig): ApiKeyProvider => {
   throw new Error(`Unknown API key provider: ${_exhaustive}`);
 };
 
-export { createApiKeyProvider };
-
 export { GatekeeperApiKeyProvider } from "./gatekeeper";
 export { NoopApiKeyProvider } from "./noop";
-
-export type { ApiKeyProviderConfig };
 
 export type { GatekeeperApiKeyProviderConfig } from "./gatekeeper";
 export type { ApiKeyInfo, ApiKeyProvider } from "./interface";
 export type { NoopApiKeyProviderConfig } from "./noop";
+export type { ApiKeyProviderConfig };
+export { createApiKeyProvider };

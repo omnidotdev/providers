@@ -158,6 +158,5 @@ function createOidcClient(config: OidcClientConfig): OidcClient {
   return { verifyIdToken, fetchUserInfo, getDiscovery, getJwks, clearCache };
 }
 
-export { createOidcClient };
-
 export type { OidcClient, OidcClientConfig, OidcDiscovery };
+export { createOidcClient };

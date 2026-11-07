@@ -214,5 +214,5 @@ type GetAuthSession = {
  * @returns `getAuth(request)` function that resolves to session or null
  */
 declare function createGetAuth(config: GetAuthConfig): (request: Request, opts?: GetAuthOptions) => Promise<GetAuthSession | null>;
-export { createGetAuth };
 export type { BetterAuthApi, GetAuthConfig, GetAuthOptions, GetAuthSession, ResolveRowIdFn, ResolveRowIdParams, SetCookieFn, };
+export { createGetAuth };

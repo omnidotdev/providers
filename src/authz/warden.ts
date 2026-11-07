@@ -374,6 +374,5 @@ function buildCacheKey(
   return `${userId}:${resourceType}:${resourceId}:${permission}`;
 }
 
-export { WardenAuthzProvider };
-
 export type { WardenAuthzProviderConfig };
+export { WardenAuthzProvider };

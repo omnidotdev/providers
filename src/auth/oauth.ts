@@ -64,6 +64,5 @@ function createOmniOAuthConfig(config: OmniOAuthConfig) {
   };
 }
 
-export { createOmniOAuthConfig };
-
 export type { OmniOAuthConfig };
+export { createOmniOAuthConfig };

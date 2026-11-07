@@ -27,6 +27,5 @@ class NoopFlagProvider implements FlagProvider {
   async close(): Promise<void> {}
 }
 
-export { NoopFlagProvider };
-
 export type { NoopFlagProviderConfig };
+export { NoopFlagProvider };

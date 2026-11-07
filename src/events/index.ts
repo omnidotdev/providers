@@ -65,8 +65,6 @@ const createEventsProvider = (config: EventsProviderConfig): EventsProvider => {
   throw new Error(`Unknown events provider: ${_exhaustive}`);
 };
 
-export { createEventsProvider };
-
 export {
   applicationSubmittedSchema,
   applicationSubmittedSchemaRegistration,
@@ -87,8 +85,6 @@ export type {
 } from "./application";
 export type { BufferConfig } from "./buffer";
 export type { EventActor } from "./enrich";
-export type { EventsProviderConfig };
-
 export type { HttpEventsProviderConfig } from "./http";
 export type { IggyEventsProviderConfig } from "./iggy";
 export type {
@@ -104,3 +100,5 @@ export type {
 } from "./interface";
 export type { NoopEventsProviderConfig } from "./noop";
 export type { ValidationResult } from "./validation";
+export type { EventsProviderConfig };
+export { createEventsProvider };

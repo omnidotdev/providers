@@ -39,5 +39,5 @@ declare class HeraldNotificationProvider implements NotificationProvider {
         message?: string;
     }>;
 }
-export { HeraldNotificationProvider };
 export type { HeraldNotificationProviderConfig };
+export { HeraldNotificationProvider };

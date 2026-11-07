@@ -11,5 +11,5 @@ type OrganizationsPluginConfig = {
  * @param config - Config with cache accessor function
  */
 declare const createOrganizationsPlugin: (config: OrganizationsPluginConfig) => Plugin;
-export { createOrganizationsPlugin };
 export type { OrganizationsPluginConfig };
+export { createOrganizationsPlugin };

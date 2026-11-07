@@ -21,5 +21,5 @@ declare function fetchUserInfo(token: string, userinfoUrl: string): Promise<User
  * @returns User claims from the IDP
  */
 declare function resolveAccessToken(token: string, config: ResolveAccessTokenConfig): Promise<UserInfoClaims>;
-export { fetchUserInfo, resolveAccessToken };
 export type { ResolveAccessTokenConfig };
+export { fetchUserInfo, resolveAccessToken };

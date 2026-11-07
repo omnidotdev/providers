@@ -52,6 +52,5 @@ async function resolveAccessToken(
   return fetchUserInfo(token, config.userinfoUrl);
 }
 
-export { fetchUserInfo, resolveAccessToken };
-
 export type { ResolveAccessTokenConfig };
+export { fetchUserInfo, resolveAccessToken };

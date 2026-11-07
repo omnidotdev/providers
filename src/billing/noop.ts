@@ -156,6 +156,5 @@ class NoopBillingProvider implements BillingProvider {
   async close(): Promise<void> {}
 }
 
-export { NoopBillingProvider };
-
 export type { NoopBillingProviderConfig };
+export { NoopBillingProvider };

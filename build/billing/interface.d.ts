@@ -236,4 +236,4 @@ interface BillingProvider {
     /** Close the provider connection (if stateful) */
     close?(): Promise<void>;
 }
-export type { BillingProvider, CheckoutParams, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, };
+export type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, };

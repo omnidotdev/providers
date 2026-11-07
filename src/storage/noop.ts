@@ -42,6 +42,5 @@ class NoopStorageProvider implements StorageProvider {
   async close(): Promise<void> {}
 }
 
-export { NoopStorageProvider };
-
 export type { NoopStorageProviderConfig };
+export { NoopStorageProvider };

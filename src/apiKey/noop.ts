@@ -27,6 +27,5 @@ class NoopApiKeyProvider implements ApiKeyProvider {
   async close(): Promise<void> {}
 }
 
-export { NoopApiKeyProvider };
-
 export type { NoopApiKeyProviderConfig };
+export { NoopApiKeyProvider };

@@ -34,6 +34,5 @@ const createOrganizationsPlugin = (
   };
 };
 
-export { createOrganizationsPlugin };
-
 export type { OrganizationsPluginConfig };
+export { createOrganizationsPlugin };

@@ -52,5 +52,5 @@ declare function ensureFreshAccessToken(config: EnsureFreshTokenConfig): Promise
  *    since a persistent token-fetch failure means re-auth is needed.
  */
 declare function isInvalidGrant(err: unknown): boolean;
-export { ensureFreshAccessToken, isIdTokenExpired, isInvalidGrant };
 export type { EnsureFreshTokenConfig, TokenResult };
+export { ensureFreshAccessToken, isIdTokenExpired, isInvalidGrant };

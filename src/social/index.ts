@@ -12,9 +12,8 @@ const createSocialProvider = (
   config: GatekeeperSocialProviderConfig,
 ): SocialProvider => new GatekeeperSocialProvider(config);
 
-export { createSocialProvider };
-
 export { GatekeeperSocialProvider } from "./gatekeeper";
 
 export type { GatekeeperSocialProviderConfig } from "./gatekeeper";
 export type { SocialConnectionDTO, SocialProvider } from "./interface";
+export { createSocialProvider };

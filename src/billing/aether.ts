@@ -571,6 +571,5 @@ class AetherBillingProvider implements BillingProvider {
   }
 }
 
-export { AetherBillingProvider };
-
 export type { AetherBillingProviderConfig };
+export { AetherBillingProvider };

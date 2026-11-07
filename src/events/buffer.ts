@@ -90,5 +90,5 @@ class EventBuffer {
   }
 }
 
-export { EventBuffer };
 export type { BufferConfig };
+export { EventBuffer };

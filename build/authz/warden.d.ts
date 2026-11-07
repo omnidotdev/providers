@@ -54,5 +54,5 @@ declare class WardenAuthzProvider implements AuthzProvider {
     private authHeaders;
     private syncDirect;
 }
-export { WardenAuthzProvider };
 export type { WardenAuthzProviderConfig };
+export { WardenAuthzProvider };

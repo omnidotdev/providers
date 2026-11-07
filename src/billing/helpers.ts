@@ -87,4 +87,4 @@ const creditsFromCostCents = (
   return Math.ceil(costCents * markup);
 };
 
-export { isWithinLimit, DEFAULT_CREDIT_COGS_MARKUP, creditsFromCostCents };
+export { DEFAULT_CREDIT_COGS_MARKUP, creditsFromCostCents, isWithinLimit };

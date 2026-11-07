@@ -29,6 +29,5 @@ class NoopNotificationProvider implements NotificationProvider {
   async close(): Promise<void> {}
 }
 
-export { NoopNotificationProvider };
-
 export type { NoopNotificationProviderConfig };
+export { NoopNotificationProvider };

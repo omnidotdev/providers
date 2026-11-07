@@ -16,5 +16,5 @@ declare class NoopEventsProvider implements EventsProvider {
     listSubscriptions(): Promise<Subscription[]>;
     close(): Promise<void>;
 }
-export { NoopEventsProvider };
 export type { NoopEventsProviderConfig };
+export { NoopEventsProvider };

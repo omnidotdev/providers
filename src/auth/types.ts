@@ -44,8 +44,6 @@ interface UserInfoClaims extends TokenPayload {
   [OMNI_CLAIMS_NAMESPACE]?: OrganizationClaim[];
 }
 
-export { OMNI_CLAIMS_NAMESPACE };
-
 export type {
   OrganizationClaim,
   TokenPayload,
@@ -53,3 +51,4 @@ export type {
   WorkspaceLink,
   WorkspaceLinkVisibility,
 };
+export { OMNI_CLAIMS_NAMESPACE };
