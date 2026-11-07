@@ -221,6 +221,5 @@ class IggyEventsProvider implements EventsProvider {
   }
 }
 
-export { IggyEventsProvider };
-
 export type { IggyEventsProviderConfig };
+export { IggyEventsProvider };

@@ -19,5 +19,5 @@ declare class EventBuffer {
     flush(): Promise<EmitResult[]>;
     close(): Promise<void>;
 }
-export { EventBuffer };
 export type { BufferConfig };
+export { EventBuffer };

@@ -20,14 +20,14 @@ type FlagProviderConfig = ({
  * @throws When required config is missing for the chosen variant
  */
 declare const createFlagProvider: (config: FlagProviderConfig) => FlagProvider;
-export { createFlagProvider };
 export { FractalFlagProvider } from "./fractal";
 export { NoopFlagProvider } from "./noop";
 export { FractalOpenFeatureProvider } from "./openfeature";
 export { UnleashFlagProvider } from "./unleash";
-export type { FlagProviderConfig };
 export type { FractalFlagProviderConfig } from "./fractal";
 export type { FlagContext, FlagProvider } from "./interface";
 export type { NoopFlagProviderConfig } from "./noop";
 export type { FractalOpenFeatureProviderConfig } from "./openfeature";
 export type { UnleashFlagProviderConfig } from "./unleash";
+export type { FlagProviderConfig };
+export { createFlagProvider };

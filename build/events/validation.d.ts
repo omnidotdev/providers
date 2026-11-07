@@ -30,5 +30,5 @@ declare class SchemaCache {
  * @param schema - JSON Schema to validate against
  */
 declare const validateEventData: (data: Record<string, unknown>, schema: Record<string, unknown>) => ValidationResult;
-export { SchemaCache, validateEventData };
 export type { ValidationResult };
+export { SchemaCache, validateEventData };

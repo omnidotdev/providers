@@ -37,5 +37,5 @@ declare class UnleashFlagProvider implements FlagProvider {
     }>;
     close(): Promise<void>;
 }
-export { UnleashFlagProvider };
 export type { UnleashFlagProviderConfig };
+export { UnleashFlagProvider };

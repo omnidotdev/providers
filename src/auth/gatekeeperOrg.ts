@@ -509,16 +509,6 @@ const formatRelativeTime = (ms: number): string => {
   return "just now";
 };
 
-export {
-  GatekeeperOrgClient,
-  GatekeeperOrgError,
-  formatRelativeTime,
-  getInviteTimeInfo,
-  isInvitationExpired,
-  slugify,
-  validateInvitation,
-};
-
 export type {
   GatekeeperInvitation,
   GatekeeperMember,
@@ -528,4 +518,13 @@ export type {
   InviteTimeInfo,
   NamespaceAvailability,
   ValidateInvitationParams,
+};
+export {
+  GatekeeperOrgClient,
+  GatekeeperOrgError,
+  formatRelativeTime,
+  getInviteTimeInfo,
+  isInvitationExpired,
+  slugify,
+  validateInvitation,
 };

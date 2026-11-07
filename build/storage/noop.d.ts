@@ -15,5 +15,5 @@ declare class NoopStorageProvider implements StorageProvider {
     }>;
     close(): Promise<void>;
 }
-export { NoopStorageProvider };
 export type { NoopStorageProviderConfig };
+export { NoopStorageProvider };

@@ -218,6 +218,5 @@ class HeraldNotificationProvider implements NotificationProvider {
   }
 }
 
-export { HeraldNotificationProvider };
-
 export type { HeraldNotificationProviderConfig };
+export { HeraldNotificationProvider };

@@ -29,5 +29,5 @@ declare class NoopBillingProvider implements BillingProvider {
     }>;
     close(): Promise<void>;
 }
-export { NoopBillingProvider };
 export type { NoopBillingProviderConfig };
+export { NoopBillingProvider };

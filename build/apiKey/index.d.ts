@@ -17,10 +17,10 @@ type ApiKeyProviderConfig = ({
  * @throws When required config is missing for the chosen variant
  */
 declare const createApiKeyProvider: (config: ApiKeyProviderConfig) => ApiKeyProvider;
-export { createApiKeyProvider };
 export { GatekeeperApiKeyProvider } from "./gatekeeper";
 export { NoopApiKeyProvider } from "./noop";
-export type { ApiKeyProviderConfig };
 export type { GatekeeperApiKeyProviderConfig } from "./gatekeeper";
 export type { ApiKeyInfo, ApiKeyProvider } from "./interface";
 export type { NoopApiKeyProviderConfig } from "./noop";
+export type { ApiKeyProviderConfig };
+export { createApiKeyProvider };

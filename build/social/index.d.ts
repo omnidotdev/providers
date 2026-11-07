@@ -6,7 +6,7 @@ import type { SocialProvider } from "./interface";
  * @returns Configured social provider instance
  */
 declare const createSocialProvider: (config: GatekeeperSocialProviderConfig) => SocialProvider;
-export { createSocialProvider };
 export { GatekeeperSocialProvider } from "./gatekeeper";
 export type { GatekeeperSocialProviderConfig } from "./gatekeeper";
 export type { SocialConnectionDTO, SocialProvider } from "./interface";
+export { createSocialProvider };

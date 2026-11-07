@@ -35,5 +35,5 @@ declare class GatekeeperApiKeyProvider implements ApiKeyProvider {
     }>;
     close(): Promise<void>;
 }
-export { GatekeeperApiKeyProvider };
 export type { GatekeeperApiKeyProviderConfig };
+export { GatekeeperApiKeyProvider };

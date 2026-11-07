@@ -59,10 +59,8 @@ type BetterAuthApi = {
    * degraded session (see the recovery note below). Better Auth's
    * `auth.api.listUserAccounts` matches this shape.
    */
-  listUserAccounts?: (opts: {
-    headers: Headers;
+  listUserAccounts?: (opts: { headers: Headers }) => Promise<
     // biome-ignore lint/suspicious/noExplicitAny: dynamic BA account fields
-  }) => Promise<
     Array<{ providerId: string; accountId: string; [k: string]: any }>
   >;
 };
@@ -655,8 +653,6 @@ function createGetAuth(config: GetAuthConfig) {
   };
 }
 
-export { createGetAuth };
-
 export type {
   BetterAuthApi,
   GetAuthConfig,
@@ -666,3 +662,4 @@ export type {
   ResolveRowIdParams,
   SetCookieFn,
 };
+export { createGetAuth };

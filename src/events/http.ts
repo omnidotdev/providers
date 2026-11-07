@@ -331,6 +331,5 @@ async function retryWithBackoff<T>(
   throw lastError;
 }
 
-export { HttpEventsProvider, retryWithBackoff };
-
 export type { HttpEventsProviderConfig };
+export { HttpEventsProvider, retryWithBackoff };

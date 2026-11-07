@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.12/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -38,6 +38,14 @@
     "lineWidth": 80,
     "indentWidth": 2
   },
+  "overrides": [
+    {
+      // Markdown (LICENSE, README, changesets) keeps its own conventions; do
+      // not let the formatter rewrite it.
+      "includes": ["**/*.md"],
+      "formatter": { "enabled": false }
+    }
+  ],
   "linter": {
     "rules": {
       "correctness": {

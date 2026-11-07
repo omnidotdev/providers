@@ -251,6 +251,5 @@ class FractalOpenFeatureProvider implements Provider {
   }
 }
 
-export { FractalOpenFeatureProvider };
-
 export type { FractalOpenFeatureProviderConfig };
+export { FractalOpenFeatureProvider };

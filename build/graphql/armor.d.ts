@@ -14,5 +14,5 @@ type ArmorConfig = {
  * @see https://github.com/escape-technologies/graphql-armor
  */
 declare const createArmorPlugins: (config: ArmorConfig) => import("@envelop/types").Plugin<{}>[];
-export { createArmorPlugins };
 export type { ArmorConfig };
+export { createArmorPlugins };

@@ -29,5 +29,5 @@ declare class CircuitBreaker {
     reset(): void;
     private recordFailure;
 }
-export { CircuitBreaker };
 export type { CircuitBreakerConfig };
+export { CircuitBreaker };

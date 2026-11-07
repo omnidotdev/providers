@@ -92,5 +92,5 @@ const useWorkspace = () => {
   return use(WorkspaceContext);
 };
 
-export { WorkspaceProvider, useWorkspace };
 export type { WorkspaceClaim };
+export { WorkspaceProvider, useWorkspace };

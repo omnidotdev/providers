@@ -16,5 +16,5 @@ type VerifyAccessTokenConfig = {
  * @throws When token is invalid or JWKS endpoint is unreachable
  */
 declare function verifyAccessToken(token: string, config: VerifyAccessTokenConfig): Promise<UserInfoClaims>;
-export { verifyAccessToken };
 export type { VerifyAccessTokenConfig };
+export { verifyAccessToken };

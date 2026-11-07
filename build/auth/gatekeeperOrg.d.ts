@@ -183,5 +183,5 @@ declare const getInviteTimeInfo: (invitation: GatekeeperInvitation) => InviteTim
  * @param ms - Duration in milliseconds
  */
 declare const formatRelativeTime: (ms: number) => string;
-export { GatekeeperOrgClient, GatekeeperOrgError, formatRelativeTime, getInviteTimeInfo, isInvitationExpired, slugify, validateInvitation, };
 export type { GatekeeperInvitation, GatekeeperMember, GatekeeperMemberRole, GatekeeperOrganization, InvitationValidationResult, InviteTimeInfo, NamespaceAvailability, ValidateInvitationParams, };
+export { GatekeeperOrgClient, GatekeeperOrgError, formatRelativeTime, getInviteTimeInfo, isInvitationExpired, slugify, validateInvitation, };

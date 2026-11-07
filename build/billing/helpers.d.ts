@@ -36,4 +36,4 @@ declare const DEFAULT_CREDIT_COGS_MARKUP = 2;
  * @returns Billable credits (a non-negative integer)
  */
 declare const creditsFromCostCents: (costCents: number, markup?: number) => number;
-export { isWithinLimit, DEFAULT_CREDIT_COGS_MARKUP, creditsFromCostCents };
+export { DEFAULT_CREDIT_COGS_MARKUP, creditsFromCostCents, isWithinLimit };

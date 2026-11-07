@@ -52,12 +52,8 @@ const createNotificationProvider = (
   throw new Error(`Unknown notification provider: ${_exhaustive}`);
 };
 
-export { createNotificationProvider };
-
 export { HeraldNotificationProvider } from "./herald";
 export { NoopNotificationProvider } from "./noop";
-
-export type { NotificationProviderConfig };
 
 export type { HeraldNotificationProviderConfig } from "./herald";
 export type {
@@ -66,3 +62,5 @@ export type {
   NotificationProvider,
 } from "./interface";
 export type { NoopNotificationProviderConfig } from "./noop";
+export type { NotificationProviderConfig };
+export { createNotificationProvider };

@@ -64,5 +64,5 @@ interface PrismClient {
  * prism.track("signup", { plan: "pro" });
  */
 declare const createPrismClient: (config: PrismClientConfig) => PrismClient;
-export { createPrismClient };
 export type { PrismClient, PrismClientConfig, PrismEvent };
+export { createPrismClient };

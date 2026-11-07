@@ -33,5 +33,5 @@ declare const WorkspaceProvider: ({ children, workspaces, }: PropsWithChildren<{
  * Returns null if used outside WorkspaceProvider.
  */
 declare const useWorkspace: () => WorkspaceContext | null;
-export { WorkspaceProvider, useWorkspace };
 export type { WorkspaceClaim };
+export { WorkspaceProvider, useWorkspace };

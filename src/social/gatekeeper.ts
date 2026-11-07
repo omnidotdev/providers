@@ -82,6 +82,5 @@ class GatekeeperSocialProvider implements SocialProvider {
   }
 }
 
-export { GatekeeperSocialProvider };
-
 export type { GatekeeperSocialProviderConfig };
+export { GatekeeperSocialProvider };

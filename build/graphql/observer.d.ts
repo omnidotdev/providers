@@ -12,5 +12,5 @@ type ObserverField = {
 declare const createObserverPlugin: (config?: {
     extraFields?: ObserverField[];
 }) => GraphileConfig.Plugin;
-export { createObserverPlugin };
 export type { ObserverField };
+export { createObserverPlugin };

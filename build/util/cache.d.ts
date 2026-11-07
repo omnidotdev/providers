@@ -30,5 +30,5 @@ declare class TtlCache<T = unknown> {
     /** Get the number of entries (including potentially expired) */
     get size(): number;
 }
-export { TtlCache };
 export type { TtlCacheConfig };
+export { TtlCache };

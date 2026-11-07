@@ -123,6 +123,5 @@ function isInvalidGrant(err: unknown): boolean {
   return false;
 }
 
-export { ensureFreshAccessToken, isIdTokenExpired, isInvalidGrant };
-
 export type { EnsureFreshTokenConfig, TokenResult };
+export { ensureFreshAccessToken, isIdTokenExpired, isInvalidGrant };

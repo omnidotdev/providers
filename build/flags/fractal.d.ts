@@ -45,5 +45,5 @@ declare class FractalFlagProvider implements FlagProvider {
     }>;
     close(): Promise<void>;
 }
-export { FractalFlagProvider };
 export type { FractalFlagProviderConfig };
+export { FractalFlagProvider };

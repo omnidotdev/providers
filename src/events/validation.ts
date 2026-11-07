@@ -72,6 +72,5 @@ const validateEventData = (
   };
 };
 
-export { SchemaCache, validateEventData };
-
 export type { ValidationResult };
+export { SchemaCache, validateEventData };

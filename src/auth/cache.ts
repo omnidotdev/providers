@@ -152,6 +152,5 @@ function createAuthCache(config: AuthCacheConfig): AuthCache {
   };
 }
 
-export { createAuthCache };
-
 export type { AuthCache, AuthCacheConfig, CachedAuthData };
+export { createAuthCache };

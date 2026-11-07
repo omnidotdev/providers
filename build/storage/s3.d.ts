@@ -43,5 +43,5 @@ declare class S3StorageProvider implements StorageProvider {
     }>;
     close(): Promise<void>;
 }
-export { S3StorageProvider };
 export type { S3StorageProviderConfig };
+export { S3StorageProvider };

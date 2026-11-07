@@ -205,6 +205,5 @@ class S3StorageProvider implements StorageProvider {
   }
 }
 
-export { S3StorageProvider };
-
 export type { S3StorageProviderConfig };
+export { S3StorageProvider };

@@ -46,8 +46,6 @@ const createBillingProvider = (
   throw new Error(`Unknown billing provider: ${_exhaustive}`);
 };
 
-export { createBillingProvider };
-
 export { AetherBillingProvider } from "./aether";
 export {
   DEFAULT_CREDIT_COGS_MARKUP,
@@ -61,8 +59,6 @@ export {
   probeWriteScope,
   safePaymentWrite,
 } from "./safePaymentWrite";
-
-export type { AetherBillingProviderConfig, BillingProviderConfig };
 
 export type {
   BillingProvider,
@@ -84,3 +80,5 @@ export type {
   SafePaymentWriteOptions,
   ScopeProbeResult,
 } from "./safePaymentWrite";
+export type { AetherBillingProviderConfig, BillingProviderConfig };
+export { createBillingProvider };

@@ -158,9 +158,9 @@ describe("GatekeeperOrgClient member endpoints", () => {
       `${baseUrl}/organization/list-members?organizationId=org1`,
     );
     expect(init?.method ?? "GET").toBe("GET");
-    expect((init?.headers as Record<string, string>).Authorization).toBe(
-      "Bearer user-token",
-    );
+    expect(
+      (init?.headers as Record<string, string> | undefined)?.Authorization,
+    ).toBe("Bearer user-token");
     expect(result).toEqual({ data: [member] });
   });
 
@@ -171,9 +171,9 @@ describe("GatekeeperOrgClient member endpoints", () => {
 
     const { url, init } = get();
     expect(url).toBe(`${baseUrl}/api/organization/members?orgId=org1`);
-    expect((init?.headers as Record<string, string>).Authorization).toBe(
-      "Bearer svc-token",
-    );
+    expect(
+      (init?.headers as Record<string, string> | undefined)?.Authorization,
+    ).toBe("Bearer svc-token");
     expect(result).toEqual({ data: [member] });
   });
 

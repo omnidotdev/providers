@@ -54,6 +54,5 @@ async function verifyAccessToken(
   return payload as UserInfoClaims;
 }
 
-export { verifyAccessToken };
-
 export type { VerifyAccessTokenConfig };
+export { verifyAccessToken };

@@ -35,5 +35,5 @@ declare class FractalOpenFeatureProvider implements Provider {
     resolveObjectEvaluation<T extends JsonValue>(flagKey: string, defaultValue: T, context: EvaluationContext): Promise<ResolutionDetails<T>>;
     onClose(): Promise<void>;
 }
-export { FractalOpenFeatureProvider };
 export type { FractalOpenFeatureProviderConfig };
+export { FractalOpenFeatureProvider };

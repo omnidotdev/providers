@@ -38,6 +38,5 @@ const createArmorPlugins = (config: ArmorConfig) => {
   return armor.protect().plugins;
 };
 
-export { createArmorPlugins };
-
 export type { ArmorConfig };
+export { createArmorPlugins };

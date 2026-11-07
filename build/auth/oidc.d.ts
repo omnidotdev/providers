@@ -30,5 +30,5 @@ type OidcClient = {
  * @returns OIDC client with verifyIdToken, getDiscovery, getJwks, clearCache
  */
 declare function createOidcClient(config: OidcClientConfig): OidcClient;
-export { createOidcClient };
 export type { OidcClient, OidcClientConfig, OidcDiscovery };
+export { createOidcClient };

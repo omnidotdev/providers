@@ -55,6 +55,5 @@ class NoopEventsProvider implements EventsProvider {
   async close(): Promise<void> {}
 }
 
-export { NoopEventsProvider };
-
 export type { NoopEventsProviderConfig };
+export { NoopEventsProvider };
