@@ -77,13 +77,15 @@ export {
   LEGAL_LINKS,
   LEGAL_URLS,
 } from "./legal";
+// Moderation
+export { createModerator } from "./moderation";
 // Notifications
 export {
   NoopNotificationProvider,
   createNotificationProvider,
 } from "./notifications";
 // Server
-export { SECURITY_HEADERS } from "./server";
+export { SECURITY_HEADERS, clientIp, clientIpKey, identityKey } from "./server";
 // Social
 export {
   GatekeeperSocialProvider,
@@ -200,12 +202,18 @@ export type {
   UnleashFlagProviderConfig,
 } from "./flags";
 export type {
+  ModerationResult,
+  Moderator,
+  ModeratorConfig,
+} from "./moderation";
+export type {
   EmailParams,
   EmailResult,
   NoopNotificationProviderConfig,
   NotificationProvider,
   NotificationProviderConfig,
 } from "./notifications";
+export type { HeadersLike, IdentitySource } from "./server";
 export type {
   GatekeeperSocialProviderConfig,
   SocialConnectionDTO,
