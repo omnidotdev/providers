@@ -12,9 +12,13 @@ export type {
 export type {
   SynapseClient,
   SynapseClientConfig,
+  SynapseContentBlock,
+  SynapseImageBlock,
+  SynapseImageMediaType,
   SynapseMessage,
   SynapseMessagesInput,
   SynapseModelRate,
   SynapseResult,
+  SynapseTextBlock,
   SynapseUsage,
 } from "./synapse";
