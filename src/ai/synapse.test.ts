@@ -67,6 +67,46 @@ describe("createSynapseClient.messages", () => {
     });
   });
 
+  test("forwards a multimodal message (text + inline image) unchanged", async () => {
+    const { fetchImpl, calls } = makeFetch({ body: OK_BODY });
+    const client = createSynapseClient({
+      baseUrl: "https://g",
+      apiKey: "k",
+      model: "anthropic/claude-opus-4-6",
+      fetchImpl,
+    });
+
+    await client.messages({
+      system: "critique this render",
+      maxTokens: 512,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "does this match 'scorpio symbol'?" },
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: "image/png",
+                data: "aGVsbG8=",
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const payload = JSON.parse(calls[0]!.init!.body as string);
+    expect(payload.messages[0].content).toEqual([
+      { type: "text", text: "does this match 'scorpio symbol'?" },
+      {
+        type: "image",
+        source: { type: "base64", media_type: "image/png", data: "aGVsbG8=" },
+      },
+    ]);
+  });
+
   test("concatenates only text blocks and returns token usage", async () => {
     const { fetchImpl } = makeFetch({ body: OK_BODY });
     const client = createSynapseClient({

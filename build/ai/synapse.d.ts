@@ -14,10 +14,36 @@
  * as a safe message. A per-request key (BYOK) overrides the configured key and
  * is the only path a caller's own key ever takes
  */
-/** A single Anthropic-style conversation turn. */
+/** A text block within a multimodal message. */
+export interface SynapseTextBlock {
+    type: "text";
+    text: string;
+}
+/** Media types Synapse/Anthropic accept for an inline base64 image. */
+export type SynapseImageMediaType = "image/png" | "image/jpeg" | "image/webp" | "image/gif";
+/**
+ * An inline image block within a multimodal message. `data` is raw base64 (no
+ * `data:` URI prefix), matching the Anthropic `/v1/messages` image source shape
+ */
+export interface SynapseImageBlock {
+    type: "image";
+    source: {
+        type: "base64";
+        media_type: SynapseImageMediaType;
+        data: string;
+    };
+}
+/** One content block of a multimodal message. */
+export type SynapseContentBlock = SynapseTextBlock | SynapseImageBlock;
+/**
+ * A single Anthropic-style conversation turn. `content` is a plain string for a
+ * text-only turn, or an array of blocks for a multimodal turn (text + inline
+ * images, e.g. a render handed to a vision model). Both forms are passed through
+ * to `/v1/messages` unchanged
+ */
 export interface SynapseMessage {
     role: "user" | "assistant";
-    content: string;
+    content: string | SynapseContentBlock[];
 }
 /** Spend rate for a model in US cents per million tokens. */
 export interface SynapseModelRate {
