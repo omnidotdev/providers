@@ -48,6 +48,10 @@ const createBillingProvider = (
 
 export { AetherBillingProvider } from "./aether";
 export {
+  createEntitlementCapResolver,
+  createStaticCapResolver,
+} from "./capResolver";
+export {
   DEFAULT_CREDIT_COGS_MARKUP,
   creditsFromCostCents,
   isWithinLimit,
@@ -59,7 +63,12 @@ export {
   probeWriteScope,
   safePaymentWrite,
 } from "./safePaymentWrite";
+export { createSpendBreaker, utcDayKey } from "./spendBreaker";
 
+export type {
+  CapResolver,
+  EntitlementCapResolverConfig,
+} from "./capResolver";
 export type {
   BillingProvider,
   CheckoutParams,
@@ -80,5 +89,6 @@ export type {
   SafePaymentWriteOptions,
   ScopeProbeResult,
 } from "./safePaymentWrite";
+export type { SpendBreaker } from "./spendBreaker";
 export type { AetherBillingProviderConfig, BillingProviderConfig };
 export { createBillingProvider };

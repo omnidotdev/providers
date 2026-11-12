@@ -18,11 +18,15 @@ type BillingProviderConfig = ({
  */
 declare const createBillingProvider: (config: BillingProviderConfig) => BillingProvider;
 export { AetherBillingProvider } from "./aether";
+export { createEntitlementCapResolver, createStaticCapResolver, } from "./capResolver";
 export { DEFAULT_CREDIT_COGS_MARKUP, creditsFromCostCents, isWithinLimit, } from "./helpers";
 export { NoopBillingProvider } from "./noop";
 export { BILLING_WRITE_FAILED_EVENT, isPermissionError, probeWriteScope, safePaymentWrite, } from "./safePaymentWrite";
+export { createSpendBreaker, utcDayKey } from "./spendBreaker";
+export type { CapResolver, EntitlementCapResolverConfig, } from "./capResolver";
 export type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, } from "./interface";
 export type { NoopBillingProviderConfig } from "./noop";
 export type { AlertEventsProvider, SafePaymentWriteOptions, ScopeProbeResult, } from "./safePaymentWrite";
+export type { SpendBreaker } from "./spendBreaker";
 export type { AetherBillingProviderConfig, BillingProviderConfig };
 export { createBillingProvider };

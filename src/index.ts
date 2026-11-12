@@ -36,11 +36,15 @@ export {
   DEFAULT_CREDIT_COGS_MARKUP,
   NoopBillingProvider,
   createBillingProvider,
+  createEntitlementCapResolver,
+  createSpendBreaker,
+  createStaticCapResolver,
   creditsFromCostCents,
   isPermissionError,
   isWithinLimit,
   probeWriteScope,
   safePaymentWrite,
+  utcDayKey,
 } from "./billing";
 // Brand
 export {
@@ -154,10 +158,12 @@ export type {
   AlertEventsProvider,
   BillingProvider,
   BillingProviderConfig,
+  CapResolver,
   CheckoutParams,
   CheckoutWithWorkspaceParams,
   CheckoutWithWorkspaceResponse,
   Entitlement,
+  EntitlementCapResolverConfig,
   EntitlementsResponse,
   EntitlementsResult,
   NoopBillingProviderConfig,
@@ -166,6 +172,7 @@ export type {
   Recurring,
   SafePaymentWriteOptions,
   ScopeProbeResult,
+  SpendBreaker,
   Subscription,
 } from "./billing";
 export type { OmniSocial } from "./brand";
