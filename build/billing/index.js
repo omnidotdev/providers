@@ -497,6 +497,30 @@ class NoopBillingProvider {
   }
   async close() {}
 }
+// src/billing/capResolver.ts
+var DEFAULT_INCLUDED_CREDITS_KEY = "included_credits";
+var DEFAULT_ENTITY_TYPE = "user";
+var createEntitlementCapResolver = ({
+  billing,
+  productId,
+  fallbackCredits,
+  featureKey = DEFAULT_INCLUDED_CREDITS_KEY,
+  entityType = DEFAULT_ENTITY_TYPE
+}) => {
+  return async (entityId) => {
+    try {
+      const response = await billing.getEntitlements(entityType, entityId, productId);
+      if (!response)
+        return fallbackCredits;
+      const entitlement = response.entitlements.find((e) => e.featureKey === featureKey);
+      const parsed = Number.parseInt(entitlement?.value ?? "", 10);
+      return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallbackCredits;
+    } catch {
+      return fallbackCredits;
+    }
+  };
+};
+var createStaticCapResolver = (capCredits) => async () => capCredits;
 // src/billing/helpers.ts
 var isWithinLimit = (entitlements, featureKey, currentCount, defaultLimits) => {
   if (!entitlements) {
@@ -592,6 +616,37 @@ async function probeWriteScope(probe, opts) {
     return { ok: false, permission: false, error: message };
   }
 }
+// src/billing/spendBreaker.ts
+var utcDayKey = (nowMs) => new Date(nowMs).toISOString().slice(0, 10);
+var createSpendBreaker = (ceilingCents) => {
+  let day = "";
+  let cents = 0;
+  const rollover = (nowMs) => {
+    const key = utcDayKey(nowMs);
+    if (key !== day) {
+      day = key;
+      cents = 0;
+    }
+  };
+  const now = () => Date.now();
+  return {
+    async spentTodayCents(nowMs = now()) {
+      rollover(nowMs);
+      return cents;
+    },
+    async record(amount, nowMs = now()) {
+      rollover(nowMs);
+      if (amount > 0)
+        cents += amount;
+    },
+    async isTripped(nowMs = now()) {
+      if (ceilingCents <= 0)
+        return false;
+      rollover(nowMs);
+      return cents >= ceilingCents;
+    }
+  };
+};
 
 // src/billing/index.ts
 var createBillingProvider = (config) => {
@@ -620,9 +675,13 @@ export {
   DEFAULT_CREDIT_COGS_MARKUP,
   NoopBillingProvider,
   createBillingProvider,
+  createEntitlementCapResolver,
+  createSpendBreaker,
+  createStaticCapResolver,
   creditsFromCostCents,
   isPermissionError,
   isWithinLimit,
   probeWriteScope,
-  safePaymentWrite
+  safePaymentWrite,
+  utcDayKey
 };
