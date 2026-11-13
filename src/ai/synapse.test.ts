@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { createSynapseClient, estimateSynapseCostCents } from "./synapse";
+import {
+  SynapseRequestError,
+  createSynapseClient,
+  estimateSynapseCostCents,
+} from "./synapse";
 
 /** Build a fetch stub recording calls and returning a scripted response. */
 const makeFetch = (res: {
@@ -245,5 +249,50 @@ describe("estimateSynapseCostCents", () => {
         outputCentsPerMTok: 1500,
       }),
     ).toBeCloseTo(1800, 6);
+  });
+});
+
+describe("SynapseRequestError", () => {
+  for (const status of [402, 503]) {
+    test(`a ${status} response throws a SynapseRequestError carrying the status`, async () => {
+      const { fetchImpl } = makeFetch({ ok: false, status });
+      const client = createSynapseClient({
+        baseUrl: "https://g",
+        apiKey: "k",
+        model: "m",
+        fetchImpl,
+      });
+
+      const err = await client
+        .messages({ system: "s", messages: [], maxTokens: 1 })
+        .catch((e) => e);
+
+      expect(err).toBeInstanceOf(SynapseRequestError);
+      expect(err).toBeInstanceOf(Error);
+      expect((err as SynapseRequestError).status).toBe(status);
+      expect((err as SynapseRequestError).name).toBe("SynapseRequestError");
+      // existing message is preserved for callers matching on it
+      expect((err as Error).message).toBe(
+        `synapse request failed: status ${status}`,
+      );
+    });
+  }
+
+  test("a transport failure throws a SynapseRequestError with no status", async () => {
+    const { fetchImpl } = makeFetch({ throws: true });
+    const client = createSynapseClient({
+      baseUrl: "https://g",
+      apiKey: "k",
+      model: "m",
+      fetchImpl,
+    });
+
+    const err = await client
+      .messages({ system: "s", messages: [], maxTokens: 1 })
+      .catch((e) => e);
+
+    expect(err).toBeInstanceOf(SynapseRequestError);
+    expect((err as SynapseRequestError).status).toBeUndefined();
+    expect((err as Error).message).toBe("synapse request failed: network down");
   });
 });
