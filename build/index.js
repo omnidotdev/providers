@@ -81782,12 +81782,28 @@ var firstCsv = (value) => {
   const first = value?.split(",")[0]?.trim();
   return first ? first : undefined;
 };
+var csvEntries = (value) => (value ?? "").split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+var rightmostUntrusted = (value, hops) => {
+  const entries = csvEntries(value);
+  if (entries.length === 0)
+    return;
+  return entries[Math.max(0, entries.length - hops)];
+};
+var normalizeHops = (hops) => Number.isInteger(hops) && hops > 0 ? hops : 0;
 var clientIp = ({
   headers,
   socketIp,
-  trustProxy = true
+  trustProxy = true,
+  trustedProxyHops
 }) => {
-  if (trustProxy) {
+  if (trustProxy && trustedProxyHops !== undefined) {
+    const hops = normalizeHops(trustedProxyHops);
+    if (hops > 0) {
+      const forwarded = rightmostUntrusted(headers.get("x-forwarded-for"), hops);
+      if (forwarded)
+        return forwarded;
+    }
+  } else if (trustProxy) {
     const forwarded = firstCsv(headers.get("x-forwarded-for"));
     if (forwarded)
       return forwarded;
