@@ -10,10 +10,29 @@
  *
  * It uses the global `fetch` (no SDK, no node imports) so it is trivially
  * mockable, and it never lets provider/transport detail reach the caller: a
- * failure throws a generic Error for the caller to log server-side and surface
- * as a safe message. A per-request key (BYOK) overrides the configured key and
- * is the only path a caller's own key ever takes
+ * failure throws a {@link SynapseRequestError} with a generic message for the
+ * caller to log server-side and surface as a safe message. The error carries
+ * the gateway's HTTP `status` so a product can map it onto its own UX (e.g.
+ * 402 insufficient credits to an out-of-credits prompt, 503 to unavailable).
+ * A per-request key (BYOK) overrides the configured key and is the only path a
+ * caller's own key ever takes
  */
+
+/**
+ * A failed Synapse call. `message` stays generic (`synapse request failed: ...`)
+ * and never carries provider detail. `status` is the gateway's HTTP status for
+ * a non-2xx response (e.g. 402 insufficient credits, 503 unavailable), or
+ * `undefined` for a transport failure, timeout, or missing key
+ */
+export class SynapseRequestError extends Error {
+  readonly status: number | undefined;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = "SynapseRequestError";
+    this.status = status;
+  }
+}
 
 /** A text block within a multimodal message. */
 export interface SynapseTextBlock {
@@ -147,7 +166,9 @@ export const createSynapseClient = (
       const key = input.apiKey ?? config.apiKey;
       if (!key) {
         // the managed path must be gated before here, this guards misuse
-        throw new Error("synapse request failed: no api key available");
+        throw new SynapseRequestError(
+          "synapse request failed: no api key available",
+        );
       }
 
       const controller = new AbortController();
@@ -175,13 +196,16 @@ export const createSynapseClient = (
         });
       } catch (err) {
         const reason = err instanceof Error ? err.message : "transport error";
-        throw new Error(`synapse request failed: ${reason}`);
+        throw new SynapseRequestError(`synapse request failed: ${reason}`);
       } finally {
         if (timeout) clearTimeout(timeout);
       }
 
       if (!res.ok) {
-        throw new Error(`synapse request failed: status ${res.status}`);
+        throw new SynapseRequestError(
+          `synapse request failed: status ${res.status}`,
+          res.status,
+        );
       }
 
       const data = (await res.json()) as AnthropicResponseBody;

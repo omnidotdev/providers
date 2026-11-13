@@ -1,10 +1,17 @@
-export { createSynapseProvisioner } from "./provisioner";
 export {
+  SynapseProvisionError,
+  SynapseScopeError,
+  createSynapseProvisioner,
+} from "./provisioner";
+export {
+  SynapseRequestError,
   createSynapseClient,
   estimateSynapseCostCents,
 } from "./synapse";
 
 export type {
+  SynapseBillingEntity,
+  SynapseBillingEntityType,
   SynapseProvisioner,
   SynapseProvisionerConfig,
   SynapseUserMeta,

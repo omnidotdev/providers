@@ -10,10 +10,23 @@
  *
  * It uses the global `fetch` (no SDK, no node imports) so it is trivially
  * mockable, and it never lets provider/transport detail reach the caller: a
- * failure throws a generic Error for the caller to log server-side and surface
- * as a safe message. A per-request key (BYOK) overrides the configured key and
- * is the only path a caller's own key ever takes
+ * failure throws a {@link SynapseRequestError} with a generic message for the
+ * caller to log server-side and surface as a safe message. The error carries
+ * the gateway's HTTP `status` so a product can map it onto its own UX (e.g.
+ * 402 insufficient credits to an out-of-credits prompt, 503 to unavailable).
+ * A per-request key (BYOK) overrides the configured key and is the only path a
+ * caller's own key ever takes
  */
+/**
+ * A failed Synapse call. `message` stays generic (`synapse request failed: ...`)
+ * and never carries provider detail. `status` is the gateway's HTTP status for
+ * a non-2xx response (e.g. 402 insufficient credits, 503 unavailable), or
+ * `undefined` for a transport failure, timeout, or missing key
+ */
+export declare class SynapseRequestError extends Error {
+    readonly status: number | undefined;
+    constructor(message: string, status?: number);
+}
 /** A text block within a multimodal message. */
 export interface SynapseTextBlock {
     type: "text";
