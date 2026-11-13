@@ -1,7 +1,7 @@
 export { GatekeeperApiKeyProvider, NoopApiKeyProvider, createApiKeyProvider, } from "./apiKey";
 export { GatekeeperOrgClient, GatekeeperOrgError, OMNI_CLAIMS_NAMESPACE, createAuthCache, createGetAuth, createOidcClient, createOmniOAuthConfig, ensureFreshAccessToken, extractOrgClaims, fetchUserInfo, isInvalidGrant, normalizeWorkspaceLinks, publicWorkspaceLinks, resolveAccessToken, verifyAccessToken, } from "./auth";
 export { WARDEN_RELATIONS, WardenAuthzProvider, createAuthzProvider, } from "./authz";
-export { AetherBillingProvider, BILLING_WRITE_FAILED_EVENT, DEFAULT_CREDIT_COGS_MARKUP, NoopBillingProvider, createBillingProvider, createEntitlementCapResolver, createSpendBreaker, createStaticCapResolver, creditsFromCostCents, isPermissionError, isWithinLimit, probeWriteScope, safePaymentWrite, utcDayKey, } from "./billing";
+export { AetherBillingProvider, BILLING_WRITE_FAILED_EVENT, CENTS_PER_CREDIT, CREDITS_PER_USD, DEFAULT_CREDIT_COGS_MARKUP, NoopBillingProvider, createBillingProvider, createEntitlementCapResolver, createSpendBreaker, createStaticCapResolver, creditsFromBalanceUsd, creditsFromChargeUsd, creditsFromCostCents, formatCredits, isPermissionError, isWithinLimit, probeWriteScope, safePaymentWrite, usdFromCredits, utcDayKey, } from "./billing";
 export { OMNI_COMMUNITY_SOCIAL_LINKS, OMNI_SOCIALS, OMNI_SOCIAL_LINKS, } from "./brand";
 export { PUBLIC_CATALOG_QUERY, fetchPublicCatalog, normalizePublicCatalog, } from "./catalog";
 export { HttpEventsProvider, IggyEventsProvider, NoopEventsProvider, createEventsProvider, eventMeta, registerSchemas, } from "./events";

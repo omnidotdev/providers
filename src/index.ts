@@ -33,17 +33,23 @@ export {
 export {
   AetherBillingProvider,
   BILLING_WRITE_FAILED_EVENT,
+  CENTS_PER_CREDIT,
+  CREDITS_PER_USD,
   DEFAULT_CREDIT_COGS_MARKUP,
   NoopBillingProvider,
   createBillingProvider,
   createEntitlementCapResolver,
   createSpendBreaker,
   createStaticCapResolver,
+  creditsFromBalanceUsd,
+  creditsFromChargeUsd,
   creditsFromCostCents,
+  formatCredits,
   isPermissionError,
   isWithinLimit,
   probeWriteScope,
   safePaymentWrite,
+  usdFromCredits,
   utcDayKey,
 } from "./billing";
 // Brand

@@ -52,6 +52,14 @@ export {
   createStaticCapResolver,
 } from "./capResolver";
 export {
+  CREDITS_PER_USD,
+  creditsFromBalanceUsd,
+  creditsFromChargeUsd,
+  formatCredits,
+  usdFromCredits,
+} from "./creditDisplay";
+export {
+  CENTS_PER_CREDIT,
   DEFAULT_CREDIT_COGS_MARKUP,
   creditsFromCostCents,
   isWithinLimit,

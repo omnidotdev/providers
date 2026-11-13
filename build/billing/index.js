@@ -546,11 +546,67 @@ var isWithinLimit = (entitlements, featureKey, currentCount, defaultLimits) => {
   }
   return true;
 };
+var CENTS_PER_CREDIT = 1;
 var DEFAULT_CREDIT_COGS_MARKUP = 2;
 var creditsFromCostCents = (costCents, markup = DEFAULT_CREDIT_COGS_MARKUP) => {
   if (!(costCents > 0) || !(markup > 0))
     return 0;
-  return Math.ceil(costCents * markup);
+  return Math.ceil(costCents * markup / CENTS_PER_CREDIT);
+};
+
+// src/billing/creditDisplay.ts
+var CENTS_PER_USD = 100;
+var CREDITS_PER_USD = CENTS_PER_USD / CENTS_PER_CREDIT;
+var DECIMAL_PATTERN = /^(-?)(\d+)(?:\.(\d+))?$/;
+var toDecimalText = (amountUsd) => {
+  if (typeof amountUsd === "string")
+    return amountUsd;
+  if (!Number.isFinite(amountUsd)) {
+    throw new TypeError(`Invalid USD amount: ${amountUsd}`);
+  }
+  const text = String(amountUsd);
+  if (!/e/i.test(text))
+    return text;
+  return Number.isInteger(amountUsd) ? BigInt(amountUsd).toString() : amountUsd.toFixed(20);
+};
+var usdToCredits = (amountUsd, rounding) => {
+  const text = toDecimalText(amountUsd);
+  const match = DECIMAL_PATTERN.exec(text);
+  if (!match) {
+    throw new TypeError(`Invalid USD amount: ${JSON.stringify(text)}`);
+  }
+  const [, sign, whole, fraction = ""] = match;
+  const units = BigInt(`${sign}${whole}${fraction}`);
+  const numerator = units * BigInt(CENTS_PER_USD);
+  const denominator = 10n ** BigInt(fraction.length) * BigInt(CENTS_PER_CREDIT);
+  let credits = numerator / denominator;
+  if (numerator % denominator !== 0n) {
+    if (rounding === "floor" && numerator < 0n)
+      credits -= 1n;
+    if (rounding === "ceil" && numerator > 0n)
+      credits += 1n;
+  }
+  if (credits > BigInt(Number.MAX_SAFE_INTEGER) || credits < BigInt(Number.MIN_SAFE_INTEGER)) {
+    throw new RangeError(`USD amount out of range for credits: ${text}`);
+  }
+  return Number(credits);
+};
+var creditsFromBalanceUsd = (balanceUsd) => usdToCredits(balanceUsd, "floor");
+var creditsFromChargeUsd = (chargeUsd) => usdToCredits(chargeUsd, "ceil");
+var usdFromCredits = (credits) => {
+  if (!Number.isInteger(credits)) {
+    throw new TypeError(`Credits must be a whole number: ${credits}`);
+  }
+  if (!Number.isSafeInteger(credits)) {
+    throw new RangeError(`Credits out of range: ${credits}`);
+  }
+  return credits * CENTS_PER_CREDIT / CENTS_PER_USD + 0;
+};
+var formatCredits = (credits, locale) => {
+  if (!Number.isFinite(credits)) {
+    throw new TypeError(`Invalid credits: ${credits}`);
+  }
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Math.floor(credits) + 0);
 };
 // src/billing/safePaymentWrite.ts
 var BILLING_WRITE_FAILED_EVENT = "billing.write.failed";
@@ -672,16 +728,22 @@ var createBillingProvider = (config) => {
 export {
   AetherBillingProvider,
   BILLING_WRITE_FAILED_EVENT,
+  CENTS_PER_CREDIT,
+  CREDITS_PER_USD,
   DEFAULT_CREDIT_COGS_MARKUP,
   NoopBillingProvider,
   createBillingProvider,
   createEntitlementCapResolver,
   createSpendBreaker,
   createStaticCapResolver,
+  creditsFromBalanceUsd,
+  creditsFromChargeUsd,
   creditsFromCostCents,
+  formatCredits,
   isPermissionError,
   isWithinLimit,
   probeWriteScope,
   safePaymentWrite,
+  usdFromCredits,
   utcDayKey
 };
