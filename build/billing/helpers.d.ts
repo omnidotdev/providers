@@ -12,6 +12,13 @@ import type { EntitlementsResponse } from "./interface";
  */
 declare const isWithinLimit: (entitlements: EntitlementsResponse | null, featureKey: string, currentCount: number, defaultLimits?: Record<string, Record<string, number>>) => boolean;
 /**
+ * Retail US cents per credit: the one fleet definition of the credit unit.
+ * 1 credit = $0.01 of retail (post-markup) spend, everywhere a credit is shown
+ * or estimated. Every cents/USD/credit conversion in this package derives from
+ * it. See plans/2026-11-12-fleet-ai-billing-ecosystem-design.md
+ */
+declare const CENTS_PER_CREDIT = 1;
+/**
  * Default markup from real model spend to billable credits, shared across the
  * fleet. A credit is a retail unit, not raw cost: 2.0 yields ~50% gross margin
  * over model spend (the standard 1.3-3x range for resold inference). Products
@@ -22,7 +29,8 @@ declare const isWithinLimit: (entitlements: EntitlementsResponse | null, feature
 declare const DEFAULT_CREDIT_COGS_MARKUP = 2;
 /**
  * Convert real model spend (US cents) into billable credits, where 1 credit is
- * a retail unit worth 1 US cent at a 1.0 markup. Rounded up so any nonzero cost
+ * a retail unit worth {@link CENTS_PER_CREDIT} US cent(s), so at a 1.0 markup
+ * cost cents and credits coincide. Rounded up so any nonzero cost
  * charges at least one credit. The markup (default 2.0) carries gross margin, so
  * the included allowance is not sold at cost.
  *
@@ -36,4 +44,4 @@ declare const DEFAULT_CREDIT_COGS_MARKUP = 2;
  * @returns Billable credits (a non-negative integer)
  */
 declare const creditsFromCostCents: (costCents: number, markup?: number) => number;
-export { DEFAULT_CREDIT_COGS_MARKUP, creditsFromCostCents, isWithinLimit };
+export { CENTS_PER_CREDIT, DEFAULT_CREDIT_COGS_MARKUP, creditsFromCostCents, isWithinLimit, };

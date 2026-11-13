@@ -19,7 +19,8 @@ type BillingProviderConfig = ({
 declare const createBillingProvider: (config: BillingProviderConfig) => BillingProvider;
 export { AetherBillingProvider } from "./aether";
 export { createEntitlementCapResolver, createStaticCapResolver, } from "./capResolver";
-export { DEFAULT_CREDIT_COGS_MARKUP, creditsFromCostCents, isWithinLimit, } from "./helpers";
+export { CREDITS_PER_USD, creditsFromBalanceUsd, creditsFromChargeUsd, formatCredits, usdFromCredits, } from "./creditDisplay";
+export { CENTS_PER_CREDIT, DEFAULT_CREDIT_COGS_MARKUP, creditsFromCostCents, isWithinLimit, } from "./helpers";
 export { NoopBillingProvider } from "./noop";
 export { BILLING_WRITE_FAILED_EVENT, isPermissionError, probeWriteScope, safePaymentWrite, } from "./safePaymentWrite";
 export { createSpendBreaker, utcDayKey } from "./spendBreaker";
