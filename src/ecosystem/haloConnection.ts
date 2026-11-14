@@ -37,8 +37,17 @@ const PRODUCT_QUERY = `query Product($rowId: UUID!) {
   product(rowId: $rowId) { rowId title status store { domain } }
 }`;
 
-const QUICK_BUY = `mutation QuickBuy($input: QuickBuyCheckoutInput!) {
-  quickBuyCheckout(input: $input) { checkoutUrl }
+/** Halo's quick-buy mutation takes flat arguments, not an input object */
+const QUICK_BUY = `mutation QuickBuy(
+  $productId: UUID!
+  $quantity: Int
+  $email: String
+  $successUrl: String!
+  $cancelUrl: String!
+) {
+  quickBuyCheckout(productId: $productId, quantity: $quantity, email: $email, successUrl: $successUrl, cancelUrl: $cancelUrl, uiMode: "hosted") {
+    checkoutUrl
+  }
 }`;
 
 /**
@@ -91,13 +100,11 @@ export const createHaloConnection = (config: HaloConfig): HaloConnection => {
         const data = await request<{
           quickBuyCheckout?: { checkoutUrl?: string };
         }>(QUICK_BUY, {
-          input: {
-            productId: input.productId,
-            quantity: input.quantity,
-            email: input.email,
-            successUrl: input.successUrl,
-            cancelUrl: input.cancelUrl,
-          },
+          productId: input.productId,
+          quantity: input.quantity,
+          email: input.email,
+          successUrl: input.successUrl,
+          cancelUrl: input.cancelUrl,
         });
 
         const url = data.quickBuyCheckout?.checkoutUrl;

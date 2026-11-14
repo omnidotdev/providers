@@ -15,18 +15,24 @@ describe("herald connection", () => {
     });
   });
 
-  it("subscribes via addContact when configured", async () => {
+  it("subscribes via addContact, reading Herald's ContactPayload", async () => {
+    let sent = "";
     const conn = createHeraldConnection({
       apiUrl: "https://herald/graphql",
       apiKey: "k",
-      request: (async () => ({
-        addContact: { contact: { id: "c1" } },
-      })) as never,
+      request: (async (query: string) => {
+        sent = query;
+
+        return { addContact: { contactId: "c1", address: "x@y.z" } };
+      }) as never,
     });
 
     expect(await conn.subscribe({ audienceId: "a", email: "x@y.z" })).toEqual({
       ok: true,
     });
+    // ContactPayload has no nested `contact`; selecting it fails validation
+    expect(sent).toContain("{ contactId }");
+    expect(sent).not.toContain("contact {");
   });
 });
 
