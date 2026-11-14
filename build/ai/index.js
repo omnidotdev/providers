@@ -101,6 +101,18 @@ class SynapseRequestError extends Error {
     this.status = status;
   }
 }
+var SYNAPSE_COST_HEADERS = {
+  chargedUsd: "x-synapse-cost-usd",
+  credits: "x-synapse-credits",
+  providerCostUsd: "x-synapse-provider-cost-usd"
+};
+var costHeader = (headers, name) => {
+  const raw = headers.get(name);
+  if (raw === null || raw.trim() === "")
+    return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+};
 var estimateSynapseCostCents = (inputTokens, outputTokens, rate) => inputTokens / 1e6 * rate.inputCentsPerMTok + outputTokens / 1e6 * rate.outputCentsPerMTok;
 var createSynapseClient = (config) => {
   const baseUrl = config.baseUrl.replace(/\/+$/, "");
@@ -146,12 +158,19 @@ var createSynapseClient = (config) => {
       const text = (data.content ?? []).filter((block) => block.type === "text" && typeof block.text === "string").map((block) => block.text).join("");
       const inputTokens = data.usage?.input_tokens ?? 0;
       const outputTokens = data.usage?.output_tokens ?? 0;
-      const costCents = typeof data.usage?.cost_cents === "number" ? data.usage.cost_cents : config.rate ? estimateSynapseCostCents(inputTokens, outputTokens, config.rate) : null;
-      return { text, usage: { inputTokens, outputTokens, costCents } };
+      const providerCostUsd = costHeader(res.headers, SYNAPSE_COST_HEADERS.providerCostUsd);
+      const costCents = providerCostUsd !== null ? providerCostUsd * 100 : config.rate ? estimateSynapseCostCents(inputTokens, outputTokens, config.rate) : null;
+      const chargedUsd = costHeader(res.headers, SYNAPSE_COST_HEADERS.chargedUsd);
+      const credits = costHeader(res.headers, SYNAPSE_COST_HEADERS.credits);
+      return {
+        text,
+        usage: { inputTokens, outputTokens, costCents, chargedUsd, credits }
+      };
     }
   };
 };
 export {
+  SYNAPSE_COST_HEADERS,
   SynapseProvisionError,
   SynapseRequestError,
   SynapseScopeError,
