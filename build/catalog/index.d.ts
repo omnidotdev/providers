@@ -13,7 +13,7 @@
  * this throws on a failed fetch.
  */
 /** The public catalog surface. `products` is `is_public`-filtered server-side. */
-export declare const PUBLIC_CATALOG_QUERY = "{\n  realms(first: 100) { nodes { slug name icon tagline description } }\n  products(first: 200) {\n    nodes {\n      slug name icon description tagline websiteUrl docsUrl repoUrl license brand\n      selfHostable releaseDate status realm { slug }\n      productDeploymentMethods { nodes { deploymentMethod { slug } } }\n    }\n  }\n  bundles(first: 50) {\n    nodes {\n      slug name description appGrants monthlyPrice yearlyPrice\n      monthlyCreditAllowance\n    }\n  }\n  productLinks(first: 1000) {\n    nodes {\n      slug sourceProduct { slug } targetProduct { slug } description status\n      productLinkRelations { nodes { relationType { slug } } }\n    }\n  }\n}";
+export declare const PUBLIC_CATALOG_QUERY = "{\n  realms(first: 100) { nodes { slug name icon tagline description } }\n  products(first: 200) {\n    nodes {\n      slug name icon description tagline websiteUrl docsUrl repoUrl license brand\n      selfHostable releaseDate status realm { slug }\n      productDeploymentMethods { nodes { deploymentMethod { slug } } }\n    }\n  }\n  bundles(first: 50) {\n    nodes {\n      slug name description appGrants monthlyPrice yearlyPrice\n      monthlyAiCredits\n    }\n  }\n  productLinks(first: 1000) {\n    nodes {\n      slug sourceProduct { slug } targetProduct { slug } description status\n      productLinkRelations { nodes { relationType { slug } } }\n    }\n  }\n}";
 export interface PublicRealm {
     slug: string;
     name: string;
@@ -67,7 +67,11 @@ export interface PublicBundle {
     appGrants: Record<string, string>;
     monthlyPrice: number;
     yearlyPrice: number;
-    monthlyCreditAllowance: number;
+    /**
+     * Monthly shared AI credit pool in whole credits (1 credit = $0.01 of retail
+     * AI spend), spendable on any product's managed AI
+     */
+    monthlyAiCredits: number;
 }
 export interface PublicConnection {
     id: string;
@@ -124,7 +128,7 @@ interface CatalogGqlData {
         appGrants: Record<string, string>;
         monthlyPrice: number;
         yearlyPrice: number;
-        monthlyCreditAllowance?: string | number | null;
+        monthlyAiCredits?: number | null;
     }>;
     productLinks: Nodes<{
         slug: string;

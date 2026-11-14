@@ -1,6 +1,10 @@
 import { describe, expect, mock, test } from "bun:test";
 
-import { fetchPublicCatalog, normalizePublicCatalog } from "./index";
+import {
+  PUBLIC_CATALOG_QUERY,
+  fetchPublicCatalog,
+  normalizePublicCatalog,
+} from "./index";
 
 const sampleData = {
   realms: {
@@ -38,7 +42,7 @@ const sampleData = {
         appGrants: { runa: "pro" },
         monthlyPrice: 1900,
         yearlyPrice: 18000,
-        monthlyCreditAllowance: "15.0000",
+        monthlyAiCredits: 1500,
       },
     ],
   },
@@ -73,8 +77,15 @@ describe("normalizePublicCatalog", () => {
     expect(catalog.realms.map((r) => r.slug)).toEqual(["core"]);
   });
 
-  test("coerces bundle credit allowance to a number", () => {
-    expect(catalog.bundles[0]?.monthlyCreditAllowance).toBe(15);
+  test("carries the bundle AI allowance in whole credits", () => {
+    expect(catalog.bundles[0]?.monthlyAiCredits).toBe(1500);
+    expect(catalog.bundles[0]).not.toHaveProperty("monthlyCreditAllowance");
+  });
+
+  // R2: one unit. The deprecated USD field must not creep back into the query
+  test("queries the credit allowance, never the deprecated USD field", () => {
+    expect(PUBLIC_CATALOG_QUERY).toContain("monthlyAiCredits");
+    expect(PUBLIC_CATALOG_QUERY).not.toContain("monthlyCreditAllowance");
   });
 
   test("flattens product links into single-pair connections", () => {

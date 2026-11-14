@@ -28,7 +28,7 @@ export const PUBLIC_CATALOG_QUERY = `{
   bundles(first: 50) {
     nodes {
       slug name description appGrants monthlyPrice yearlyPrice
-      monthlyCreditAllowance
+      monthlyAiCredits
     }
   }
   productLinks(first: 1000) {
@@ -96,7 +96,11 @@ export interface PublicBundle {
   appGrants: Record<string, string>;
   monthlyPrice: number;
   yearlyPrice: number;
-  monthlyCreditAllowance: number;
+  /**
+   * Monthly shared AI credit pool in whole credits (1 credit = $0.01 of retail
+   * AI spend), spendable on any product's managed AI
+   */
+  monthlyAiCredits: number;
 }
 
 export interface PublicConnection {
@@ -150,7 +154,7 @@ interface CatalogGqlData {
     appGrants: Record<string, string>;
     monthlyPrice: number;
     yearlyPrice: number;
-    monthlyCreditAllowance?: string | number | null;
+    monthlyAiCredits?: number | null;
   }>;
   productLinks: Nodes<{
     slug: string;
@@ -209,7 +213,7 @@ export const normalizePublicCatalog = (data: CatalogGqlData): PublicCatalog => {
     appGrants: b.appGrants,
     monthlyPrice: b.monthlyPrice,
     yearlyPrice: b.yearlyPrice,
-    monthlyCreditAllowance: Number(b.monthlyCreditAllowance ?? 0),
+    monthlyAiCredits: b.monthlyAiCredits ?? 0,
   }));
 
   const connections: PublicConnection[] = data.productLinks.nodes
