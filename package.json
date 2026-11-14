@@ -209,7 +209,7 @@
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.997.0",
     "@aws-sdk/s3-request-presigner": "^3.997.0",
-    "@biomejs/biome": "2.6.6",
+    "@biomejs/biome": "2.6.7",
     "@changesets/changelog-github": "^1.0.0",
     "@changesets/cli": "^3.0.1",
     "@envelop/types": "^5.0.0",
