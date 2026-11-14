@@ -212,7 +212,7 @@
     "@biomejs/biome": "2.6.6",
     "@changesets/changelog-github": "^1.0.0",
     "@changesets/cli": "^3.0.1",
-    "@envelop/types": "^5.0.0",
+    "@envelop/types": "^6.0.0",
     "@escape.tech/graphql-armor": "^3.2.0",
     "@iggy.rs/sdk": "^1.0.6",
     "@openfeature/server-sdk": "^1.22.0",
