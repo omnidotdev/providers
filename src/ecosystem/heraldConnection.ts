@@ -17,8 +17,12 @@ export interface HeraldConnection {
   subscribe(input: HeraldSubscribeInput): Promise<{ ok: boolean }>;
 }
 
+/**
+ * Herald returns `ContactPayload { contactId address }` (not a nested
+ * `contact` object), so select `contactId`
+ */
 const ADD_CONTACT = `mutation AddContact($input: AddContactInput!) {
-  addContact(input: $input) { contact { id } }
+  addContact(input: $input) { contactId }
 }`;
 
 /**
@@ -42,7 +46,7 @@ export const createHeraldConnection = (
 
       try {
         const data = await request<{
-          addContact?: { contact?: { id?: string } };
+          addContact?: { contactId?: string };
         }>(ADD_CONTACT, {
           input: {
             audienceId: input.audienceId,
@@ -51,7 +55,7 @@ export const createHeraldConnection = (
           },
         });
 
-        return { ok: Boolean(data.addContact?.contact?.id) };
+        return { ok: Boolean(data.addContact?.contactId) };
       } catch {
         return { ok: false };
       }

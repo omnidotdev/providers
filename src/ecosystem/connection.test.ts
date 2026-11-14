@@ -87,3 +87,37 @@ describe("halo connection", () => {
     });
   });
 });
+
+describe("halo quick buy", () => {
+  it("sends quickBuyCheckout flat arguments, matching Halo's schema", async () => {
+    const sent = { query: "", variables: {} as Record<string, unknown> };
+    const conn = createHaloConnection({
+      apiUrl: "https://halo/graphql",
+      storefrontBase: "https://halo.test",
+      request: (async (query: string, variables: Record<string, unknown>) => {
+        sent.query = query;
+        sent.variables = variables;
+
+        return { quickBuyCheckout: { checkoutUrl: "https://stripe/s" } };
+      }) as never,
+    });
+
+    const result = await conn.createBuyCheckout({
+      productId: "p1",
+      quantity: 1,
+      successUrl: "https://shop.test/?ok",
+      cancelUrl: "https://shop.test/?no",
+    });
+
+    expect(result).toEqual({ url: "https://stripe/s" });
+    expect(sent.query).toContain("quickBuyCheckout(productId: $productId");
+    expect(sent.query).not.toContain("QuickBuyCheckoutInput");
+    expect(sent.variables).toEqual({
+      productId: "p1",
+      quantity: 1,
+      email: undefined,
+      successUrl: "https://shop.test/?ok",
+      cancelUrl: "https://shop.test/?no",
+    });
+  });
+});

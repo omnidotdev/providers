@@ -105,8 +105,16 @@ var createCrystalConnection = (config) => {
 var PRODUCT_QUERY = `query Product($rowId: UUID!) {
   product(rowId: $rowId) { rowId title status store { domain } }
 }`;
-var QUICK_BUY = `mutation QuickBuy($input: QuickBuyCheckoutInput!) {
-  quickBuyCheckout(input: $input) { checkoutUrl }
+var QUICK_BUY = `mutation QuickBuy(
+  $productId: UUID!
+  $quantity: Int
+  $email: String
+  $successUrl: String!
+  $cancelUrl: String!
+) {
+  quickBuyCheckout(productId: $productId, quantity: $quantity, email: $email, successUrl: $successUrl, cancelUrl: $cancelUrl, uiMode: "hosted") {
+    checkoutUrl
+  }
 }`;
 var createHaloConnection = (config) => {
   const request = config.request;
@@ -137,13 +145,11 @@ var createHaloConnection = (config) => {
         return null;
       try {
         const data = await request(QUICK_BUY, {
-          input: {
-            productId: input.productId,
-            quantity: input.quantity,
-            email: input.email,
-            successUrl: input.successUrl,
-            cancelUrl: input.cancelUrl
-          }
+          productId: input.productId,
+          quantity: input.quantity,
+          email: input.email,
+          successUrl: input.successUrl,
+          cancelUrl: input.cancelUrl
         });
         const url = data.quickBuyCheckout?.checkoutUrl;
         return url ? { url } : null;
@@ -155,7 +161,7 @@ var createHaloConnection = (config) => {
 };
 // src/ecosystem/heraldConnection.ts
 var ADD_CONTACT = `mutation AddContact($input: AddContactInput!) {
-  addContact(input: $input) { contact { id } }
+  addContact(input: $input) { contactId }
 }`;
 var createHeraldConnection = (config) => {
   const request = config.request;
@@ -173,7 +179,7 @@ var createHeraldConnection = (config) => {
             attributes: input.attributes
           }
         });
-        return { ok: Boolean(data.addContact?.contact?.id) };
+        return { ok: Boolean(data.addContact?.contactId) };
       } catch {
         return { ok: false };
       }
