@@ -68,11 +68,33 @@ export interface SynapseUsage {
     inputTokens: number;
     outputTokens: number;
     /**
-     * Spend for this call in US cents: Synapse's reported cost when present, else
-     * estimated from tokens when a rate is configured, else null (unknown)
+     * Real (pre-markup) model spend for this call in US cents, possibly
+     * fractional: the gateway's reported provider cost when present, else
+     * estimated from tokens when a rate is configured, else null (unknown).
+     * Feeds real-cents spend breakers, never billing
      */
     costCents: number | null;
+    /**
+     * Retail amount the gateway charged for this call in US dollars (after the
+     * product margin), or null when the gateway reported none (e.g. no billing
+     * identity). Zero for a BYOK call
+     */
+    chargedUsd: number | null;
+    /** {@link chargedUsd} in display credits ($0.01 each), or null */
+    credits: number | null;
 }
+/**
+ * Response headers carrying the gateway's per-call cost (non-streaming calls).
+ * Amounts are decimal strings in US dollars, except credits
+ */
+export declare const SYNAPSE_COST_HEADERS: {
+    /** Retail amount charged, after the product margin */
+    readonly chargedUsd: "x-synapse-cost-usd";
+    /** {@link SYNAPSE_COST_HEADERS.chargedUsd} in credits ($0.01 each) */
+    readonly credits: "x-synapse-credits";
+    /** Upstream provider cost before the margin (real spend) */
+    readonly providerCostUsd: "x-synapse-provider-cost-usd";
+};
 /** The result of a messages call: concatenated text plus usage. */
 export interface SynapseResult {
     text: string;

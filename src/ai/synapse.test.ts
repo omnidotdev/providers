@@ -11,6 +11,7 @@ const makeFetch = (res: {
   ok?: boolean;
   status?: number;
   body?: unknown;
+  headers?: Record<string, string>;
   throws?: boolean;
 }): {
   fetchImpl: typeof fetch;
@@ -23,6 +24,7 @@ const makeFetch = (res: {
     return {
       ok: res.ok ?? true,
       status: res.status ?? 200,
+      headers: new Headers(res.headers ?? {}),
       json: async () => res.body ?? {},
     } as Response;
   }) as unknown as typeof fetch;
@@ -166,9 +168,14 @@ describe("createSynapseClient.messages", () => {
     expect(result.usage.costCents).toBeCloseTo(0.105, 6);
   });
 
-  test("uses Synapse's reported cost_cents when present", async () => {
+  test("uses the gateway's reported provider cost over the estimate", async () => {
     const { fetchImpl } = makeFetch({
-      body: { ...OK_BODY, usage: { ...OK_BODY.usage, cost_cents: 7 } },
+      body: OK_BODY,
+      headers: {
+        "x-synapse-provider-cost-usd": "0.0712",
+        "x-synapse-cost-usd": "0.1424",
+        "x-synapse-credits": "14.24",
+      },
     });
     const client = createSynapseClient({
       baseUrl: "https://g",
@@ -182,7 +189,57 @@ describe("createSynapseClient.messages", () => {
       messages: [],
       maxTokens: 10,
     });
-    expect(result.usage.costCents).toBe(7);
+    // Real spend in cents is the pre-margin provider cost, never the retail charge
+    expect(result.usage.costCents).toBeCloseTo(7.12, 6);
+    expect(result.usage.chargedUsd).toBeCloseTo(0.1424, 6);
+    expect(result.usage.credits).toBeCloseTo(14.24, 6);
+  });
+
+  test("a zero reported cost (BYOK) is a real zero, not unknown", async () => {
+    const { fetchImpl } = makeFetch({
+      body: OK_BODY,
+      headers: {
+        "x-synapse-provider-cost-usd": "0",
+        "x-synapse-cost-usd": "0",
+        "x-synapse-credits": "0",
+      },
+    });
+    const client = createSynapseClient({
+      baseUrl: "https://g",
+      apiKey: "k",
+      model: "m",
+      rate: { inputCentsPerMTok: 300, outputCentsPerMTok: 1500 },
+      fetchImpl,
+    });
+    const result = await client.messages({
+      system: "",
+      messages: [],
+      maxTokens: 10,
+    });
+    expect(result.usage.costCents).toBe(0);
+    expect(result.usage.chargedUsd).toBe(0);
+  });
+
+  test("ignores a malformed cost header and falls back to the estimate", async () => {
+    const { fetchImpl } = makeFetch({
+      body: OK_BODY,
+      headers: { "x-synapse-provider-cost-usd": "not-a-number" },
+    });
+    const client = createSynapseClient({
+      baseUrl: "https://g",
+      apiKey: "k",
+      model: "m",
+      rate: { inputCentsPerMTok: 300, outputCentsPerMTok: 1500 },
+      fetchImpl,
+    });
+    const result = await client.messages({
+      system: "",
+      messages: [],
+      maxTokens: 10,
+    });
+    expect(result.usage.costCents).toBeCloseTo(0.105, 6);
+    expect(result.usage.chargedUsd).toBeNull();
+    expect(result.usage.credits).toBeNull();
   });
 
   test("cost is null when no rate is configured and none is reported", async () => {

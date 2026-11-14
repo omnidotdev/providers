@@ -85,11 +85,42 @@ export interface SynapseUsage {
   inputTokens: number;
   outputTokens: number;
   /**
-   * Spend for this call in US cents: Synapse's reported cost when present, else
-   * estimated from tokens when a rate is configured, else null (unknown)
+   * Real (pre-markup) model spend for this call in US cents, possibly
+   * fractional: the gateway's reported provider cost when present, else
+   * estimated from tokens when a rate is configured, else null (unknown).
+   * Feeds real-cents spend breakers, never billing
    */
   costCents: number | null;
+  /**
+   * Retail amount the gateway charged for this call in US dollars (after the
+   * product margin), or null when the gateway reported none (e.g. no billing
+   * identity). Zero for a BYOK call
+   */
+  chargedUsd: number | null;
+  /** {@link chargedUsd} in display credits ($0.01 each), or null */
+  credits: number | null;
 }
+
+/**
+ * Response headers carrying the gateway's per-call cost (non-streaming calls).
+ * Amounts are decimal strings in US dollars, except credits
+ */
+export const SYNAPSE_COST_HEADERS = {
+  /** Retail amount charged, after the product margin */
+  chargedUsd: "x-synapse-cost-usd",
+  /** {@link SYNAPSE_COST_HEADERS.chargedUsd} in credits ($0.01 each) */
+  credits: "x-synapse-credits",
+  /** Upstream provider cost before the margin (real spend) */
+  providerCostUsd: "x-synapse-provider-cost-usd",
+} as const;
+
+/** A finite, non-negative number from a cost header, else null */
+const costHeader = (headers: Headers, name: string): number | null => {
+  const raw = headers.get(name);
+  if (raw === null || raw.trim() === "") return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+};
 
 /** The result of a messages call: concatenated text plus usage. */
 export interface SynapseResult {
@@ -137,7 +168,6 @@ interface AnthropicResponseBody {
   usage?: {
     input_tokens?: number;
     output_tokens?: number;
-    cost_cents?: number;
   };
 }
 
@@ -219,14 +249,30 @@ export const createSynapseClient = (
 
       const inputTokens = data.usage?.input_tokens ?? 0;
       const outputTokens = data.usage?.output_tokens ?? 0;
+
+      // The gateway reports what the call actually cost, including any model
+      // it failed over or escalated to, so a reported cost always wins over
+      // the list-rate estimate
+      const providerCostUsd = costHeader(
+        res.headers,
+        SYNAPSE_COST_HEADERS.providerCostUsd,
+      );
       const costCents =
-        typeof data.usage?.cost_cents === "number"
-          ? data.usage.cost_cents
+        providerCostUsd !== null
+          ? providerCostUsd * 100
           : config.rate
             ? estimateSynapseCostCents(inputTokens, outputTokens, config.rate)
             : null;
+      const chargedUsd = costHeader(
+        res.headers,
+        SYNAPSE_COST_HEADERS.chargedUsd,
+      );
+      const credits = costHeader(res.headers, SYNAPSE_COST_HEADERS.credits);
 
-      return { text, usage: { inputTokens, outputTokens, costCents } };
+      return {
+        text,
+        usage: { inputTokens, outputTokens, costCents, chargedUsd, credits },
+      };
     },
   };
 };
