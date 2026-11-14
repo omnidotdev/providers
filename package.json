@@ -232,7 +232,7 @@
     "postgraphile": "^5.0.0-rc.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "typescript": "^5.8.3",
+    "typescript": "^7.0.0",
     "unleash-client": "^6.9.6"
   }
 }
