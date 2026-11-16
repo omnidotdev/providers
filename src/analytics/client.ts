@@ -80,6 +80,12 @@ interface PrismClientConfig {
   maxBatchSize?: number;
   /** Fetch implementation, for tests or non-global-fetch runtimes */
   fetch?: typeof globalThis.fetch;
+  /**
+   * Rewrite the pathname before it is sent, e.g. to collapse capability tokens
+   * or ids in a path (`/c/abc123` to `/c/:id`) so they never reach analytics
+   * storage. Return null to drop the event entirely
+   */
+  sanitizePath?: (pathname: string) => string | null;
 }
 
 interface PrismClient {
@@ -171,6 +177,7 @@ const createPrismClient = (config: PrismClientConfig): PrismClient => {
     flushIntervalMs = DEFAULT_FLUSH_INTERVAL_MS,
     maxBatchSize = DEFAULT_MAX_BATCH_SIZE,
     fetch: fetchImpl,
+    sanitizePath,
   } = config;
 
   // Graceful no-op when the collector is unconfigured, or when running outside
@@ -246,7 +253,12 @@ const createPrismClient = (config: PrismClientConfig): PrismClient => {
   const track = (name: string, properties?: Record<string, unknown>) => {
     const event: PrismEvent = { name, sessionId };
 
-    const path = window.location?.pathname;
+    const rawPath = window.location?.pathname;
+    const path = rawPath && sanitizePath ? sanitizePath(rawPath) : rawPath;
+
+    // the product asked to drop events on this path
+    if (rawPath && path === null) return;
+
     if (path) event.path = path;
 
     const referrer = document.referrer;
