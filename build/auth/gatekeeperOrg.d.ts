@@ -125,6 +125,21 @@ declare class GatekeeperOrgClient {
         data: GatekeeperMember[];
     }>;
     /**
+     * Resolve an IdP subject to the user's email (server-to-server).
+     *
+     * Hits Gatekeeper's service-only `/api/user/resolve-email` route, gated on
+     * `ORG_SYNC_SERVICE_TOKEN`. The central consent ledger is keyed by IdP subject,
+     * but email systems (e.g. Herald) are keyed by address, so a consumer acting on
+     * a consent change uses this to turn the subject into the email it must suppress
+     * or resubscribe. Returns only the subject and email.
+     */
+    resolveUserEmail(sub: string, serviceToken: string): Promise<{
+        data: {
+            id: string;
+            email: string;
+        };
+    }>;
+    /**
      * Update a member's role (user context).
      *
      * Uses Better Auth's `update-member-role` endpoint, which enforces caller
