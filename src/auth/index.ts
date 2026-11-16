@@ -13,6 +13,10 @@ export { buildIdpLogoutUrl } from "./idpLogout";
 export { verifyAccessToken } from "./jwt";
 export { createOmniOAuthConfig } from "./oauth";
 export { createOidcClient } from "./oidc";
+export {
+  createOrganizationHydrator,
+  isSlimOrganizationClaim,
+} from "./organizations";
 export { fetchUserInfo, resolveAccessToken } from "./resolve";
 export {
   ensureFreshAccessToken,
@@ -52,6 +56,11 @@ export type {
   OidcClientConfig,
   OidcDiscovery,
 } from "./oidc";
+export type {
+  HydrateOptions,
+  OrganizationHydrator,
+  OrganizationHydratorConfig,
+} from "./organizations";
 export type { ResolveAccessTokenConfig } from "./resolve";
 export type { EnsureFreshTokenConfig, TokenResult } from "./token";
 export type {

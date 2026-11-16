@@ -1,4 +1,8 @@
 import { readOrgClaims } from "./claims";
+import {
+  createOrganizationHydrator,
+  isSlimOrganizationClaim,
+} from "./organizations";
 import { ensureFreshAccessToken, isInvalidGrant } from "./token";
 
 import type { AuthCache } from "./cache";
@@ -282,10 +286,16 @@ function createGetAuth(config: GetAuthConfig) {
   // carry org ids only. Not a cookie (org lists are unbounded -> HTTP 431), so
   // this lives in memory with a short TTL; staleness is bounded and only
   // affects display fields (authz still flows through the token's org ids).
-  const orgCache = new Map<
-    string,
-    { organizations: OrganizationClaim[]; expiry: number }
-  >();
+  // Shared with apps that read the ID token directly via the same hydrator
+  const orgHydrator = createOrganizationHydrator({
+    fetchUserInfo:
+      typeof oidc.fetchUserInfo === "function"
+        ? (token) => oidc.fetchUserInfo(token)
+        : undefined,
+    ttlMs: orgCacheTtlMs,
+    now,
+    logPrefix,
+  });
 
   // Single-flight the token refresh per session. An SSR page load fires many
   // parallel requests carrying the SAME session cookie; without deduping, each
@@ -420,54 +430,12 @@ function createGetAuth(config: GetAuthConfig) {
         // rejected. Cached per subject (TTL) to avoid a round-trip on every
         // request. Used both to enrich slim tokens and to recover orgs when a
         // refresh returns no id token.
-        const orgsFromUserInfo = async (
+        const orgsFromUserInfo = (
           expectedSub: string | null | undefined,
-        ): Promise<OrganizationClaim[] | undefined> => {
-          if (!accessToken || typeof oidc.fetchUserInfo !== "function")
-            return undefined;
-
-          const cacheKey = expectedSub ?? null;
-          // Skip the cache read when a live refresh was requested, but still
-          // fall through to fetch + write a fresh entry below.
-          const cached =
-            !forceRefreshOrgs && cacheKey && orgCacheTtlMs > 0
-              ? orgCache.get(cacheKey)
-              : undefined;
-          if (cached && cached.expiry > now()) return cached.organizations;
-
-          try {
-            const info = await oidc.fetchUserInfo(accessToken);
-
-            // OIDC Core 5.3.2: never trust a userinfo response whose subject
-            // does not match the session subject.
-            const infoSub = (info as { sub?: unknown })?.sub;
-            if (
-              expectedSub &&
-              typeof infoSub === "string" &&
-              infoSub !== expectedSub
-            ) {
-              console.error(
-                `${logPrefix} userinfo sub mismatch; ignoring org claims`,
-              );
-              return undefined;
-            }
-
-            const infoOrgs = readOrgClaims(info);
-            if (infoOrgs !== undefined && cacheKey && orgCacheTtlMs > 0) {
-              orgCache.set(cacheKey, {
-                organizations: infoOrgs,
-                expiry: now() + orgCacheTtlMs,
-              });
-            }
-            return infoOrgs;
-          } catch (infoError) {
-            console.error(
-              `${logPrefix} userinfo org hydration failed:`,
-              infoError,
-            );
-            return undefined;
-          }
-        };
+        ): Promise<OrganizationClaim[] | undefined> =>
+          orgHydrator.hydrate(expectedSub, accessToken, {
+            forceRefresh: forceRefreshOrgs,
+          });
 
         // Extract claims from ID token (verified via OIDC discovery + JWKS)
         if (tokenResult?.idToken) {
@@ -497,9 +465,7 @@ function createGetAuth(config: GetAuthConfig) {
             // alone — userinfo would not carry it either.
             const needsHydration =
               organizations.length > 0 &&
-              organizations.some(
-                (org) => (org as Partial<OrganizationClaim>).name === undefined,
-              );
+              isSlimOrganizationClaim(organizations);
 
             if (needsHydration) {
               const hydrated = await orgsFromUserInfo(

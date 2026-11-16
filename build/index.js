@@ -79370,6 +79370,103 @@ class GatekeeperOrgClient {
     }
   }
 }
+// src/auth/resolve.ts
+async function fetchUserInfo(token, userinfoUrl) {
+  const response = await fetch(userinfoUrl, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(1e4)
+  });
+  if (!response.ok) {
+    throw new Error(`Userinfo request failed: ${response.status}`);
+  }
+  return response.json();
+}
+async function resolveAccessToken(token, config) {
+  const isJwt = token.split(".").length === 3;
+  if (isJwt) {
+    await Promise.resolve().then(() => init_jwt());
+    await verifyAccessToken(token, config);
+  }
+  return fetchUserInfo(token, config.userinfoUrl);
+}
+
+// src/auth/organizations.ts
+var isRichOrganization = (org) => typeof org === "object" && org !== null && typeof org.id === "string" && typeof org.name === "string" && typeof org.slug === "string";
+var isSlimOrganizationClaim = (orgs) => orgs.some((org) => !isRichOrganization(org));
+var normalizeOrganization = (org) => ({
+  ...org,
+  type: org.type ?? "team",
+  roles: Array.isArray(org.roles) ? org.roles : [],
+  teams: Array.isArray(org.teams) ? org.teams : []
+});
+var createOrganizationHydrator = (config) => {
+  const {
+    userinfoUrl,
+    ttlMs = 60000,
+    maxEntries = 5000,
+    now = Date.now,
+    logPrefix = "[organizations]"
+  } = config;
+  const fetchUserInfo2 = config.fetchUserInfo ?? (userinfoUrl ? (accessToken) => fetchUserInfo(accessToken, userinfoUrl) : undefined);
+  const cache = new Map;
+  const remember = (subject, organizations) => {
+    if (ttlMs <= 0)
+      return;
+    const at = now();
+    if (cache.size >= maxEntries) {
+      for (const [key, entry] of cache) {
+        if (entry.expiry <= at)
+          cache.delete(key);
+      }
+      if (cache.size >= maxEntries)
+        cache.clear();
+    }
+    cache.set(subject, { organizations, expiry: at + ttlMs });
+  };
+  const hydrate = async (subject, accessToken, opts) => {
+    if (!accessToken || !fetchUserInfo2)
+      return;
+    if (subject && ttlMs > 0 && !opts?.forceRefresh) {
+      const cached = cache.get(subject);
+      if (cached && cached.expiry > now())
+        return cached.organizations;
+    }
+    try {
+      const info = await fetchUserInfo2(accessToken);
+      const infoSub = info?.sub;
+      if (subject && typeof infoSub === "string" && infoSub !== subject) {
+        console.error(`${logPrefix} userinfo sub mismatch; ignoring org claims`);
+        return;
+      }
+      const claimed = info ? readOrgClaims(info) : undefined;
+      if (!Array.isArray(claimed))
+        return;
+      const organizations = claimed.filter(isRichOrganization).map(normalizeOrganization);
+      if (subject)
+        remember(subject, organizations);
+      return organizations;
+    } catch (err) {
+      console.error(`${logPrefix} userinfo org hydration failed:`, err);
+      return;
+    }
+  };
+  const resolve = async (idTokenClaims, accessToken, opts) => {
+    const claimed = readOrgClaims(idTokenClaims);
+    if (!Array.isArray(claimed) || claimed.length === 0)
+      return [];
+    if (!isSlimOrganizationClaim(claimed))
+      return claimed.map(normalizeOrganization);
+    const subject = idTokenClaims.sub;
+    if (typeof subject !== "string")
+      return [];
+    return await hydrate(subject, accessToken, opts) ?? [];
+  };
+  const forget = (subject) => {
+    cache.delete(subject);
+  };
+  return { hydrate, resolve, forget };
+};
+
 // src/auth/token.ts
 async function ensureFreshAccessToken(config) {
   const result = await config.getAccessToken();
@@ -79442,7 +79539,12 @@ function createGetAuth(config) {
       forward(setCookie);
     }
   };
-  const orgCache = new Map;
+  const orgHydrator = createOrganizationHydrator({
+    fetchUserInfo: typeof oidc.fetchUserInfo === "function" ? (token) => oidc.fetchUserInfo(token) : undefined,
+    ttlMs: orgCacheTtlMs,
+    now,
+    logPrefix
+  });
   const refreshInFlight = new Map;
   return async function getAuth(request, opts) {
     const forceRefreshOrgs = opts?.forceRefreshOrgs ?? false;
@@ -79510,33 +79612,9 @@ function createGetAuth(config) {
         if (!accessToken) {
           console.warn(`${logPrefix} No access token after refresh attempt`);
         }
-        const orgsFromUserInfo = async (expectedSub) => {
-          if (!accessToken || typeof oidc.fetchUserInfo !== "function")
-            return;
-          const cacheKey = expectedSub ?? null;
-          const cached = !forceRefreshOrgs && cacheKey && orgCacheTtlMs > 0 ? orgCache.get(cacheKey) : undefined;
-          if (cached && cached.expiry > now())
-            return cached.organizations;
-          try {
-            const info = await oidc.fetchUserInfo(accessToken);
-            const infoSub = info?.sub;
-            if (expectedSub && typeof infoSub === "string" && infoSub !== expectedSub) {
-              console.error(`${logPrefix} userinfo sub mismatch; ignoring org claims`);
-              return;
-            }
-            const infoOrgs = readOrgClaims(info);
-            if (infoOrgs !== undefined && cacheKey && orgCacheTtlMs > 0) {
-              orgCache.set(cacheKey, {
-                organizations: infoOrgs,
-                expiry: now() + orgCacheTtlMs
-              });
-            }
-            return infoOrgs;
-          } catch (infoError) {
-            console.error(`${logPrefix} userinfo org hydration failed:`, infoError);
-            return;
-          }
-        };
+        const orgsFromUserInfo = (expectedSub) => orgHydrator.hydrate(expectedSub, accessToken, {
+          forceRefresh: forceRefreshOrgs
+        });
         if (tokenResult?.idToken) {
           try {
             const payload = await oidc.verifyIdToken(tokenResult.idToken);
@@ -79547,7 +79625,7 @@ function createGetAuth(config) {
             if (tokenOrgs !== undefined) {
               organizations = tokenOrgs;
             }
-            const needsHydration = organizations.length > 0 && organizations.some((org) => org.name === undefined);
+            const needsHydration = organizations.length > 0 && isSlimOrganizationClaim(organizations);
             if (needsHydration) {
               const hydrated = await orgsFromUserInfo(identityProviderId ?? payload.sub);
               if (hydrated !== undefined)
@@ -79747,25 +79825,6 @@ function createOidcClient(config) {
     jwksExpiry = 0;
   }
   return { verifyIdToken, fetchUserInfo, getDiscovery, getJwks, clearCache };
-}
-// src/auth/resolve.ts
-async function fetchUserInfo(token, userinfoUrl) {
-  const response = await fetch(userinfoUrl, {
-    headers: { Authorization: `Bearer ${token}` },
-    signal: AbortSignal.timeout(1e4)
-  });
-  if (!response.ok) {
-    throw new Error(`Userinfo request failed: ${response.status}`);
-  }
-  return response.json();
-}
-async function resolveAccessToken(token, config) {
-  const isJwt = token.split(".").length === 3;
-  if (isJwt) {
-    await Promise.resolve().then(() => init_jwt());
-    await verifyAccessToken(token, config);
-  }
-  return fetchUserInfo(token, config.userinfoUrl);
 }
 // src/authz/warden.ts
 var REQUEST_TIMEOUT_MS2 = 5000;
@@ -82184,6 +82243,7 @@ export {
   createNotificationProvider,
   createOidcClient,
   createOmniOAuthConfig,
+  createOrganizationHydrator,
   createResilientS3Client,
   createSocialProvider,
   createSpendBreaker,
@@ -82201,6 +82261,7 @@ export {
   identityKey,
   isInvalidGrant,
   isPermissionError,
+  isSlimOrganizationClaim,
   isWithinLimit,
   normalizePublicCatalog,
   normalizeWorkspaceLinks,
