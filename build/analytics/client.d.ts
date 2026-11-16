@@ -47,6 +47,12 @@ interface PrismClientConfig {
     maxBatchSize?: number;
     /** Fetch implementation, for tests or non-global-fetch runtimes */
     fetch?: typeof globalThis.fetch;
+    /**
+     * Rewrite the pathname before it is sent, e.g. to collapse capability tokens
+     * or ids in a path (`/c/abc123` to `/c/:id`) so they never reach analytics
+     * storage. Return null to drop the event entirely
+     */
+    sanitizePath?: (pathname: string) => string | null;
 }
 interface PrismClient {
     /** Enqueue an event for the next batch flush */
