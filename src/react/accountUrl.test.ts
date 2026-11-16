@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test";
 import {
   accountUrl,
   hubCreditsUrl,
+  hubInvoicesUrl,
   hubManageUrl,
   hubPlanUrl,
   workspacesUrl,
@@ -138,5 +139,23 @@ describe("hubCreditsUrl", () => {
 
   it("returns an empty string when no base is configured", () => {
     expect(hubCreditsUrl(undefined, { pack: "credits-500" })).toBe("");
+  });
+});
+
+describe("hubInvoicesUrl", () => {
+  it("links a workspace's invoices, lowercased", () => {
+    expect(
+      hubInvoicesUrl("https://account.omni.dev/", { workspace: "Acme" }),
+    ).toBe("https://account.omni.dev/billing?workspace=acme&tab=invoices");
+  });
+
+  it("links the personal workspace when none is named", () => {
+    expect(hubInvoicesUrl("https://account.omni.dev")).toBe(
+      "https://account.omni.dev/billing?tab=invoices",
+    );
+  });
+
+  it("returns an empty string when no base is configured", () => {
+    expect(hubInvoicesUrl(undefined, { workspace: "acme" })).toBe("");
   });
 });

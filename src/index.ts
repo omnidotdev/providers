@@ -39,6 +39,7 @@ export {
   CREDITS_PER_USD,
   DEFAULT_CREDIT_COGS_MARKUP,
   NoopBillingProvider,
+  accountCreditDisplay,
   createBillingProvider,
   createEntitlementCapResolver,
   createSpendBreaker,
@@ -47,6 +48,7 @@ export {
   creditsFromChargeUsd,
   creditsFromCostCents,
   formatCredits,
+  formatMinorAmount,
   isPermissionError,
   isWithinLimit,
   probeWriteScope,
@@ -164,6 +166,8 @@ export type {
   WardenResourceType,
 } from "./authz";
 export type {
+  AccountCredit,
+  AccountCreditDisplay,
   AetherBillingProviderConfig,
   AlertEventsProvider,
   BillingProvider,

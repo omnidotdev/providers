@@ -172,3 +172,28 @@ export const hubCreditsUrl = (
     pack: pack?.toLowerCase(),
     ...(pack ? {} : { tab: "ai" }),
   });
+
+/** A workspace's invoices on the account hub */
+export interface HubInvoicesParams {
+  /** Workspace handle whose invoices to show. Omit for the personal workspace */
+  workspace?: string;
+}
+
+/**
+ * Account hub URL for a workspace's invoices
+ * (`${accountBaseUrl}/billing?workspace=&tab=invoices`).
+ *
+ * Invoices for every Omni product a workspace pays for live in one place, the
+ * account hub, so a product's billing page links there (an "Invoices" link)
+ * instead of listing them itself. The hub shows them only to owners and
+ * admins of the workspace. Ids are lowercased. Returns an empty string when no
+ * base is configured, mirroring {@link accountUrl}
+ */
+export const hubInvoicesUrl = (
+  accountBaseUrl: string | undefined,
+  { workspace }: HubInvoicesParams = {},
+): string =>
+  hubBillingUrl(accountBaseUrl, {
+    workspace: workspace?.toLowerCase(),
+    tab: "invoices",
+  });

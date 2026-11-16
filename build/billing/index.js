@@ -350,6 +350,17 @@ class AetherBillingProvider {
       return null;
     return await response.json();
   }
+  async getAccountCredit(entityType, entityId, accessToken) {
+    try {
+      const response = await this.resilientFetch(`${this.config.baseUrl}/billing-portal/account-credit/${this.config.appId}/${entityType}/${entityId}`, { headers: this.userHeaders(accessToken) });
+      if (!response.ok)
+        return null;
+      const { accountCredit } = await response.json();
+      return accountCredit ?? null;
+    } catch {
+      return null;
+    }
+  }
   async checkCredits(entityType, entityId, amount) {
     const url = new URL(`${this.config.baseUrl}/credits/${this.config.appId}/${entityType}/${entityId}/check`);
     url.searchParams.set("amount", String(amount));
@@ -483,6 +494,9 @@ class NoopBillingProvider {
   async getCreditBalance(_entityType, _entityId) {
     return null;
   }
+  async getAccountCredit(_entityType, _entityId, _accessToken) {
+    return null;
+  }
   async checkCredits(_entityType, _entityId, _amount) {
     return { sufficient: false, balance: 0 };
   }
@@ -499,6 +513,36 @@ class NoopBillingProvider {
   }
   async close() {}
 }
+
+// src/billing/accountCredit.ts
+var formatMinorAmount = (amount, currency, locale) => {
+  const formatter = new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: currency.toUpperCase()
+  });
+  const digits = formatter.resolvedOptions().maximumFractionDigits ?? 2;
+  return formatter.format(amount / 10 ** digits);
+};
+var accountCreditDisplay = (accountCredit, locale) => {
+  if (!accountCredit || typeof accountCredit.currency !== "string") {
+    return { kind: "none" };
+  }
+  const { credit, due, currency } = accountCredit;
+  const kind = Number.isFinite(credit) && credit > 0 ? "credit" : Number.isFinite(due) && due > 0 ? "due" : null;
+  if (!kind)
+    return { kind: "none" };
+  const amount = kind === "credit" ? credit : due;
+  try {
+    return {
+      kind,
+      amount,
+      currency,
+      label: formatMinorAmount(amount, currency, locale)
+    };
+  } catch {
+    return { kind: "none" };
+  }
+};
 // src/billing/capResolver.ts
 var DEFAULT_INCLUDED_CREDITS_KEY = "included_credits";
 var DEFAULT_ENTITY_TYPE = "user";
@@ -734,6 +778,7 @@ export {
   CREDITS_PER_USD,
   DEFAULT_CREDIT_COGS_MARKUP,
   NoopBillingProvider,
+  accountCreditDisplay,
   createBillingProvider,
   createEntitlementCapResolver,
   createSpendBreaker,
@@ -742,6 +787,7 @@ export {
   creditsFromChargeUsd,
   creditsFromCostCents,
   formatCredits,
+  formatMinorAmount,
   isPermissionError,
   isWithinLimit,
   probeWriteScope,

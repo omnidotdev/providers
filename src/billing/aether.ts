@@ -3,6 +3,7 @@ import { CircuitBreaker } from "../util/circuitBreaker";
 import { log } from "../util/log";
 
 import type {
+  AccountCredit,
   BillingProvider,
   CheckoutParams,
   CheckoutWithWorkspaceParams,
@@ -428,6 +429,27 @@ class AetherBillingProvider implements BillingProvider {
     );
     if (!response.ok) return null;
     return (await response.json()) as CreditBalance;
+  }
+
+  async getAccountCredit(
+    entityType: string,
+    entityId: string,
+    accessToken: string,
+  ): Promise<AccountCredit | null> {
+    try {
+      const response = await this.resilientFetch(
+        `${this.config.baseUrl}/billing-portal/account-credit/${this.config.appId}/${entityType}/${entityId}`,
+        { headers: this.userHeaders(accessToken) },
+      );
+      if (!response.ok) return null;
+
+      const { accountCredit } = (await response.json()) as {
+        accountCredit?: AccountCredit;
+      };
+      return accountCredit ?? null;
+    } catch {
+      return null;
+    }
   }
 
   async checkCredits(

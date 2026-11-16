@@ -66,3 +66,39 @@ describe("AetherBillingProvider.createCheckoutSession", () => {
     );
   });
 });
+
+describe("AetherBillingProvider.getAccountCredit", () => {
+  it("reads the workspace's account credit for the signed-in user", async () => {
+    const accountCredit = {
+      balance: -1000,
+      credit: 1000,
+      due: 0,
+      currency: "usd",
+    };
+    const calls = captureFetch({ accountCredit });
+
+    const result = await provider.getAccountCredit(
+      "organization",
+      "org-1",
+      "user-token",
+    );
+
+    expect(result).toEqual(accountCredit);
+    const [call] = calls;
+    expect(call?.url).toBe(
+      "https://aether.test/billing-portal/account-credit/runa/organization/org-1",
+    );
+    expect(call?.init.headers).toMatchObject({
+      Authorization: "Bearer user-token",
+      "x-service-api-key": "runa-key",
+    });
+  });
+
+  it("returns null when the user may not read it", async () => {
+    captureFetch({ error: "Forbidden" }, 403);
+
+    expect(
+      await provider.getAccountCredit("organization", "org-1", "user-token"),
+    ).toBeNull();
+  });
+});

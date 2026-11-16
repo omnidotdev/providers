@@ -131,6 +131,22 @@ type CreditBalance = {
     billingAccountId: string;
     balance: number;
 };
+/**
+ * Account credit on a workspace's Stripe customer: the balance Stripe applies
+ * to the next invoice. Not to be confused with prepaid Omni credits
+ * ({@link CreditBalance}), which fund AI usage. Amounts are in the currency's
+ * minor unit (cents for USD)
+ */
+type AccountCredit = {
+    /** Stripe's raw customer balance: negative is credit, positive is owed */
+    balance: number;
+    /** Credit applied to the next invoice, never negative */
+    credit: number;
+    /** Amount owed added to the next invoice, never negative */
+    due: number;
+    /** ISO currency code, lowercase */
+    currency: string;
+};
 /** Whether a balance covers a requested amount. */
 type CreditCheck = {
     sufficient: boolean;
@@ -226,6 +242,13 @@ interface BillingProvider {
      * across products). Returns null when no billing account or on error.
      */
     getCreditBalance(entityType: string, entityId: string): Promise<CreditBalance | null>;
+    /**
+     * Get a workspace's account credit (its Stripe customer balance, applied to
+     * the next invoice) for the signed-in user, who must own or administer the
+     * workspace. Returns null when it cannot be read (no access, or an error),
+     * so a product's billing page simply shows nothing
+     */
+    getAccountCredit(entityType: string, entityId: string, accessToken: string): Promise<AccountCredit | null>;
     /** Check whether an entity's balance covers `amount`. Fails closed on error. */
     checkCredits(entityType: string, entityId: string, amount: number): Promise<CreditCheck>;
     /**
@@ -248,4 +271,4 @@ interface BillingProvider {
     /** Close the provider connection (if stateful) */
     close?(): Promise<void>;
 }
-export type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, };
+export type { AccountCredit, BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, };
