@@ -202,4 +202,80 @@ describe("createPrismClient", () => {
       globalThis.window = savedWindow;
     }
   });
+
+  describe("first-touch campaign attribution", () => {
+    const land = (search: string) => {
+      window.sessionStorage.clear();
+      window.history.replaceState(null, "", `/landing${search}`);
+    };
+
+    afterEach(() => {
+      window.history.replaceState(null, "", "/");
+    });
+
+    it("attaches whitelisted campaign params to every event, never the rest of the query", () => {
+      const { calls } = stubFetch();
+      land(
+        "?utm_source=newsletter&utm_campaign=launch&token=secret&email=a@b.c",
+      );
+
+      const client = createPrismClient({
+        collectorUrl: COLLECTOR_URL,
+        product: PRODUCT,
+      });
+
+      client.track("pageview");
+      client.track("signup", { plan: "pro" });
+      client.flush();
+
+      const [pageview, signup] = parseBody(calls[0]?.init).events;
+
+      expect(pageview?.properties).toEqual({
+        utm_source: "newsletter",
+        utm_campaign: "launch",
+      });
+      expect(signup?.properties).toEqual({
+        utm_source: "newsletter",
+        utm_campaign: "launch",
+        plan: "pro",
+      });
+      expect(JSON.stringify(calls[0]?.init?.body)).not.toContain("secret");
+      expect(pageview?.path).toBe("/landing");
+    });
+
+    it("keeps the first touch for the tab after navigating away", () => {
+      const { calls } = stubFetch();
+      land("?ref=producthunt");
+      createPrismClient({ collectorUrl: COLLECTOR_URL, product: PRODUCT });
+
+      // a later client in the same tab, on a page with no campaign params
+      window.history.replaceState(null, "", "/signup");
+      const client = createPrismClient({
+        collectorUrl: COLLECTOR_URL,
+        product: PRODUCT,
+      });
+      client.track("signup_completed");
+      client.flush();
+
+      expect(parseBody(calls[0]?.init).events[0]?.properties).toEqual({
+        ref: "producthunt",
+      });
+    });
+
+    it("sends no properties when the visit had no campaign params", () => {
+      const { calls } = stubFetch();
+      land("");
+
+      const client = createPrismClient({
+        collectorUrl: COLLECTOR_URL,
+        product: PRODUCT,
+      });
+      client.track("pageview");
+      client.flush();
+
+      expect(parseBody(calls[0]?.init).events[0]).not.toHaveProperty(
+        "properties",
+      );
+    });
+  });
 });

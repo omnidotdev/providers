@@ -2,6 +2,15 @@
 var DEFAULT_FLUSH_INTERVAL_MS = 1e4;
 var DEFAULT_MAX_BATCH_SIZE = 20;
 var SESSION_STORAGE_KEY = "prism.sid";
+var CAMPAIGN_STORAGE_KEY = "prism.utm";
+var CAMPAIGN_KEYS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "ref"
+];
+var MAX_CAMPAIGN_VALUE_LENGTH = 100;
 var noopClient = {
   track: () => {},
   flush: () => {}
@@ -19,6 +28,26 @@ var resolveSessionId = () => {
     return generateSessionId();
   }
 };
+var resolveFirstTouch = () => {
+  try {
+    const cached = window.sessionStorage.getItem(CAMPAIGN_STORAGE_KEY);
+    if (cached)
+      return JSON.parse(cached);
+  } catch {}
+  const params = new URLSearchParams(window.location?.search ?? "");
+  const touch = {};
+  for (const key of CAMPAIGN_KEYS) {
+    const value = params.get(key);
+    if (value)
+      touch[key] = value.slice(0, MAX_CAMPAIGN_VALUE_LENGTH);
+  }
+  if (Object.keys(touch).length === 0)
+    return;
+  try {
+    window.sessionStorage.setItem(CAMPAIGN_STORAGE_KEY, JSON.stringify(touch));
+  } catch {}
+  return touch;
+};
 var createPrismClient = (config) => {
   const {
     collectorUrl,
@@ -31,6 +60,7 @@ var createPrismClient = (config) => {
     return noopClient;
   const endpoint = `${collectorUrl.replace(/\/+$/, "")}/collect`;
   const sessionId = resolveSessionId();
+  const firstTouch = resolveFirstTouch();
   const queue = [];
   let intervalId = null;
   const stopTimer = () => {
@@ -74,8 +104,8 @@ var createPrismClient = (config) => {
     const referrer = document.referrer;
     if (referrer)
       event.referrer = referrer;
-    if (properties)
-      event.properties = properties;
+    if (firstTouch || properties)
+      event.properties = { ...firstTouch, ...properties };
     queue.push(event);
     ensureTimer();
     if (queue.length >= maxBatchSize)
