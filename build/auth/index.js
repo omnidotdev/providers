@@ -3152,6 +3152,17 @@ class GatekeeperOrgClient {
     }
     return response.json();
   }
+  async resolveUserEmail(sub, serviceToken) {
+    const url = new URL(`${this.baseUrl}/api/user/resolve-email`);
+    url.searchParams.set("sub", sub);
+    const response = await fetch(url.toString(), {
+      headers: this.authHeaders(serviceToken)
+    });
+    if (!response.ok) {
+      throw await this.parseError(response, "Failed to resolve user email");
+    }
+    return response.json();
+  }
   async updateMemberRole(params, accessToken) {
     const response = await fetch(`${this.baseUrl}/organization/update-member-role`, {
       method: "POST",

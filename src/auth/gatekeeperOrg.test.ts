@@ -88,6 +88,10 @@ describe("GatekeeperOrgClient", () => {
   it("should expose listMembersViaService", () => {
     expect(typeof client.listMembersViaService).toBe("function");
   });
+
+  it("should expose resolveUserEmail", () => {
+    expect(typeof client.resolveUserEmail).toBe("function");
+  });
 });
 
 describe("GatekeeperOrgClient member endpoints", () => {
@@ -175,6 +179,19 @@ describe("GatekeeperOrgClient member endpoints", () => {
       (init?.headers as Record<string, string> | undefined)?.Authorization,
     ).toBe("Bearer svc-token");
     expect(result).toEqual({ data: [member] });
+  });
+
+  it("resolveUserEmail hits the service route with the subject and service token", async () => {
+    const get = stubFetch({ data: { id: "u1", email: "a@b.com" } });
+
+    const result = await client.resolveUserEmail("u1", "svc-token");
+
+    const { url, init } = get();
+    expect(url).toBe(`${baseUrl}/api/user/resolve-email?sub=u1`);
+    expect(
+      (init?.headers as Record<string, string> | undefined)?.Authorization,
+    ).toBe("Bearer svc-token");
+    expect(result).toEqual({ data: { id: "u1", email: "a@b.com" } });
   });
 
   it("updateMemberRole POSTs to Better Auth update-member-role and unwraps { member }", async () => {
