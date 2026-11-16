@@ -220,6 +220,7 @@ export type {
   ModeratorConfig,
 } from "./moderation";
 export type {
+  EmailAttachment,
   EmailParams,
   EmailResult,
   NoopNotificationProviderConfig,

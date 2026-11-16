@@ -20,7 +20,7 @@ declare const createNotificationProvider: (config: NotificationProviderConfig) =
 export { HeraldNotificationProvider } from "./herald";
 export { NoopNotificationProvider } from "./noop";
 export type { HeraldNotificationProviderConfig } from "./herald";
-export type { EmailParams, EmailResult, NotificationProvider, } from "./interface";
+export type { EmailAttachment, EmailParams, EmailResult, NotificationProvider, } from "./interface";
 export type { NoopNotificationProviderConfig } from "./noop";
 export type { NotificationProviderConfig };
 export { createNotificationProvider };

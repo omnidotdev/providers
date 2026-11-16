@@ -1,3 +1,18 @@
+/**
+ * A file attached to an email, in the common transactional email API shape.
+ * The provider enforces its own limits (Herald: at most 20 files and 25 MiB
+ * total decoded size per message, executable and script types refused).
+ */
+type EmailAttachment = {
+    /** File name shown to the recipient, e.g. "contract.pdf" */
+    filename: string;
+    /** File content: raw bytes, or an already base64-encoded string */
+    content: Uint8Array | string;
+    /** MIME type, e.g. "application/pdf"; inferred from the filename when omitted */
+    contentType?: string;
+    /** Content-ID for an inline image, referenced from an html body as `cid:<contentId>` */
+    contentId?: string;
+};
 /** Parameters for sending an email */
 type EmailParams = {
     /** Recipient email address(es) */
@@ -18,6 +33,8 @@ type EmailParams = {
     headers?: Record<string, string>;
     /** Whether `body` contains HTML (default false, plain text) */
     html?: boolean;
+    /** Files to attach; every recipient of a multi-recipient send receives them */
+    attachments?: EmailAttachment[];
 };
 /** Result of a send email operation */
 type EmailResult = {
@@ -52,4 +69,4 @@ interface NotificationProvider {
     /** Close the provider connection (if stateful) */
     close?(): Promise<void>;
 }
-export type { EmailParams, EmailResult, NotificationProvider };
+export type { EmailAttachment, EmailParams, EmailResult, NotificationProvider };

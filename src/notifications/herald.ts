@@ -2,6 +2,7 @@ import { CircuitBreaker } from "../util/circuitBreaker";
 import { log } from "../util/log";
 
 import type {
+  EmailAttachment,
   EmailParams,
   EmailResult,
   NotificationProvider,
@@ -45,6 +46,15 @@ type ValidatedHeraldConfig = HeraldNotificationProviderConfig & {
   defaultFrom: string;
 };
 
+/** An attachment as Herald's `POST /messages` endpoint accepts it. */
+type HeraldAttachment = {
+  filename: string;
+  /** Base64-encoded file content */
+  content: string;
+  contentType?: string;
+  contentId?: string;
+};
+
 /** Request body accepted by the Herald `POST /messages` endpoint. */
 type HeraldMessageBody = {
   to: string;
@@ -56,7 +66,30 @@ type HeraldMessageBody = {
   bcc?: string[];
   replyTo?: string;
   headers?: Record<string, string>;
+  attachments?: HeraldAttachment[];
 };
+
+/**
+ * Convert attachments to Herald's wire shape, base64-encoding raw bytes. A
+ * string is taken as already base64-encoded and passed through; Herald
+ * validates it (and the count, size, filename, and file type) at its boundary.
+ */
+const toHeraldAttachments = (
+  attachments: EmailAttachment[],
+): HeraldAttachment[] =>
+  attachments.map((attachment) => ({
+    filename: attachment.filename,
+    content:
+      typeof attachment.content === "string"
+        ? attachment.content
+        : Buffer.from(
+            attachment.content.buffer,
+            attachment.content.byteOffset,
+            attachment.content.byteLength,
+          ).toString("base64"),
+    ...(attachment.contentType ? { contentType: attachment.contentType } : {}),
+    ...(attachment.contentId ? { contentId: attachment.contentId } : {}),
+  }));
 
 /**
  * Extract a bare email address from an RFC 5322 address. Herald validates the
@@ -98,6 +131,11 @@ class HeraldNotificationProvider implements NotificationProvider {
 
       let lastMessageId: string | undefined;
 
+      // Encode once, not per recipient: every recipient receives the same files
+      const attachments = params.attachments?.length
+        ? toHeraldAttachments(params.attachments)
+        : undefined;
+
       for (const [index, recipient] of recipients.entries()) {
         const body: HeraldMessageBody = {
           to: toBareEmail(recipient),
@@ -111,6 +149,7 @@ class HeraldNotificationProvider implements NotificationProvider {
           ...(params.html ? {} : { text: params.body }),
           ...(params.replyTo ? { replyTo: toBareEmail(params.replyTo) } : {}),
           ...(params.headers ? { headers: params.headers } : {}),
+          ...(attachments ? { attachments } : {}),
           // cc/bcc attach to the first message only, so a multi-recipient
           // fan-out does not send the same copy to each cc/bcc address
           ...(index === 0 && params.cc?.length
