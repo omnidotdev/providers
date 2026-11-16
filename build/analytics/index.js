@@ -54,7 +54,8 @@ var createPrismClient = (config) => {
     product,
     flushIntervalMs = DEFAULT_FLUSH_INTERVAL_MS,
     maxBatchSize = DEFAULT_MAX_BATCH_SIZE,
-    fetch: fetchImpl
+    fetch: fetchImpl,
+    sanitizePath
   } = config;
   if (!collectorUrl || typeof window === "undefined")
     return noopClient;
@@ -98,7 +99,10 @@ var createPrismClient = (config) => {
   };
   const track = (name, properties) => {
     const event = { name, sessionId };
-    const path = window.location?.pathname;
+    const rawPath = window.location?.pathname;
+    const path = rawPath && sanitizePath ? sanitizePath(rawPath) : rawPath;
+    if (rawPath && path === null)
+      return;
     if (path)
       event.path = path;
     const referrer = document.referrer;
