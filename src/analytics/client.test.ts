@@ -278,4 +278,42 @@ describe("createPrismClient", () => {
       );
     });
   });
+
+  describe("sanitizePath", () => {
+    afterEach(() => {
+      window.history.replaceState(null, "", "/");
+    });
+
+    it("rewrites the path before it is sent", () => {
+      const { calls } = stubFetch();
+      window.history.replaceState(null, "", "/c/secret-share-id");
+
+      const client = createPrismClient({
+        collectorUrl: COLLECTOR_URL,
+        product: PRODUCT,
+        sanitizePath: (path) => path.replace(/^\/c\/[^/]+/, "/c/:id"),
+      });
+      client.track("pageview");
+      client.flush();
+
+      const body = String(calls[0]?.init?.body);
+      expect(parseBody(calls[0]?.init).events[0]?.path).toBe("/c/:id");
+      expect(body).not.toContain("secret-share-id");
+    });
+
+    it("drops the event when the sanitizer returns null", () => {
+      const { calls } = stubFetch();
+      window.history.replaceState(null, "", "/messages/conversation-1");
+
+      const client = createPrismClient({
+        collectorUrl: COLLECTOR_URL,
+        product: PRODUCT,
+        sanitizePath: (path) => (path.startsWith("/messages/") ? null : path),
+      });
+      client.track("pageview");
+      client.flush();
+
+      expect(calls).toHaveLength(0);
+    });
+  });
 });
