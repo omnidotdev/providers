@@ -1,6 +1,30 @@
 // src/react/accountUrl.ts
 var accountUrl = (accountBaseUrl) => accountBaseUrl ? accountBaseUrl.replace(/\/+$/, "") : "";
 var workspacesUrl = (accountBaseUrl) => accountBaseUrl ? `${accountBaseUrl.replace(/\/+$/, "")}/workspaces` : "";
+var hubBillingUrl = (accountBaseUrl, params) => {
+  const base = accountUrl(accountBaseUrl);
+  if (!base)
+    return "";
+  const search = new URLSearchParams;
+  for (const [key, value] of Object.entries(params)) {
+    if (value)
+      search.set(key, value);
+  }
+  return `${base}/billing?${search.toString()}`;
+};
+var hubPlanUrl = (accountBaseUrl, { product, plan, interval, workspace, returnUrl }) => hubBillingUrl(accountBaseUrl, {
+  product: product.toLowerCase(),
+  plan: plan.toLowerCase(),
+  interval,
+  workspace: workspace?.toLowerCase(),
+  return: returnUrl
+});
+var hubManageUrl = (accountBaseUrl, { product, workspace, returnUrl }) => hubBillingUrl(accountBaseUrl, {
+  product: product.toLowerCase(),
+  workspace: workspace.toLowerCase(),
+  manage: "1",
+  return: returnUrl
+});
 // src/react/EventsProvider.tsx
 import { createContext, use } from "react";
 import { jsx } from "react/jsx-runtime";
@@ -180,6 +204,8 @@ export {
   createWorkspaceFlow,
   gatekeeperDashboardUrl,
   gatekeeperOrgManageUrl,
+  hubManageUrl,
+  hubPlanUrl,
   useCreateWorkspace,
   useEvents,
   useWorkspace as useOrganization,
