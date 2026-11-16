@@ -1,4 +1,4 @@
-import type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Subscription } from "./interface";
+import type { AccountCredit, BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Subscription } from "./interface";
 type AetherBillingProviderConfig = {
     /** Aether billing service base URL */
     baseUrl?: string;
@@ -60,6 +60,7 @@ declare class AetherBillingProvider implements BillingProvider {
     }>;
     close(): Promise<void>;
     getCreditBalance(entityType: string, entityId: string): Promise<CreditBalance | null>;
+    getAccountCredit(entityType: string, entityId: string, accessToken: string): Promise<AccountCredit | null>;
     checkCredits(entityType: string, entityId: string, amount: number): Promise<CreditCheck>;
     deductCredits(entityType: string, entityId: string, amount: number, options?: CreditWriteOptions): Promise<CreditDeductResult>;
     addCredits(entityType: string, entityId: string, amount: number, type: CreditAddType, options?: CreditWriteOptions): Promise<CreditAddResult | null>;

@@ -1,4 +1,5 @@
 import type {
+  AccountCredit,
   BillingProvider,
   CheckoutParams,
   CheckoutWithWorkspaceParams,
@@ -114,6 +115,14 @@ class NoopBillingProvider implements BillingProvider {
     _entityType: string,
     _entityId: string,
   ): Promise<CreditBalance | null> {
+    return null;
+  }
+
+  async getAccountCredit(
+    _entityType: string,
+    _entityId: string,
+    _accessToken: string,
+  ): Promise<AccountCredit | null> {
     return null;
   }
 

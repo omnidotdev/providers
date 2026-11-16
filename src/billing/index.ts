@@ -46,6 +46,7 @@ const createBillingProvider = (
   throw new Error(`Unknown billing provider: ${_exhaustive}`);
 };
 
+export { accountCreditDisplay, formatMinorAmount } from "./accountCredit";
 export { AetherBillingProvider } from "./aether";
 export {
   createEntitlementCapResolver,
@@ -73,11 +74,13 @@ export {
 } from "./safePaymentWrite";
 export { createSpendBreaker, utcDayKey } from "./spendBreaker";
 
+export type { AccountCreditDisplay } from "./accountCredit";
 export type {
   CapResolver,
   EntitlementCapResolverConfig,
 } from "./capResolver";
 export type {
+  AccountCredit,
   BillingProvider,
   CheckoutParams,
   CheckoutWithWorkspaceParams,

@@ -17,6 +17,7 @@ type BillingProviderConfig = ({
  * @throws When required config is missing for the chosen variant
  */
 declare const createBillingProvider: (config: BillingProviderConfig) => BillingProvider;
+export { accountCreditDisplay, formatMinorAmount } from "./accountCredit";
 export { AetherBillingProvider } from "./aether";
 export { createEntitlementCapResolver, createStaticCapResolver, } from "./capResolver";
 export { CREDITS_PER_USD, creditsFromBalanceUsd, creditsFromChargeUsd, formatCredits, usdFromCredits, } from "./creditDisplay";
@@ -24,8 +25,9 @@ export { CENTS_PER_CREDIT, DEFAULT_CREDIT_COGS_MARKUP, creditsFromCostCents, isW
 export { NoopBillingProvider } from "./noop";
 export { BILLING_WRITE_FAILED_EVENT, isPermissionError, probeWriteScope, safePaymentWrite, } from "./safePaymentWrite";
 export { createSpendBreaker, utcDayKey } from "./spendBreaker";
+export type { AccountCreditDisplay } from "./accountCredit";
 export type { CapResolver, EntitlementCapResolverConfig, } from "./capResolver";
-export type { BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, } from "./interface";
+export type { AccountCredit, BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, } from "./interface";
 export type { NoopBillingProviderConfig } from "./noop";
 export type { AlertEventsProvider, SafePaymentWriteOptions, ScopeProbeResult, } from "./safePaymentWrite";
 export type { SpendBreaker } from "./spendBreaker";
