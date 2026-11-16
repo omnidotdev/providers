@@ -175,6 +175,14 @@ const entries = [
     ],
   },
   {
+    entrypoint: "./src/graphql-surface/index.ts",
+    outdir: "./build/graphql-surface",
+    target: "node" as const,
+    // Test-time guard; use the service's own graphql copy so schema objects
+    // built by the service pass `instanceof` checks here
+    external: ["graphql"],
+  },
+  {
     entrypoint: "./src/react/index.ts",
     outdir: "./build/react",
     target: "browser" as const,
