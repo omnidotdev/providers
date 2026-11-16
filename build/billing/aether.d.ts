@@ -42,7 +42,7 @@ declare class AetherBillingProvider implements BillingProvider {
      *  - `unavailable`: Aether is unreachable / erroring (circuit open, non-2xx,
      *    or a thrown request). The caller decides whether to fail open or closed.
      */
-    getEntitlementsResult(entityType: string, entityId: string, productId?: string, accessToken?: string): Promise<EntitlementsResult>;
+    getEntitlementsResult(entityType: string, entityId: string, productId?: string, _accessToken?: string): Promise<EntitlementsResult>;
     checkEntitlement(entityType: string, entityId: string, productId: string, featureKey: string, accessToken?: string): Promise<string | null>;
     getPrices(appName: string): Promise<Price[]>;
     createCheckoutSession(params: CheckoutParams): Promise<string>;
@@ -63,6 +63,16 @@ declare class AetherBillingProvider implements BillingProvider {
     checkCredits(entityType: string, entityId: string, amount: number): Promise<CreditCheck>;
     deductCredits(entityType: string, entityId: string, amount: number, options?: CreditWriteOptions): Promise<CreditDeductResult>;
     addCredits(entityType: string, entityId: string, amount: number, type: CreditAddType, options?: CreditWriteOptions): Promise<CreditAddResult | null>;
+    /**
+     * Headers for a call made for a signed-in user (checkout, subscription
+     * lookup, billing portal). Sends the service key WITH the user's token: the
+     * user's token is minted for this product's own API (or is opaque), never
+     * for Aether, so Aether accepts it only when the product's service key
+     * vouches for the call, and still checks the user's own access per billing
+     * entity. Without a configured key the token is sent alone, which Aether
+     * accepts only when it was minted for Aether itself
+     */
+    private userHeaders;
     private serviceHeaders;
     /**
      * Fetch a read endpoint with a per-attempt timeout and retries on transient

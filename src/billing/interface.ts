@@ -171,7 +171,8 @@ type CreditAddResult = {
  */
 interface BillingProvider {
   /**
-   * Get all entitlements for an entity.
+   * Get all entitlements for an entity. Authenticated with the service key;
+   * `accessToken` is accepted for compatibility and never sent.
    */
   getEntitlements(
     entityType: string,
@@ -216,6 +217,12 @@ interface BillingProvider {
   /**
    * Create a checkout session with workspace creation/selection.
    * Routes through Aether for orchestration.
+   *
+   * This and the other calls taking a user `accessToken` (subscription lookup,
+   * billing portal, cancel, renew) act for the signed-in user. Configure the
+   * provider's `serviceApiKey`: the user's token is minted for the product, not
+   * Aether, so Aether only accepts it alongside the product's service key, and
+   * only an owner/admin of the workspace may buy or manage its billing.
    */
   createCheckoutWithWorkspace(
     params: CheckoutWithWorkspaceParams,

@@ -80036,7 +80036,7 @@ class AetherBillingProvider {
     const result = await this.getEntitlementsResult(entityType, entityId, productId, accessToken);
     return result.status === "success" ? result.data : null;
   }
-  async getEntitlementsResult(entityType, entityId, productId, accessToken) {
+  async getEntitlementsResult(entityType, entityId, productId, _accessToken) {
     const cacheKey = `${entityType}:${entityId}:${productId ?? "all"}`;
     const cached = this.cache.get(cacheKey);
     if (cached)
@@ -80048,14 +80048,9 @@ class AetherBillingProvider {
     try {
       const appId = productId ?? this.config.appId;
       const url = new URL(`${this.config.baseUrl}/entitlements/${appId}/${entityType}/${entityId}`);
-      const headers = {};
-      if (this.config.serviceApiKey) {
-        headers["x-service-api-key"] = this.config.serviceApiKey;
-      }
-      if (accessToken) {
-        headers.Authorization = `Bearer ${accessToken}`;
-      }
-      const response = await this.resilientFetch(url.toString(), { headers });
+      const response = await this.resilientFetch(url.toString(), {
+        headers: this.serviceHeaders()
+      });
       if (response.status === 404) {
         return { status: "not_found" };
       }
@@ -80111,7 +80106,7 @@ class AetherBillingProvider {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${params.accessToken}`
+        ...this.userHeaders(params.accessToken)
       },
       body: JSON.stringify({
         appId: params.appId,
@@ -80138,7 +80133,7 @@ class AetherBillingProvider {
   async getSubscription(entityType, entityId, accessToken) {
     try {
       const response = await this.resilientFetch(`${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
+        headers: this.userHeaders(accessToken)
       });
       if (!response.ok)
         return null;
@@ -80151,7 +80146,7 @@ class AetherBillingProvider {
   async listSubscriptions(entityType, entityId, accessToken) {
     try {
       const response = await this.resilientFetch(`${this.config.baseUrl}/billing-portal/subscriptions/${this.config.appId}/${entityType}/${entityId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
+        headers: this.userHeaders(accessToken)
       });
       if (!response.ok)
         return [];
@@ -80166,7 +80161,7 @@ class AetherBillingProvider {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`
+        ...this.userHeaders(accessToken)
       },
       body: JSON.stringify({ productId, returnUrl, ...flow && { flow } })
     });
@@ -80180,7 +80175,7 @@ class AetherBillingProvider {
   async cancelSubscription(entityType, entityId, accessToken) {
     const response = await fetch(`${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}/cancel`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: this.userHeaders(accessToken)
     });
     if (!response.ok) {
       const error = await response.json().catch(() => null);
@@ -80192,7 +80187,7 @@ class AetherBillingProvider {
   async renewSubscription(entityType, entityId, accessToken) {
     const response = await fetch(`${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}/renew`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: this.userHeaders(accessToken)
     });
     if (!response.ok) {
       const error = await response.json().catch(() => null);
@@ -80282,6 +80277,12 @@ class AetherBillingProvider {
     if (!response.ok)
       return null;
     return await response.json();
+  }
+  userHeaders(accessToken) {
+    return {
+      ...this.serviceHeaders(),
+      Authorization: `Bearer ${accessToken}`
+    };
   }
   serviceHeaders() {
     if (this.config.serviceApiKey) {
