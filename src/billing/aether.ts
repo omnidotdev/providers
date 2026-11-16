@@ -203,13 +203,16 @@ class AetherBillingProvider implements BillingProvider {
   }
 
   async createCheckoutSession(params: CheckoutParams): Promise<string> {
+    const { accessToken, ...checkout } = params;
+
+    // Aether authorizes a delegating product against the top-level `appId`
     const response = await fetch(`${this.config.baseUrl}/checkout/session`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...this.serviceHeaders(),
+        ...this.userHeaders(accessToken),
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify({ appId: this.config.appId, ...checkout }),
     });
 
     if (!response.ok) {
