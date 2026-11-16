@@ -35,8 +35,8 @@ export interface HubPlanParams {
     /** Billing interval */
     interval: HubPlanInterval;
     /**
-     * Workspace handle the plan is for. Omit to let the hub ask, listing only
-     * workspaces the user owns or administers
+     * Workspace handle the plan is for. Omit to let the hub pick: the only
+     * workspace the user owns or administers, or a choice among them
      */
     workspace?: string;
     /**
@@ -64,9 +64,15 @@ export interface HubManageParams {
  *
  * The account hub is the one place plans are bought: a product shows its own
  * pricing, but its "Upgrade" action links here instead of running checkout
- * itself. The hub confirms the plan and workspace (prices and plan names come
- * from Aether), starts Stripe Checkout with its own billing-scoped token, and
- * returns to `returnUrl`. Ids are lowercased. Returns an empty string when no
+ * itself. One click lands on Stripe Checkout: the hub resolves the plan's
+ * price from Aether, checks the user owns or administers the workspace,
+ * creates the Checkout session server-side with its own billing-scoped token,
+ * and redirects straight to it (signing the user in first when needed, with no
+ * extra click). It stops on its own page only when it needs the user: several
+ * workspaces and none named, a workspace the user cannot buy for, an unknown
+ * plan, or a workspace that already has the plan (it opens plan management
+ * instead). Checkout returns to `returnUrl` with `checkout=success` or
+ * `checkout=canceled`. Ids are lowercased. Returns an empty string when no
  * base is configured, so a missing optional env degrades to an inert link,
  * mirroring {@link accountUrl}
  */
@@ -75,10 +81,41 @@ export declare const hubPlanUrl: (accountBaseUrl: string | undefined, { product,
  * Account hub URL to manage a workspace's plan for a product
  * (`${accountBaseUrl}/billing?product=&workspace=&manage=1&return=`).
  *
- * Opens the product's billing portal for that workspace (change or cancel the
- * plan, payment method, invoices), returning to `returnUrl`. Use it for every
- * "Manage billing" or "Manage subscription" action instead of opening the
- * portal from the product. Ids are lowercased. Returns an empty string when no
- * base is configured, mirroring {@link accountUrl}
+ * One click lands on the product's billing portal for that workspace (change
+ * or cancel the plan, payment method, invoices), returning to `returnUrl`. Use
+ * it for every "Manage billing" or "Manage subscription" action instead of
+ * opening the portal from the product. Ids are lowercased. Returns an empty
+ * string when no base is configured, mirroring {@link accountUrl}
  */
 export declare const hubManageUrl: (accountBaseUrl: string | undefined, { product, workspace, returnUrl }: HubManageParams) => string;
+/** Omni credits to buy on the account hub */
+export interface HubCreditsParams {
+    /**
+     * Product the user is buying from (catalog id, e.g. "facet"); names the
+     * receipt. Credits themselves are shared across every Omni product
+     */
+    product?: string;
+    /**
+     * Workspace handle whose balance the credits fund. Omit for the user's
+     * personal account
+     */
+    workspace?: string;
+    /**
+     * Credit pack id (Aether's `GET /account/credit-packs`, e.g.
+     * "credits-2000") to go straight to Stripe Checkout for. Omit to let the
+     * user pick a pack on the hub
+     */
+    pack?: string;
+}
+/**
+ * Account hub URL to buy Omni credits
+ * (`${accountBaseUrl}/billing?product=&workspace=&pack=`).
+ *
+ * With a `pack`, one click lands on Stripe Checkout for it, for the linked
+ * workspace (which the user must own or administer) or their personal
+ * account; without one, the hub's AI usage tab shows the balance and the
+ * packs to choose from. Checkout returns to the hub with the new balance. Ids
+ * are lowercased. Returns an empty string when no base is configured,
+ * mirroring {@link accountUrl}
+ */
+export declare const hubCreditsUrl: (accountBaseUrl: string | undefined, { product, workspace, pack }?: HubCreditsParams) => string;

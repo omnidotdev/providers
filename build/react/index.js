@@ -25,6 +25,12 @@ var hubManageUrl = (accountBaseUrl, { product, workspace, returnUrl }) => hubBil
   manage: "1",
   return: returnUrl
 });
+var hubCreditsUrl = (accountBaseUrl, { product, workspace, pack } = {}) => hubBillingUrl(accountBaseUrl, {
+  product: product?.toLowerCase(),
+  workspace: workspace?.toLowerCase(),
+  pack: pack?.toLowerCase(),
+  ...pack ? {} : { tab: "ai" }
+});
 // src/react/EventsProvider.tsx
 import { createContext, use } from "react";
 import { jsx } from "react/jsx-runtime";
@@ -204,6 +210,7 @@ export {
   createWorkspaceFlow,
   gatekeeperDashboardUrl,
   gatekeeperOrgManageUrl,
+  hubCreditsUrl,
   hubManageUrl,
   hubPlanUrl,
   useCreateWorkspace,
