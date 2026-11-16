@@ -118,7 +118,7 @@ class AetherBillingProvider implements BillingProvider {
     entityType: string,
     entityId: string,
     productId?: string,
-    accessToken?: string,
+    _accessToken?: string,
   ): Promise<EntitlementsResult> {
     const cacheKey = `${entityType}:${entityId}:${productId ?? "all"}`;
 
@@ -136,15 +136,12 @@ class AetherBillingProvider implements BillingProvider {
         `${this.config.baseUrl}/entitlements/${appId}/${entityType}/${entityId}`,
       );
 
-      const headers: Record<string, string> = {};
-      if (this.config.serviceApiKey) {
-        headers["x-service-api-key"] = this.config.serviceApiKey;
-      }
-      if (accessToken) {
-        headers.Authorization = `Bearer ${accessToken}`;
-      }
-
-      const response = await this.resilientFetch(url.toString(), { headers });
+      // Service key only: Aether's entitlement routes authenticate the calling
+      // service, so the user's token is never sent here (it would only widen
+      // where that token travels)
+      const response = await this.resilientFetch(url.toString(), {
+        headers: this.serviceHeaders(),
+      });
 
       if (response.status === 404) {
         return { status: "not_found" };
@@ -234,7 +231,7 @@ class AetherBillingProvider implements BillingProvider {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${params.accessToken}`,
+        ...this.userHeaders(params.accessToken),
       },
       body: JSON.stringify({
         appId: params.appId,
@@ -273,7 +270,7 @@ class AetherBillingProvider implements BillingProvider {
       const response = await this.resilientFetch(
         `${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}`,
         {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: this.userHeaders(accessToken),
         },
       );
 
@@ -297,7 +294,7 @@ class AetherBillingProvider implements BillingProvider {
       const response = await this.resilientFetch(
         `${this.config.baseUrl}/billing-portal/subscriptions/${this.config.appId}/${entityType}/${entityId}`,
         {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: this.userHeaders(accessToken),
         },
       );
 
@@ -326,7 +323,7 @@ class AetherBillingProvider implements BillingProvider {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
+          ...this.userHeaders(accessToken),
         },
         body: JSON.stringify({ productId, returnUrl, ...(flow && { flow }) }),
       },
@@ -353,7 +350,7 @@ class AetherBillingProvider implements BillingProvider {
       `${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}/cancel`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: this.userHeaders(accessToken),
       },
     );
 
@@ -378,7 +375,7 @@ class AetherBillingProvider implements BillingProvider {
       `${this.config.baseUrl}/billing-portal/subscription/${this.config.appId}/${entityType}/${entityId}/renew`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: this.userHeaders(accessToken),
       },
     );
 
@@ -514,6 +511,22 @@ class AetherBillingProvider implements BillingProvider {
     );
     if (!response.ok) return null;
     return (await response.json()) as CreditAddResult;
+  }
+
+  /**
+   * Headers for a call made for a signed-in user (checkout, subscription
+   * lookup, billing portal). Sends the service key WITH the user's token: the
+   * user's token is minted for this product's own API (or is opaque), never
+   * for Aether, so Aether accepts it only when the product's service key
+   * vouches for the call, and still checks the user's own access per billing
+   * entity. Without a configured key the token is sent alone, which Aether
+   * accepts only when it was minted for Aether itself
+   */
+  private userHeaders(accessToken: string): Record<string, string> {
+    return {
+      ...this.serviceHeaders(),
+      Authorization: `Bearer ${accessToken}`,
+    };
   }
 
   private serviceHeaders(): Record<string, string> {
