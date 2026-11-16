@@ -1,8 +1,10 @@
 export {
+  type HubCreditsParams,
   type HubManageParams,
   type HubPlanInterval,
   type HubPlanParams,
   accountUrl,
+  hubCreditsUrl,
   hubManageUrl,
   hubPlanUrl,
   workspacesUrl,

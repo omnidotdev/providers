@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 
 import {
   accountUrl,
+  hubCreditsUrl,
   hubManageUrl,
   hubPlanUrl,
   workspacesUrl,
@@ -105,5 +106,37 @@ describe("hubManageUrl", () => {
     expect(hubManageUrl("", { product: "keystone", workspace: "acme" })).toBe(
       "",
     );
+  });
+});
+
+describe("hubCreditsUrl", () => {
+  it("links a pack for one-click checkout, lowercased", () => {
+    const url = new URL(
+      hubCreditsUrl("https://account.omni.dev/", {
+        product: "Facet",
+        workspace: "Acme",
+        pack: "Credits-2000",
+      }),
+    );
+
+    expect(url.origin + url.pathname).toBe("https://account.omni.dev/billing");
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      product: "facet",
+      workspace: "acme",
+      pack: "credits-2000",
+    });
+  });
+
+  it("opens the pack picker when no pack is named", () => {
+    expect(hubCreditsUrl("https://account.omni.dev")).toBe(
+      "https://account.omni.dev/billing?tab=ai",
+    );
+    expect(
+      hubCreditsUrl("https://account.omni.dev", { product: "beacon" }),
+    ).toBe("https://account.omni.dev/billing?product=beacon&tab=ai");
+  });
+
+  it("returns an empty string when no base is configured", () => {
+    expect(hubCreditsUrl(undefined, { pack: "credits-500" })).toBe("");
   });
 });
