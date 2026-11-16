@@ -8,7 +8,8 @@
  * Privacy: the client never sends an IP, cookie, or any visitor identifier.
  * Prism's collector derives the visitor id, country, and device server-side
  * from request metadata, so the wire payload carries only the event name, the
- * current path/referrer, a per-tab session id, and optional custom properties.
+ * current path/referrer, a per-tab session id, the tab's first-touch campaign
+ * params (whitelisted `utm_*` and `ref` only), and optional custom properties.
  *
  * Fleet patterns:
  * - Graceful no-op when `collectorUrl` is falsy, so a product can ship the
@@ -28,6 +29,25 @@ const DEFAULT_MAX_BATCH_SIZE = 20;
 
 /** Key under which the per-tab session id is cached in `sessionStorage` */
 const SESSION_STORAGE_KEY = "prism.sid";
+
+/** Key under which the tab's first-touch campaign params are cached */
+const CAMPAIGN_STORAGE_KEY = "prism.utm";
+
+/**
+ * Campaign query parameters the client reads. Only these are ever taken from
+ * the URL: the rest of a query string can carry tokens or personal data and is
+ * never sent
+ */
+const CAMPAIGN_KEYS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "ref",
+] as const;
+
+/** Cap on a single campaign value, matching the collector's limit */
+const MAX_CAMPAIGN_VALUE_LENGTH = 100;
 
 /**
  * A single analytics event as it travels on the wire. Matches the Prism
@@ -52,7 +72,7 @@ interface PrismClientConfig {
    * is tolerated). When falsy, the client is a graceful no-op.
    */
   collectorUrl?: string;
-  /** Product identifier the collector attributes events to */
+  /** Public collector key of the product (from the product's settings in Prism) */
   product: string;
   /** Flush interval in milliseconds (default 10s) */
   flushIntervalMs?: number;
@@ -101,12 +121,46 @@ const resolveSessionId = (): string => {
 };
 
 /**
+ * Resolve the tab's first-touch campaign attribution: the whitelisted campaign
+ * params (`utm_*`, `ref`) from the URL the tab landed on. Cached in
+ * `sessionStorage` so later pageviews and custom events in the same tab (e.g. a
+ * signup several pages in) still carry the source that brought the visit.
+ * Returns undefined when the landing URL had none
+ */
+const resolveFirstTouch = (): Record<string, string> | undefined => {
+  try {
+    const cached = window.sessionStorage.getItem(CAMPAIGN_STORAGE_KEY);
+    if (cached) return JSON.parse(cached) as Record<string, string>;
+  } catch {
+    // storage unavailable or corrupt, fall back to the current URL
+  }
+
+  const params = new URLSearchParams(window.location?.search ?? "");
+  const touch: Record<string, string> = {};
+
+  for (const key of CAMPAIGN_KEYS) {
+    const value = params.get(key);
+    if (value) touch[key] = value.slice(0, MAX_CAMPAIGN_VALUE_LENGTH);
+  }
+
+  if (Object.keys(touch).length === 0) return undefined;
+
+  try {
+    window.sessionStorage.setItem(CAMPAIGN_STORAGE_KEY, JSON.stringify(touch));
+  } catch {
+    // keep the in-memory value when storage is unavailable
+  }
+
+  return touch;
+};
+
+/**
  * Create a Prism analytics client.
  *
  * @example
  * const prism = createPrismClient({
  *   collectorUrl: import.meta.env.VITE_PRISM_COLLECTOR_URL,
- *   product: "launchpad",
+ *   product: "pk_...", // the product's collector key
  * });
  * prism.track("signup", { plan: "pro" });
  */
@@ -125,6 +179,7 @@ const createPrismClient = (config: PrismClientConfig): PrismClient => {
 
   const endpoint = `${collectorUrl.replace(/\/+$/, "")}/collect`;
   const sessionId = resolveSessionId();
+  const firstTouch = resolveFirstTouch();
   const queue: PrismEvent[] = [];
 
   let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -197,7 +252,10 @@ const createPrismClient = (config: PrismClientConfig): PrismClient => {
     const referrer = document.referrer;
     if (referrer) event.referrer = referrer;
 
-    if (properties) event.properties = properties;
+    // first-touch campaign params ride along on every event so conversions
+    // can be attributed; explicit properties win on a key clash
+    if (firstTouch || properties)
+      event.properties = { ...firstTouch, ...properties };
 
     queue.push(event);
     ensureTimer();

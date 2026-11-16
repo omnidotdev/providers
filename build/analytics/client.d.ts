@@ -8,7 +8,8 @@
  * Privacy: the client never sends an IP, cookie, or any visitor identifier.
  * Prism's collector derives the visitor id, country, and device server-side
  * from request metadata, so the wire payload carries only the event name, the
- * current path/referrer, a per-tab session id, and optional custom properties.
+ * current path/referrer, a per-tab session id, the tab's first-touch campaign
+ * params (whitelisted `utm_*` and `ref` only), and optional custom properties.
  *
  * Fleet patterns:
  * - Graceful no-op when `collectorUrl` is falsy, so a product can ship the
@@ -38,7 +39,7 @@ interface PrismClientConfig {
      * is tolerated). When falsy, the client is a graceful no-op.
      */
     collectorUrl?: string;
-    /** Product identifier the collector attributes events to */
+    /** Public collector key of the product (from the product's settings in Prism) */
     product: string;
     /** Flush interval in milliseconds (default 10s) */
     flushIntervalMs?: number;
@@ -59,7 +60,7 @@ interface PrismClient {
  * @example
  * const prism = createPrismClient({
  *   collectorUrl: import.meta.env.VITE_PRISM_COLLECTOR_URL,
- *   product: "launchpad",
+ *   product: "pk_...", // the product's collector key
  * });
  * prism.track("signup", { plan: "pro" });
  */
