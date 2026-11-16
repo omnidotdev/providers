@@ -81,6 +81,11 @@ type Price = {
 
 /** Checkout session parameters */
 type CheckoutParams = {
+  /**
+   * The signed-in user's access token. Aether only checks out for that user,
+   * so `metadata.externalId` must be their id
+   */
+  accessToken: string;
   priceId: string;
   successUrl: string;
   customerEmail: string;

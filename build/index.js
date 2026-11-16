@@ -80086,13 +80086,14 @@ class AetherBillingProvider {
     return prices;
   }
   async createCheckoutSession(params) {
+    const { accessToken, ...checkout } = params;
     const response = await fetch(`${this.config.baseUrl}/checkout/session`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...this.serviceHeaders()
+        ...this.userHeaders(accessToken)
       },
-      body: JSON.stringify(params)
+      body: JSON.stringify({ appId: this.config.appId, ...checkout })
     });
     if (!response.ok) {
       const error = await response.json().catch(() => null);
