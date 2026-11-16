@@ -23,7 +23,7 @@ export type { FetchPublicCatalogOptions, PublicBundle, PublicCatalog, PublicConn
 export type { EmitResult, EventActor, EventInput, EventsProvider, EventsProviderConfig, EventsProviderStatus, HttpEventsProviderConfig, IggyEventsProviderConfig, NoopEventsProviderConfig, RegisteredSchema, SchemaRegistration, SubscriptionCreated, SubscriptionInput, } from "./events";
 export type { FlagContext, FlagProvider, FlagProviderConfig, NoopFlagProviderConfig, UnleashFlagProviderConfig, } from "./flags";
 export type { ModerationResult, Moderator, ModeratorConfig, } from "./moderation";
-export type { EmailParams, EmailResult, NoopNotificationProviderConfig, NotificationProvider, NotificationProviderConfig, } from "./notifications";
+export type { EmailAttachment, EmailParams, EmailResult, NoopNotificationProviderConfig, NotificationProvider, NotificationProviderConfig, } from "./notifications";
 export type { HeadersLike, IdentitySource } from "./server";
 export type { GatekeeperSocialProviderConfig, SocialConnectionDTO, SocialProvider, } from "./social";
 export type { NoopStorageProviderConfig, PresignedParams, PresignedResult, S3StorageProviderConfig, StorageProvider, StorageProviderConfig, UploadParams, UploadResult, } from "./storage";

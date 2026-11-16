@@ -81692,6 +81692,12 @@ class HeraldHttpError extends Error {
 var DEFAULT_MAX_RETRIES2 = 2;
 var DEFAULT_RETRY_BASE_DELAY_MS = 200;
 var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+var toHeraldAttachments = (attachments) => attachments.map((attachment) => ({
+  filename: attachment.filename,
+  content: typeof attachment.content === "string" ? attachment.content : Buffer.from(attachment.content.buffer, attachment.content.byteOffset, attachment.content.byteLength).toString("base64"),
+  ...attachment.contentType ? { contentType: attachment.contentType } : {},
+  ...attachment.contentId ? { contentId: attachment.contentId } : {}
+}));
 var toBareEmail = (address) => {
   const match = address.match(/<([^>]+)>/);
   return (match ? match[1] : address).trim();
@@ -81712,6 +81718,7 @@ class HeraldNotificationProvider {
     try {
       const recipients = Array.isArray(params.to) ? params.to : [params.to];
       let lastMessageId;
+      const attachments = params.attachments?.length ? toHeraldAttachments(params.attachments) : undefined;
       for (const [index, recipient] of recipients.entries()) {
         const body = {
           to: toBareEmail(recipient),
@@ -81721,6 +81728,7 @@ class HeraldNotificationProvider {
           ...params.html ? {} : { text: params.body },
           ...params.replyTo ? { replyTo: toBareEmail(params.replyTo) } : {},
           ...params.headers ? { headers: params.headers } : {},
+          ...attachments ? { attachments } : {},
           ...index === 0 && params.cc?.length ? { cc: params.cc.map(toBareEmail) } : {},
           ...index === 0 && params.bcc?.length ? { bcc: params.bcc.map(toBareEmail) } : {}
         };

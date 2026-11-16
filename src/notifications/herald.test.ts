@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import { HeraldNotificationProvider } from "./herald";
 import { createNotificationProvider } from "./index";
@@ -229,6 +229,133 @@ describe("HeraldNotificationProvider.sendEmail", () => {
     // are still reduced to bare addresses
     expect(body.from).toBe("Omni Orders <orders@send.omni.dev>");
     expect(body.to).toBe("buyer@example.com");
+  });
+});
+
+describe("HeraldNotificationProvider attachments", () => {
+  const PDF_BYTES = new TextEncoder().encode("%PDF-1.4 signed");
+  const PDF_BASE64 = Buffer.from(PDF_BYTES).toString("base64");
+
+  it("base64-encodes byte content and forwards type and content id", async () => {
+    const { calls } = stubFetch(200, { id: "m_att", status: "queued" });
+    const provider = makeProvider();
+
+    const result = await provider.sendEmail({
+      to: "signer@example.com",
+      subject: "Signed",
+      body: '<p>Done <img src="cid:logo"></p>',
+      html: true,
+      attachments: [
+        {
+          filename: "contract.pdf",
+          content: PDF_BYTES,
+          contentType: "application/pdf",
+        },
+        { filename: "logo.png", content: "iVBORw0KGgo=", contentId: "logo" },
+      ],
+    });
+
+    expect(result).toEqual({ success: true, messageId: "m_att" });
+    const sent = JSON.parse(calls[0]?.init?.body as string);
+    expect(sent.attachments).toEqual([
+      {
+        filename: "contract.pdf",
+        content: PDF_BASE64,
+        contentType: "application/pdf",
+      },
+      { filename: "logo.png", content: "iVBORw0KGgo=", contentId: "logo" },
+    ]);
+  });
+
+  it("encodes only the viewed bytes of a subarray", async () => {
+    const { calls } = stubFetch(200, { id: "m_view", status: "queued" });
+    const provider = makeProvider();
+    const backing = new Uint8Array([0xff, ...PDF_BYTES, 0xff]);
+
+    await provider.sendEmail({
+      to: "signer@example.com",
+      subject: "Signed",
+      body: "<p>Done</p>",
+      html: true,
+      attachments: [
+        {
+          filename: "contract.pdf",
+          content: backing.subarray(1, backing.length - 1),
+        },
+      ],
+    });
+
+    const sent = JSON.parse(calls[0]?.init?.body as string);
+    expect(sent.attachments[0].content).toBe(PDF_BASE64);
+  });
+
+  it("sends the attachments to every recipient of a multi-recipient send", async () => {
+    const { calls } = stubFetch(200, { id: "m_multi_att", status: "queued" });
+    const provider = makeProvider();
+
+    await provider.sendEmail({
+      to: ["a@example.com", "b@example.com"],
+      subject: "Signed",
+      body: "<p>Done</p>",
+      html: true,
+      attachments: [{ filename: "contract.pdf", content: PDF_BYTES }],
+    });
+
+    for (const call of calls) {
+      expect(JSON.parse(call.init?.body as string).attachments).toEqual([
+        { filename: "contract.pdf", content: PDF_BASE64 },
+      ]);
+    }
+  });
+
+  it("omits the attachments field when there are none", async () => {
+    const { calls } = stubFetch(200, { id: "m_none", status: "queued" });
+    const provider = makeProvider();
+
+    await provider.sendEmail({
+      to: "user@example.com",
+      subject: "Hi",
+      body: "<p>Hi</p>",
+      html: true,
+      attachments: [],
+    });
+
+    expect(JSON.parse(calls[0]?.init?.body as string)).not.toHaveProperty(
+      "attachments",
+    );
+  });
+
+  it("does not retry a refused attachment and never logs its bytes", async () => {
+    const { calls } = stubFetch(413, {
+      error: "Attachments exceed the 25 MB total size limit",
+    });
+    const errorSpy = spyOn(console, "error").mockImplementation(() => {});
+    const infoSpy = spyOn(console, "info").mockImplementation(() => {});
+
+    try {
+      const result = await makeProvider().sendEmail({
+        to: "user@example.com",
+        subject: "Big",
+        body: "<p>Big</p>",
+        html: true,
+        attachments: [{ filename: "contract.pdf", content: PDF_BYTES }],
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("413");
+      expect(result.error).toContain("total size limit");
+      // a 4xx is permanent, so one attempt only
+      expect(calls).toHaveLength(1);
+
+      const logged = JSON.stringify([
+        ...errorSpy.mock.calls,
+        ...infoSpy.mock.calls,
+      ]);
+      expect(logged).not.toContain(PDF_BASE64);
+    } finally {
+      errorSpy.mockRestore();
+      infoSpy.mockRestore();
+    }
   });
 });
 

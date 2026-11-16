@@ -57,6 +57,7 @@ export { NoopNotificationProvider } from "./noop";
 
 export type { HeraldNotificationProviderConfig } from "./herald";
 export type {
+  EmailAttachment,
   EmailParams,
   EmailResult,
   NotificationProvider,
