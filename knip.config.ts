@@ -14,6 +14,7 @@ export default {
     "@tanstack/query-core",
     "@tanstack/react-start",
     "graphile-export",
+    "graphql",
     "postgraphile",
     "react",
     "unleash-client",
