@@ -12,7 +12,15 @@
  * tracker to the database (probing each untracked migration in a rolled-back,
  * side-effect-free transaction and recording the ones already applied) and
  * retries once. A genuinely pending migration still applies; a real error still
- * surfaces. This lives here so the whole fleet shares one implementation instead
+ * surfaces.
+ *
+ * It also applies "shadowed" migrations up front. drizzle's migrator is a
+ * high-water mark: it only runs journal entries whose `when` is later than the
+ * newest tracker row's `created_at`. A tracker row stamped later than pending
+ * migrations (e.g. a hand-written ledger rebaseline that used `now()`) makes
+ * drizzle skip them on every boot with no error, so the schema silently falls
+ * behind. `runMigrations` detects the untracked journal tail at or below the
+ * high-water mark and applies it itself before handing off to `migrate`. This lives here so the whole fleet shares one implementation instead
  * of copying a migrate script per service.
  *
  * `drizzle-orm` and `pg` are optional peer dependencies: only services that call
@@ -70,6 +78,26 @@ export interface RunMigrationsOptions {
     /** Status-line sink. Defaults to `console.info`. */
     log?: (message: string) => void;
 }
+/**
+ * Journal migrations drizzle's migrator would skip forever: the untracked tail
+ * of the journal (every entry after the last tracked one) that is no later than
+ * the tracker's high-water mark.
+ *
+ * drizzle-orm reads only the newest tracker row (`ORDER BY created_at DESC
+ * LIMIT 1`) and runs a migration only when `Number(created_at) < when`, so an
+ * untracked entry with `when <= highWaterMark` is never applied and never
+ * errors. `highWaterMark` is that newest row's `created_at` exactly as drizzle
+ * sees it (`undefined` when the tracker is empty). `migrations` must be in
+ * journal order.
+ *
+ * Only the tail counts. An untracked entry that precedes a tracked one is
+ * almost always a migration edited after it was applied (its hash changed), not
+ * a pending one, so re-running it out of order is unsafe and it is left alone.
+ */
+export declare const findShadowedMigrations: <T extends {
+    hash: string;
+    when: number;
+}>(migrations: readonly T[], trackedHashes: ReadonlySet<string>, highWaterMark: number | undefined) => T[];
 /**
  * Apply drizzle migrations, self-healing migration-tracker drift.
  *

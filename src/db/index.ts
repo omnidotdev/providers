@@ -12,7 +12,15 @@
  * tracker to the database (probing each untracked migration in a rolled-back,
  * side-effect-free transaction and recording the ones already applied) and
  * retries once. A genuinely pending migration still applies; a real error still
- * surfaces. This lives here so the whole fleet shares one implementation instead
+ * surfaces.
+ *
+ * It also applies "shadowed" migrations up front. drizzle's migrator is a
+ * high-water mark: it only runs journal entries whose `when` is later than the
+ * newest tracker row's `created_at`. A tracker row stamped later than pending
+ * migrations (e.g. a hand-written ledger rebaseline that used `now()`) makes
+ * drizzle skip them on every boot with no error, so the schema silently falls
+ * behind. `runMigrations` detects the untracked journal tail at or below the
+ * high-water mark and applies it itself before handing off to `migrate`. This lives here so the whole fleet shares one implementation instead
  * of copying a migrate script per service.
  *
  * `drizzle-orm` and `pg` are optional peer dependencies: only services that call
@@ -28,7 +36,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
 
-import type { PoolConfig } from "pg";
+import type { PoolClient, PoolConfig } from "pg";
 
 /**
  * Default `lock_timeout` (milliseconds) applied to migration connections. A
@@ -119,6 +127,185 @@ const isAlreadyExists = (err: unknown): boolean => {
   return false;
 };
 
+/** A journal migration with its on-disk SQL resolved */
+interface JournalMigration extends JournalEntry {
+  /** sha256 of the file contents, as drizzle-orm records it in the tracker */
+  hash: string;
+  /** Statements split on drizzle's breakpoint marker */
+  statements: string[];
+}
+
+/** Read the journal and resolve each entry's SQL, hash, and statements */
+const readJournalMigrations = (
+  migrationsFolder: string,
+): JournalMigration[] => {
+  const journal = JSON.parse(
+    readFileSync(join(migrationsFolder, "meta", "_journal.json"), "utf-8"),
+  ) as { entries: JournalEntry[] };
+
+  return journal.entries.map((entry) => {
+    const sql = readFileSync(
+      join(migrationsFolder, `${entry.tag}.sql`),
+      "utf-8",
+    );
+
+    return {
+      ...entry,
+      hash: createHash("sha256").update(sql).digest("hex"),
+      statements: sql
+        .split("--> statement-breakpoint")
+        .map((statement) => statement.trim())
+        .filter(Boolean),
+    };
+  });
+};
+
+/**
+ * Journal migrations drizzle's migrator would skip forever: the untracked tail
+ * of the journal (every entry after the last tracked one) that is no later than
+ * the tracker's high-water mark.
+ *
+ * drizzle-orm reads only the newest tracker row (`ORDER BY created_at DESC
+ * LIMIT 1`) and runs a migration only when `Number(created_at) < when`, so an
+ * untracked entry with `when <= highWaterMark` is never applied and never
+ * errors. `highWaterMark` is that newest row's `created_at` exactly as drizzle
+ * sees it (`undefined` when the tracker is empty). `migrations` must be in
+ * journal order.
+ *
+ * Only the tail counts. An untracked entry that precedes a tracked one is
+ * almost always a migration edited after it was applied (its hash changed), not
+ * a pending one, so re-running it out of order is unsafe and it is left alone.
+ */
+export const findShadowedMigrations = <
+  T extends { hash: string; when: number },
+>(
+  migrations: readonly T[],
+  trackedHashes: ReadonlySet<string>,
+  highWaterMark: number | undefined,
+): T[] => {
+  if (highWaterMark === undefined || !Number.isFinite(highWaterMark)) {
+    return [];
+  }
+
+  let lastTracked = -1;
+  migrations.forEach((migration, index) => {
+    if (trackedHashes.has(migration.hash)) lastTracked = index;
+  });
+
+  return migrations
+    .slice(lastTracked + 1)
+    .filter((migration) => migration.when <= highWaterMark);
+};
+
+/**
+ * Key for the transaction-scoped advisory lock serializing shadowed-migration
+ * application across replicas that boot at the same time
+ */
+const SHADOWED_MIGRATION_LOCK_KEY = 7_204_311_906;
+
+/**
+ * Apply migrations drizzle would skip because the tracker's high-water mark is
+ * ahead of them. Each runs in its own transaction with its tracker row (stamped
+ * with the journal `when`, as drizzle would), under an advisory lock so
+ * concurrent replicas do not double-apply. A migration whose objects already
+ * exist is recorded as applied, matching the reconcile path. Returns the number
+ * of migrations applied or recorded.
+ */
+const applyShadowedMigrations = async (
+  pool: Pool,
+  migrationsFolder: string,
+  log: (message: string) => void,
+): Promise<number> => {
+  // drizzle creates the tracker inside `migrate`; nothing can be shadowed yet
+  const { rows: trackerExists } = await pool.query<{ exists: boolean }>(
+    'SELECT to_regclass(\'"drizzle"."__drizzle_migrations"\') IS NOT NULL AS exists',
+  );
+  if (!trackerExists[0]?.exists) return 0;
+
+  const loadTracker = async (
+    client: Pool | PoolClient,
+  ): Promise<{ hashes: Set<string>; highWaterMark: number | undefined }> => {
+    const { rows } = await client.query<{
+      hash: string;
+      created_at: string | null;
+    }>('SELECT hash, created_at FROM "drizzle"."__drizzle_migrations"');
+    // Mirror drizzle's `ORDER BY created_at DESC LIMIT 1` (NULLs sort first)
+    const { rows: newest } = await client.query<{ created_at: string | null }>(
+      'SELECT created_at FROM "drizzle"."__drizzle_migrations" ORDER BY created_at DESC LIMIT 1',
+    );
+    const newestRow = newest[0];
+
+    return {
+      hashes: new Set(rows.map((row) => row.hash)),
+      highWaterMark: newestRow ? Number(newestRow.created_at) : undefined,
+    };
+  };
+
+  const initial = await loadTracker(pool);
+  const migrations = readJournalMigrations(migrationsFolder);
+  const shadowed = findShadowedMigrations(
+    migrations,
+    initial.hashes,
+    initial.highWaterMark,
+  );
+  if (shadowed.length === 0) return 0;
+
+  log(
+    `[Migrate] ${shadowed.length} migration(s) predate the tracker's newest entry and would be skipped; applying them`,
+  );
+
+  let applied = 0;
+
+  for (const migration of shadowed) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock($1)", [
+        SHADOWED_MIGRATION_LOCK_KEY,
+      ]);
+
+      // Another replica may have applied it while this one waited on the lock
+      const current = await loadTracker(client);
+      if (current.hashes.has(migration.hash)) {
+        await client.query("ROLLBACK");
+        continue;
+      }
+
+      await client.query("SAVEPOINT shadowed_migration");
+      let alreadyApplied = false;
+      try {
+        for (const statement of migration.statements) {
+          await client.query(statement);
+        }
+      } catch (error) {
+        if (!isAlreadyExists(error)) throw error;
+        await client.query("ROLLBACK TO SAVEPOINT shadowed_migration");
+        alreadyApplied = true;
+      }
+
+      await client.query(
+        'INSERT INTO "drizzle"."__drizzle_migrations" (hash, created_at) VALUES ($1, $2)',
+        [migration.hash, migration.when],
+      );
+      await client.query("COMMIT");
+
+      log(
+        alreadyApplied
+          ? `[Migrate] Reconciled already-applied migration ${migration.tag} into the tracker`
+          : `[Migrate] Applied skipped migration ${migration.tag}`,
+      );
+      applied++;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  return applied;
+};
+
 /**
  * Reconcile the migration tracker with the database after a re-apply error.
  * Returns the number of migrations backfilled (retry the migrate if > 0).
@@ -128,9 +315,7 @@ const reconcileTracker = async (
   migrationsFolder: string,
   log: (message: string) => void,
 ): Promise<number> => {
-  const journal = JSON.parse(
-    readFileSync(join(migrationsFolder, "meta", "_journal.json"), "utf-8"),
-  ) as { entries: JournalEntry[] };
+  const migrations = readJournalMigrations(migrationsFolder);
 
   await pool.query('CREATE SCHEMA IF NOT EXISTS "drizzle"');
   await pool.query(`
@@ -148,19 +333,9 @@ const reconcileTracker = async (
 
   let backfilled = 0;
 
-  for (const entry of journal.entries) {
-    const sql = readFileSync(
-      join(migrationsFolder, `${entry.tag}.sql`),
-      "utf-8",
-    );
-    // drizzle-orm records the sha256 of a migration file's contents as `hash`.
-    const hash = createHash("sha256").update(sql).digest("hex");
+  for (const entry of migrations) {
+    const { hash, statements } = entry;
     if (trackedHashes.has(hash)) continue;
-
-    const statements = sql
-      .split("--> statement-breakpoint")
-      .map((statement) => statement.trim())
-      .filter(Boolean);
 
     const client = await pool.connect();
     let alreadyApplied = false;
@@ -221,6 +396,7 @@ export const runMigrations = async (
     const db = drizzle({ client: pool, casing });
 
     log("[Migrate] Applying migrations...");
+    await applyShadowedMigrations(pool, migrationsFolder, log);
     try {
       await migrate(db, { migrationsFolder });
     } catch (error) {

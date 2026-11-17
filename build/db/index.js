@@ -31,8 +31,88 @@ var isAlreadyExists = (err) => {
   }
   return false;
 };
-var reconcileTracker = async (pool, migrationsFolder, log) => {
+var readJournalMigrations = (migrationsFolder) => {
   const journal = JSON.parse(readFileSync(join(migrationsFolder, "meta", "_journal.json"), "utf-8"));
+  return journal.entries.map((entry) => {
+    const sql = readFileSync(join(migrationsFolder, `${entry.tag}.sql`), "utf-8");
+    return {
+      ...entry,
+      hash: createHash("sha256").update(sql).digest("hex"),
+      statements: sql.split("--> statement-breakpoint").map((statement) => statement.trim()).filter(Boolean)
+    };
+  });
+};
+var findShadowedMigrations = (migrations, trackedHashes, highWaterMark) => {
+  if (highWaterMark === undefined || !Number.isFinite(highWaterMark)) {
+    return [];
+  }
+  let lastTracked = -1;
+  migrations.forEach((migration, index) => {
+    if (trackedHashes.has(migration.hash))
+      lastTracked = index;
+  });
+  return migrations.slice(lastTracked + 1).filter((migration) => migration.when <= highWaterMark);
+};
+var SHADOWED_MIGRATION_LOCK_KEY = 7204311906;
+var applyShadowedMigrations = async (pool, migrationsFolder, log) => {
+  const { rows: trackerExists } = await pool.query(`SELECT to_regclass('"drizzle"."__drizzle_migrations"') IS NOT NULL AS exists`);
+  if (!trackerExists[0]?.exists)
+    return 0;
+  const loadTracker = async (client) => {
+    const { rows } = await client.query('SELECT hash, created_at FROM "drizzle"."__drizzle_migrations"');
+    const { rows: newest } = await client.query('SELECT created_at FROM "drizzle"."__drizzle_migrations" ORDER BY created_at DESC LIMIT 1');
+    const newestRow = newest[0];
+    return {
+      hashes: new Set(rows.map((row) => row.hash)),
+      highWaterMark: newestRow ? Number(newestRow.created_at) : undefined
+    };
+  };
+  const initial = await loadTracker(pool);
+  const migrations = readJournalMigrations(migrationsFolder);
+  const shadowed = findShadowedMigrations(migrations, initial.hashes, initial.highWaterMark);
+  if (shadowed.length === 0)
+    return 0;
+  log(`[Migrate] ${shadowed.length} migration(s) predate the tracker's newest entry and would be skipped; applying them`);
+  let applied = 0;
+  for (const migration of shadowed) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock($1)", [
+        SHADOWED_MIGRATION_LOCK_KEY
+      ]);
+      const current = await loadTracker(client);
+      if (current.hashes.has(migration.hash)) {
+        await client.query("ROLLBACK");
+        continue;
+      }
+      await client.query("SAVEPOINT shadowed_migration");
+      let alreadyApplied = false;
+      try {
+        for (const statement of migration.statements) {
+          await client.query(statement);
+        }
+      } catch (error) {
+        if (!isAlreadyExists(error))
+          throw error;
+        await client.query("ROLLBACK TO SAVEPOINT shadowed_migration");
+        alreadyApplied = true;
+      }
+      await client.query('INSERT INTO "drizzle"."__drizzle_migrations" (hash, created_at) VALUES ($1, $2)', [migration.hash, migration.when]);
+      await client.query("COMMIT");
+      log(alreadyApplied ? `[Migrate] Reconciled already-applied migration ${migration.tag} into the tracker` : `[Migrate] Applied skipped migration ${migration.tag}`);
+      applied++;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+  return applied;
+};
+var reconcileTracker = async (pool, migrationsFolder, log) => {
+  const migrations = readJournalMigrations(migrationsFolder);
   await pool.query('CREATE SCHEMA IF NOT EXISTS "drizzle"');
   await pool.query(`
     CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
@@ -44,12 +124,10 @@ var reconcileTracker = async (pool, migrationsFolder, log) => {
   const { rows } = await pool.query('SELECT hash FROM "drizzle"."__drizzle_migrations"');
   const trackedHashes = new Set(rows.map((r) => r.hash));
   let backfilled = 0;
-  for (const entry of journal.entries) {
-    const sql = readFileSync(join(migrationsFolder, `${entry.tag}.sql`), "utf-8");
-    const hash = createHash("sha256").update(sql).digest("hex");
+  for (const entry of migrations) {
+    const { hash, statements } = entry;
     if (trackedHashes.has(hash))
       continue;
-    const statements = sql.split("--> statement-breakpoint").map((statement) => statement.trim()).filter(Boolean);
     const client = await pool.connect();
     let alreadyApplied = false;
     try {
@@ -86,6 +164,7 @@ var runMigrations = async (options = {}) => {
   try {
     const db = drizzle({ client: pool, casing });
     log("[Migrate] Applying migrations...");
+    await applyShadowedMigrations(pool, migrationsFolder, log);
     try {
       await migrate(db, { migrationsFolder });
     } catch (error) {
@@ -107,5 +186,6 @@ var runMigrations = async (options = {}) => {
 export {
   DEFAULT_LOCK_TIMEOUT_MS,
   buildMigrationPoolConfig,
+  findShadowedMigrations,
   runMigrations
 };
