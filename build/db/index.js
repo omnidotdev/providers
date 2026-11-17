@@ -46,7 +46,12 @@ var findShadowedMigrations = (migrations, trackedHashes, highWaterMark) => {
   if (highWaterMark === undefined || !Number.isFinite(highWaterMark)) {
     return [];
   }
-  return migrations.filter((migration) => !trackedHashes.has(migration.hash) && migration.when <= highWaterMark);
+  let lastTracked = -1;
+  migrations.forEach((migration, index) => {
+    if (trackedHashes.has(migration.hash))
+      lastTracked = index;
+  });
+  return migrations.slice(lastTracked + 1).filter((migration) => migration.when <= highWaterMark);
 };
 var SHADOWED_MIGRATION_LOCK_KEY = 7204311906;
 var applyShadowedMigrations = async (pool, migrationsFolder, log) => {

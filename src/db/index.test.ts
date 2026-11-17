@@ -82,6 +82,28 @@ describe("findShadowedMigrations", () => {
     ).toEqual([]);
   });
 
+  it("leaves an untracked entry that precedes a tracked one alone", () => {
+    // 0001 edited after it was applied: its new hash is untracked, but later
+    // migrations are tracked, so it is not pending and must not re-run
+    const shadowed = findShadowedMigrations(
+      journal,
+      new Set(["h0", "h2", "h3"]),
+      4000,
+    );
+
+    expect(shadowed).toEqual([]);
+  });
+
+  it("only returns the tail after the last tracked migration", () => {
+    const shadowed = findShadowedMigrations(
+      journal,
+      new Set(["h0", "h2"]),
+      9999,
+    );
+
+    expect(shadowed.map((m) => m.tag)).toEqual(["0003_add_column"]);
+  });
+
   it("returns nothing for an empty tracker", () => {
     expect(findShadowedMigrations(journal, new Set(), undefined)).toEqual([]);
   });

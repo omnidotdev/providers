@@ -19,8 +19,8 @@
  * newest tracker row's `created_at`. A tracker row stamped later than pending
  * migrations (e.g. a hand-written ledger rebaseline that used `now()`) makes
  * drizzle skip them on every boot with no error, so the schema silently falls
- * behind. `runMigrations` detects untracked entries at or below the high-water
- * mark and applies them itself before handing off to `migrate`. This lives here so the whole fleet shares one implementation instead
+ * behind. `runMigrations` detects the untracked journal tail at or below the
+ * high-water mark and applies it itself before handing off to `migrate`. This lives here so the whole fleet shares one implementation instead
  * of copying a migrate script per service.
  *
  * `drizzle-orm` and `pg` are optional peer dependencies: only services that call
@@ -161,14 +161,20 @@ const readJournalMigrations = (
 };
 
 /**
- * Journal migrations drizzle's migrator would skip forever: not recorded in the
- * tracker, yet no later than the tracker's high-water mark.
+ * Journal migrations drizzle's migrator would skip forever: the untracked tail
+ * of the journal (every entry after the last tracked one) that is no later than
+ * the tracker's high-water mark.
  *
  * drizzle-orm reads only the newest tracker row (`ORDER BY created_at DESC
- * LIMIT 1`) and runs a migration only when `Number(created_at) < when`, so any
+ * LIMIT 1`) and runs a migration only when `Number(created_at) < when`, so an
  * untracked entry with `when <= highWaterMark` is never applied and never
  * errors. `highWaterMark` is that newest row's `created_at` exactly as drizzle
- * sees it (`undefined` when the tracker is empty).
+ * sees it (`undefined` when the tracker is empty). `migrations` must be in
+ * journal order.
+ *
+ * Only the tail counts. An untracked entry that precedes a tracked one is
+ * almost always a migration edited after it was applied (its hash changed), not
+ * a pending one, so re-running it out of order is unsafe and it is left alone.
  */
 export const findShadowedMigrations = <
   T extends { hash: string; when: number },
@@ -181,10 +187,14 @@ export const findShadowedMigrations = <
     return [];
   }
 
-  return migrations.filter(
-    (migration) =>
-      !trackedHashes.has(migration.hash) && migration.when <= highWaterMark,
-  );
+  let lastTracked = -1;
+  migrations.forEach((migration, index) => {
+    if (trackedHashes.has(migration.hash)) lastTracked = index;
+  });
+
+  return migrations
+    .slice(lastTracked + 1)
+    .filter((migration) => migration.when <= highWaterMark);
 };
 
 /**
