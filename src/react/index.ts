@@ -19,7 +19,6 @@ export { EventsProvider, useEvents } from "./EventsProvider";
 export {
   ManageTeamLink,
   type ManageTeamLinkProps,
-  gatekeeperDashboardUrl,
   gatekeeperOrgManageUrl,
 } from "./ManageTeamLink";
 export {
