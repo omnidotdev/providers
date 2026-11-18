@@ -1,4 +1,5 @@
 import { readOrgClaims } from "./claims";
+import { hostSetCookieForwarder } from "./forwardCookie";
 import {
   createOrganizationHydrator,
   isSlimOrganizationClaim,
@@ -106,7 +107,7 @@ type GetAuthConfig = {
    * internal refresh-token rotation is forwarded onto the outgoing response.
    *
    * By default this is unnecessary: `getAuth` forwards the rotated account
-   * cookie automatically via TanStack Start's `getResponseHeaders().append`, so
+   * cookie automatically via TanStack Start's `appendResponseHeader`, so
    * every Omni app persists the new refresh token WITHOUT wiring anything. Supply
    * this only to override that default (a non-TanStack host, or custom behavior).
    *
@@ -235,13 +236,13 @@ function createGetAuth(config: GetAuthConfig) {
   } = config;
 
   // Resolve the cookie forwarder ONCE. Prefer an explicit override; otherwise
-  // fall back to TanStack Start's response-header append so forwarding is
+  // fall back to TanStack Start's `appendResponseHeader` so forwarding is
   // automatic and no app has to remember to wire it (the omission that silently
   // emptied dashboards fleet-wide). The tanstack import is lazy and optional: a
   // non-tanstack consumer that supplies no override keeps the prior no-op (the
-  // rotated cookie is dropped) rather than crashing. `getResponseHeaders` is
-  // resolved once, but invoked per request inside the closure so it always reads
-  // the current request's response headers.
+  // rotated cookie is dropped) rather than crashing. The helper is resolved
+  // once, but invoked per request inside the closure so it always writes the
+  // current request's response (see `hostSetCookieForwarder`).
   let forwarder: ((raw: string) => void) | null | undefined;
   const resolveForwarder = async (): Promise<
     ((raw: string) => void) | null
@@ -255,12 +256,11 @@ function createGetAuth(config: GetAuthConfig) {
       // @tanstack/react-start is an optional RUNTIME peer resolved in the
       // consuming app (every Omni app has it), not a providers build dependency,
       // so providers deliberately carries no types for it
-      const { getResponseHeaders } = await import(
+      const server = await import(
         // @ts-expect-error optional runtime peer, no types in providers
         "@tanstack/react-start/server"
       );
-      forwarder = (raw: string) =>
-        getResponseHeaders().append("set-cookie", raw);
+      forwarder = hostSetCookieForwarder(server);
     } catch {
       forwarder = null;
     }
