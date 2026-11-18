@@ -3240,6 +3240,18 @@ var formatRelativeTime = (ms) => {
     return `${minutes}m`;
   return "just now";
 };
+// src/auth/forwardCookie.ts
+var hostSetCookieForwarder = (server) => {
+  const { appendResponseHeader, getResponseHeaders } = server;
+  if (typeof appendResponseHeader === "function") {
+    return (raw) => appendResponseHeader("set-cookie", raw);
+  }
+  if (typeof getResponseHeaders === "function") {
+    return (raw) => getResponseHeaders().append("set-cookie", raw);
+  }
+  return null;
+};
+
 // src/auth/resolve.ts
 async function fetchUserInfo(token, userinfoUrl) {
   const response = await fetch(userinfoUrl, {
@@ -3400,8 +3412,8 @@ function createGetAuth(config) {
       return forwarder;
     }
     try {
-      const { getResponseHeaders } = await import(/* @vite-ignore */ (() => "@tanstack/react-start/server")());
-      forwarder = (raw) => getResponseHeaders().append("set-cookie", raw);
+      const server = await import(/* @vite-ignore */ (() => "@tanstack/react-start/server")());
+      forwarder = hostSetCookieForwarder(server);
     } catch {
       forwarder = null;
     }

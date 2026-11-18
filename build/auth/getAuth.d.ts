@@ -105,7 +105,7 @@ type GetAuthConfig = {
      * internal refresh-token rotation is forwarded onto the outgoing response.
      *
      * By default this is unnecessary: `getAuth` forwards the rotated account
-     * cookie automatically via TanStack Start's `getResponseHeaders().append`, so
+     * cookie automatically via TanStack Start's `appendResponseHeader`, so
      * every Omni app persists the new refresh token WITHOUT wiring anything. Supply
      * this only to override that default (a non-TanStack host, or custom behavior).
      *
