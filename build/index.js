@@ -80068,7 +80068,9 @@ var WARDEN_RELATIONS = {
   vortex_workflow: ["owner", "editor", "viewer"],
   vortex_integration: ["owner", "editor", "viewer"],
   vortex_plugin: ["owner", "editor", "viewer"],
-  vortex_mcp_server: ["owner", "editor", "viewer"]
+  vortex_mcp_server: ["owner", "editor", "viewer"],
+  profile: ["creator"],
+  store: ["owner", "admin", "editor", "member"]
 };
 
 // src/authz/index.ts

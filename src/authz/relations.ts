@@ -25,6 +25,8 @@ export const WARDEN_RELATIONS = {
   vortex_integration: ["owner", "editor", "viewer"],
   vortex_plugin: ["owner", "editor", "viewer"],
   vortex_mcp_server: ["owner", "editor", "viewer"],
+  profile: ["creator"],
+  store: ["owner", "admin", "editor", "member"],
 } as const;
 
 /** A resource type that has user-assignable role relations in Warden. */
