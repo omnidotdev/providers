@@ -25,6 +25,8 @@ export declare const WARDEN_RELATIONS: {
     readonly vortex_integration: readonly ["owner", "editor", "viewer"];
     readonly vortex_plugin: readonly ["owner", "editor", "viewer"];
     readonly vortex_mcp_server: readonly ["owner", "editor", "viewer"];
+    readonly profile: readonly ["creator"];
+    readonly store: readonly ["owner", "admin", "editor", "member"];
 };
 /** A resource type that has user-assignable role relations in Warden. */
 export type WardenResourceType = keyof typeof WARDEN_RELATIONS;
