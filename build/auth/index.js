@@ -3647,6 +3647,7 @@ function createOmniOAuthConfig(config) {
 init_webapi();
 var DISCOVERY_TTL = 24 * 60 * 60 * 1000;
 var JWKS_TTL = 60 * 60 * 1000;
+var discoveryUrl = (issuer) => `${issuer.replace(/\/+$/, "")}/.well-known/openid-configuration`;
 function createOidcClient(config) {
   let discoveryCache = null;
   let discoveryExpiry = 0;
@@ -3656,8 +3657,7 @@ function createOidcClient(config) {
     const now = Date.now();
     if (discoveryCache && now < discoveryExpiry)
       return discoveryCache;
-    const url = new URL("/.well-known/openid-configuration", config.authBaseUrl);
-    const response = await fetch(url, {
+    const response = await fetch(discoveryUrl(config.authBaseUrl), {
       signal: AbortSignal.timeout(15000)
     });
     if (!response.ok) {
