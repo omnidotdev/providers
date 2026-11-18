@@ -111,4 +111,41 @@ describe("createOidcClient", () => {
     expect(urls[0]).toContain("auth1.example.com");
     expect(urls[1]).toContain("auth2.example.com");
   });
+
+  describe("discovery URL", () => {
+    // OIDC Discovery 1.0 section 4: the issuer with the well-known path
+    // appended, so an issuer's own path is kept
+    it.each([
+      [
+        "a root issuer",
+        "https://identity.omni.dev",
+        "https://identity.omni.dev/.well-known/openid-configuration",
+      ],
+      [
+        "a root issuer with a trailing slash",
+        "https://identity.omni.dev/",
+        "https://identity.omni.dev/.well-known/openid-configuration",
+      ],
+      [
+        "an issuer with a path",
+        "https://auth.example.com/dex",
+        "https://auth.example.com/dex/.well-known/openid-configuration",
+      ],
+      [
+        "a nested issuer path with a trailing slash",
+        "https://sso.example.com/realms/acme/",
+        "https://sso.example.com/realms/acme/.well-known/openid-configuration",
+      ],
+    ])("is built for %s", async (_label, authBaseUrl, expected) => {
+      const urls: string[] = [];
+      globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+        urls.push(input.toString());
+        return new Response(JSON.stringify(MOCK_DISCOVERY), { status: 200 });
+      });
+
+      await createOidcClient({ authBaseUrl }).getDiscovery();
+
+      expect(urls).toEqual([expected]);
+    });
+  });
 });

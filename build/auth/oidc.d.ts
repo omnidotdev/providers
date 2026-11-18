@@ -8,7 +8,10 @@ type OidcDiscovery = {
     userinfo_endpoint?: string;
 };
 type OidcClientConfig = {
-    /** Base URL of the auth service (e.g. https://auth.omni.dev) */
+    /**
+     * Base URL of the auth service: the OIDC issuer, which may carry a path
+     * (e.g. https://identity.omni.dev, https://auth.example.com/dex)
+     */
     authBaseUrl: string;
 };
 type OidcClient = {

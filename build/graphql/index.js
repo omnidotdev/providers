@@ -17246,14 +17246,17 @@ var createGetOrganizationClaimsFromCache = (queryClient) => {
 import { EXPORTABLE } from "graphile-export/helpers";
 import { context, lambda } from "postgraphile/grafast";
 import { extendSchema, gql } from "postgraphile/utils";
-var BASE_FIELDS = [
+var baseFields = (identityProviderIdType) => [
   { name: "rowId", type: "UUID!" },
-  { name: "identityProviderId", type: "UUID!" },
+  { name: "identityProviderId", type: identityProviderIdType },
   { name: "name", type: "String!" },
   { name: "email", type: "String!" }
 ];
 var createObserverPlugin = (config) => {
-  const allFields = [...BASE_FIELDS, ...config?.extraFields ?? []];
+  const allFields = [
+    ...baseFields(config?.identityProviderIdType ?? "UUID!"),
+    ...config?.extraFields ?? []
+  ];
   const fieldDefs = allFields.map((f) => `      ${f.name}: ${f.type}`).join(`
 `);
   return extendSchema({

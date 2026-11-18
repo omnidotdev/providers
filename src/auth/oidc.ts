@@ -12,7 +12,10 @@ type OidcDiscovery = {
 };
 
 type OidcClientConfig = {
-  /** Base URL of the auth service (e.g. https://auth.omni.dev) */
+  /**
+   * Base URL of the auth service: the OIDC issuer, which may carry a path
+   * (e.g. https://identity.omni.dev, https://auth.example.com/dex)
+   */
   authBaseUrl: string;
 };
 
@@ -33,6 +36,15 @@ const DISCOVERY_TTL = 24 * 60 * 60 * 1000; // 24h
 const JWKS_TTL = 60 * 60 * 1000; // 1h
 
 /**
+ * The discovery document URL for an issuer: the issuer with
+ * `/.well-known/openid-configuration` appended (OIDC Discovery 1.0 section 4),
+ * so an issuer with a path (`https://host/dex`, `https://host/realms/x`) keeps
+ * it. A trailing slash on the issuer is dropped first
+ */
+const discoveryUrl = (issuer: string): string =>
+  `${issuer.replace(/\/+$/, "")}/.well-known/openid-configuration`;
+
+/**
  * Create an OIDC Discovery client with JWKS caching.
  * Replaces per-app inline OIDC/JWKS boilerplate.
  * @param config - OIDC client configuration
@@ -49,11 +61,7 @@ function createOidcClient(config: OidcClientConfig): OidcClient {
 
     if (discoveryCache && now < discoveryExpiry) return discoveryCache;
 
-    const url = new URL(
-      "/.well-known/openid-configuration",
-      config.authBaseUrl,
-    );
-    const response = await fetch(url, {
+    const response = await fetch(discoveryUrl(config.authBaseUrl), {
       signal: AbortSignal.timeout(15_000),
     });
 
