@@ -1,5 +1,11 @@
 # @omnidotdev/providers
 
+## 0.4.0
+
+### Minor Changes
+
+- [#93](https://github.com/omnidotdev/providers/pull/93) [`5bfbbe1`](https://github.com/omnidotdev/providers/commit/5bfbbe1f42264854090bd30426b3c31daf44e592) Thanks [@coopbri](https://github.com/coopbri)! - The Synapse client reports every charge a call settled as `chargeIds` (the gateway lists them comma-separated in `x-synapse-charge-id`, since a cascade bills each attempt). `chargeId` stays as the first one and is deprecated.
+
 ## 0.3.0
 
 ### Minor Changes
