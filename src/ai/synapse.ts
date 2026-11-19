@@ -115,10 +115,12 @@ export const SYNAPSE_COST_HEADERS = {
 } as const;
 
 /**
- * Response header naming the gateway's charge for a non-streaming managed call:
- * the idempotency key of the debit it settled against the caller's billing
- * account. A product refunds a call it could not use by this id. Absent when
- * nothing was charged (BYOK, a zero cost, or a settlement that failed)
+ * Response header naming the gateway's charges for a non-streaming managed
+ * call: the idempotency keys of the debits it settled against the caller's
+ * billing account, comma-separated (a cascade bills each attempt it made). A
+ * product refunds a call it could not use by these ids. Absent when nothing
+ * was charged (BYOK, a zero cost, an included-allowance product, or a
+ * settlement that failed)
  */
 export const SYNAPSE_CHARGE_HEADER = "x-synapse-charge-id";
 
@@ -145,7 +147,15 @@ export interface SynapseResult {
    * null when not reported. `max_tokens` means the output was cut off
    */
   stopReason: string | null;
-  /** The gateway's charge for this call ({@link SYNAPSE_CHARGE_HEADER}), or null */
+  /**
+   * The gateway's charges for this call ({@link SYNAPSE_CHARGE_HEADER}), in
+   * settlement order; empty when nothing was charged
+   */
+  chargeIds: string[];
+  /**
+   * The first of {@link chargeIds}, or null
+   * @deprecated A call can settle more than one charge; use `chargeIds`
+   */
   chargeId: string | null;
 }
 
@@ -298,7 +308,10 @@ export const createSynapseClient = (
       );
       const credits = costHeader(res.headers, SYNAPSE_COST_HEADERS.credits);
 
-      const chargeId = res.headers.get(SYNAPSE_CHARGE_HEADER)?.trim() || null;
+      const chargeIds = (res.headers.get(SYNAPSE_CHARGE_HEADER) ?? "")
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
 
       return {
         text,
@@ -309,7 +322,8 @@ export const createSynapseClient = (
             : null,
         stopReason:
           typeof data.stop_reason === "string" ? data.stop_reason : null,
-        chargeId,
+        chargeIds,
+        chargeId: chargeIds[0] ?? null,
       };
     },
   };
