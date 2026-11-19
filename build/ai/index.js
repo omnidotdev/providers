@@ -164,13 +164,14 @@ var createSynapseClient = (config) => {
       const costCents = providerCostUsd !== null ? providerCostUsd * 100 : config.rate ? estimateSynapseCostCents(inputTokens, outputTokens, config.rate) : null;
       const chargedUsd = costHeader(res.headers, SYNAPSE_COST_HEADERS.chargedUsd);
       const credits = costHeader(res.headers, SYNAPSE_COST_HEADERS.credits);
-      const chargeId = res.headers.get(SYNAPSE_CHARGE_HEADER)?.trim() || null;
+      const chargeIds = (res.headers.get(SYNAPSE_CHARGE_HEADER) ?? "").split(",").map((id) => id.trim()).filter(Boolean);
       return {
         text,
         usage: { inputTokens, outputTokens, costCents, chargedUsd, credits },
         model: typeof data.model === "string" && data.model.trim() ? data.model.trim() : null,
         stopReason: typeof data.stop_reason === "string" ? data.stop_reason : null,
-        chargeId
+        chargeIds,
+        chargeId: chargeIds[0] ?? null
       };
     }
   };

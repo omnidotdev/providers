@@ -202,6 +202,29 @@ describe("createSynapseClient.messages", () => {
     expect(result.model).toBe("claude-haiku-5-5");
     expect(result.stopReason).toBe("max_tokens");
     expect(result.chargeId).toBe("charge-123");
+    expect(result.chargeIds).toEqual(["charge-123"]);
+  });
+
+  test("reports every charge a call settled, in order", async () => {
+    const { fetchImpl } = makeFetch({
+      body: OK_BODY,
+      headers: { [SYNAPSE_CHARGE_HEADER]: "charge-1, charge-2" },
+    });
+    const client = createSynapseClient({
+      baseUrl: "https://g",
+      apiKey: "k",
+      model: "m",
+      fetchImpl,
+    });
+
+    const result = await client.messages({
+      system: "",
+      messages: [],
+      maxTokens: 10,
+    });
+
+    expect(result.chargeIds).toEqual(["charge-1", "charge-2"]);
+    expect(result.chargeId).toBe("charge-1");
   });
 
   test("reports nulls when the gateway omits the model, stop reason, or charge", async () => {
@@ -222,6 +245,7 @@ describe("createSynapseClient.messages", () => {
     expect(result.model).toBeNull();
     expect(result.stopReason).toBeNull();
     expect(result.chargeId).toBeNull();
+    expect(result.chargeIds).toEqual([]);
   });
 
   test("a per-request key (BYOK) overrides the configured key", async () => {
