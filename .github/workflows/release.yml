@@ -36,7 +36,7 @@ jobs:
           bun-version: latest
       # registry-url is what writes the .npmrc that reads NODE_AUTH_TOKEN below;
       # without it the publish reaches npm unauthenticated and fails ENEEDAUTH
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
