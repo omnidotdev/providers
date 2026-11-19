@@ -42,13 +42,14 @@ var readJournalMigrations = (migrationsFolder) => {
     };
   });
 };
-var findShadowedMigrations = (migrations, trackedHashes, highWaterMark) => {
+var isMigrationTracked = (migration, trackedKeys) => trackedKeys.has(migration.hash) || migration.tag !== undefined && trackedKeys.has(migration.tag);
+var findShadowedMigrations = (migrations, trackedKeys, highWaterMark) => {
   if (highWaterMark === undefined || !Number.isFinite(highWaterMark)) {
     return [];
   }
   let lastTracked = -1;
   migrations.forEach((migration, index) => {
-    if (trackedHashes.has(migration.hash))
+    if (isMigrationTracked(migration, trackedKeys))
       lastTracked = index;
   });
   return migrations.slice(lastTracked + 1).filter((migration) => migration.when <= highWaterMark);
@@ -82,7 +83,7 @@ var applyShadowedMigrations = async (pool, migrationsFolder, log) => {
         SHADOWED_MIGRATION_LOCK_KEY
       ]);
       const current = await loadTracker(client);
-      if (current.hashes.has(migration.hash)) {
+      if (isMigrationTracked(migration, current.hashes)) {
         await client.query("ROLLBACK");
         continue;
       }
@@ -126,7 +127,7 @@ var reconcileTracker = async (pool, migrationsFolder, log) => {
   let backfilled = 0;
   for (const entry of migrations) {
     const { hash, statements } = entry;
-    if (trackedHashes.has(hash))
+    if (isMigrationTracked(entry, trackedHashes))
       continue;
     const client = await pool.connect();
     let alreadyApplied = false;
@@ -187,5 +188,6 @@ export {
   DEFAULT_LOCK_TIMEOUT_MS,
   buildMigrationPoolConfig,
   findShadowedMigrations,
+  isMigrationTracked,
   runMigrations
 };

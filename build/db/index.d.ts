@@ -79,6 +79,19 @@ export interface RunMigrationsOptions {
     log?: (message: string) => void;
 }
 /**
+ * Whether a journal migration has a tracker row. drizzle-orm records the
+ * sha256 of the migration file in the tracker's `hash` column, but legacy
+ * trackers (hand-written ledgers, older migrate scripts) record the migration
+ * tag (`0000_boring_rocket_racer`) there instead. drizzle's own migrator never
+ * reads `hash` (it only compares the newest row's `created_at`), so those
+ * trackers work with plain `migrate()`; a tag row must count as tracked here
+ * too, or every legacy-tracked migration looks untracked and is re-run
+ */
+export declare const isMigrationTracked: (migration: {
+    hash: string;
+    tag?: string;
+}, trackedKeys: ReadonlySet<string>) => boolean;
+/**
  * Journal migrations drizzle's migrator would skip forever: the untracked tail
  * of the journal (every entry after the last tracked one) that is no later than
  * the tracker's high-water mark.
@@ -87,7 +100,9 @@ export interface RunMigrationsOptions {
  * LIMIT 1`) and runs a migration only when `Number(created_at) < when`, so an
  * untracked entry with `when <= highWaterMark` is never applied and never
  * errors. `highWaterMark` is that newest row's `created_at` exactly as drizzle
- * sees it (`undefined` when the tracker is empty). `migrations` must be in
+ * sees it (`undefined` when the tracker is empty). `trackedKeys` is every
+ * tracker row's `hash` column, which holds a sha256 or, in legacy trackers, a
+ * migration tag (see {@link isMigrationTracked}). `migrations` must be in
  * journal order.
  *
  * Only the tail counts. An untracked entry that precedes a tracked one is
@@ -96,8 +111,9 @@ export interface RunMigrationsOptions {
  */
 export declare const findShadowedMigrations: <T extends {
     hash: string;
+    tag?: string;
     when: number;
-}>(migrations: readonly T[], trackedHashes: ReadonlySet<string>, highWaterMark: number | undefined) => T[];
+}>(migrations: readonly T[], trackedKeys: ReadonlySet<string>, highWaterMark: number | undefined) => T[];
 /**
  * Apply drizzle migrations, self-healing migration-tracker drift.
  *
