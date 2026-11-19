@@ -4,6 +4,7 @@ export {
   createSynapseProvisioner,
 } from "./provisioner";
 export {
+  SYNAPSE_CHARGE_HEADER,
   SYNAPSE_COST_HEADERS,
   SynapseRequestError,
   createSynapseClient,

@@ -27,7 +27,7 @@ export { BILLING_WRITE_FAILED_EVENT, isPermissionError, probeWriteScope, safePay
 export { createSpendBreaker, utcDayKey } from "./spendBreaker";
 export type { AccountCreditDisplay } from "./accountCredit";
 export type { CapResolver, EntitlementCapResolverConfig, } from "./capResolver";
-export type { AccountCredit, BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, } from "./interface";
+export type { AccountCredit, BillingProvider, ChargeReversalResult, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, } from "./interface";
 export type { NoopBillingProviderConfig } from "./noop";
 export type { AlertEventsProvider, SafePaymentWriteOptions, ScopeProbeResult, } from "./safePaymentWrite";
 export type { SpendBreaker } from "./spendBreaker";

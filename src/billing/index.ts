@@ -82,6 +82,7 @@ export type {
 export type {
   AccountCredit,
   BillingProvider,
+  ChargeReversalResult,
   CheckoutParams,
   CheckoutWithWorkspaceParams,
   CheckoutWithWorkspaceResponse,

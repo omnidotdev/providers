@@ -186,6 +186,25 @@ type CreditAddResult = {
     duplicate: boolean;
 };
 /**
+ * Result of reversing a charge:
+ * - `reversed`: the charge was refunded (`duplicate` when an earlier call
+ *   already reversed it, so nothing more was refunded)
+ * - `not_found`: no such charge on this entity for this product
+ * - `unavailable`: a transport or service error; the charge stands, so a
+ *   caller may retry with the same id
+ */
+type ChargeReversalResult = {
+    status: "reversed";
+    amount: number;
+    balance: number;
+    duplicate: boolean;
+} | {
+    status: "not_found";
+} | {
+    status: "unavailable";
+    error: string;
+};
+/**
  * Billing provider interface.
  * Implementations check feature access and limits.
  */
@@ -259,6 +278,16 @@ interface BillingProvider {
     deductCredits(entityType: string, entityId: string, amount: number, options?: CreditWriteOptions): Promise<CreditDeductResult>;
     /** Add credit to an entity's balance (purchase/grant/refund/adjustment). */
     addCredits(entityType: string, entityId: string, amount: number, type: CreditAddType, options?: CreditWriteOptions): Promise<CreditAddResult | null>;
+    /**
+     * Refund a charge in full: the debit the AI gateway settled for a call the
+     * product could not use, named by its charge id (the debit's idempotency
+     * key, which the gateway returns as `x-synapse-charge-id`). Aether refunds
+     * exactly what that debit took, at most once, and only a debit made for this
+     * product on this entity
+     */
+    reverseCharge?(entityType: string, entityId: string, chargeId: string, options?: {
+        reason?: string;
+    }): Promise<ChargeReversalResult>;
     /** Invalidate cached entitlements for an entity */
     invalidateCache?(entityType: string, entityId: string): void;
     /** Clear all cached entitlements */
@@ -271,4 +300,4 @@ interface BillingProvider {
     /** Close the provider connection (if stateful) */
     close?(): Promise<void>;
 }
-export type { AccountCredit, BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, };
+export type { AccountCredit, BillingProvider, ChargeReversalResult, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, Entitlement, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Product, Recurring, Subscription, };

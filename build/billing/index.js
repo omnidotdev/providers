@@ -416,6 +416,36 @@ class AetherBillingProvider {
       return null;
     return await response.json();
   }
+  async reverseCharge(entityType, entityId, chargeId, options = {}) {
+    try {
+      const response = await fetch(`${this.config.baseUrl}/credits/${this.config.appId}/${entityType}/${entityId}/reverse`, {
+        method: "POST",
+        headers: {
+          ...this.serviceHeaders(),
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ chargeId, ...options }),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+      });
+      if (response.status === 404)
+        return { status: "not_found" };
+      if (!response.ok) {
+        return { status: "unavailable", error: `HTTP ${response.status}` };
+      }
+      const data = await response.json();
+      return {
+        status: "reversed",
+        amount: data.amount,
+        balance: data.balance,
+        duplicate: data.duplicate
+      };
+    } catch (error) {
+      return {
+        status: "unavailable",
+        error: error instanceof Error ? error.message : "reversal failed"
+      };
+    }
+  }
   userHeaders(accessToken) {
     return {
       ...this.serviceHeaders(),
@@ -505,6 +535,9 @@ class NoopBillingProvider {
   }
   async addCredits(_entityType, _entityId, _amount, _type, _options) {
     return null;
+  }
+  async reverseCharge(_entityType, _entityId, _chargeId) {
+    return { status: "unavailable", error: "Billing is not configured" };
   }
   invalidateCache(_entityType, _entityId) {}
   clearCache() {}

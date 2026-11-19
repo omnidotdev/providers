@@ -1,4 +1,4 @@
-import type { AccountCredit, BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Subscription } from "./interface";
+import type { AccountCredit, BillingProvider, ChargeReversalResult, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Subscription } from "./interface";
 type NoopBillingProviderConfig = {};
 /**
  * No-op billing provider for self-hosted, dev, and testing.
@@ -22,6 +22,7 @@ declare class NoopBillingProvider implements BillingProvider {
     checkCredits(_entityType: string, _entityId: string, _amount: number): Promise<CreditCheck>;
     deductCredits(_entityType: string, _entityId: string, _amount: number, _options?: CreditWriteOptions): Promise<CreditDeductResult>;
     addCredits(_entityType: string, _entityId: string, _amount: number, _type: CreditAddType, _options?: CreditWriteOptions): Promise<CreditAddResult | null>;
+    reverseCharge(_entityType: string, _entityId: string, _chargeId: string): Promise<ChargeReversalResult>;
     invalidateCache(_entityType: string, _entityId: string): void;
     clearCache(): void;
     healthCheck(): Promise<{
