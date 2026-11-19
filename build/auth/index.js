@@ -3328,7 +3328,7 @@ var createOrganizationHydrator = (config) => {
         remember(subject, organizations);
       return organizations;
     } catch (err) {
-      console.error(`${logPrefix} userinfo org hydration failed:`, err);
+      console.error(`${logPrefix} userinfo org hydration failed:`, err instanceof Error ? err.message : String(err));
       return;
     }
   };
@@ -3523,7 +3523,7 @@ function createGetAuth(config) {
                 organizations = hydrated;
             }
           } catch (jwtError) {
-            console.error(`${logPrefix} JWT verification failed:`, jwtError);
+            console.error(`${logPrefix} JWT verification failed:`, jwtError instanceof Error ? jwtError.message : String(jwtError));
           }
         }
         if (organizations.length === 0) {
@@ -3562,7 +3562,7 @@ function createGetAuth(config) {
         if (isInvalidGrant(err)) {
           console.warn(`${logPrefix} Token refresh failed (likely a rotation race); serving session without a fresh access token`);
         } else {
-          console.error(`${logPrefix} Token fetch error:`, err);
+          console.error(`${logPrefix} Token fetch error:`, err instanceof Error ? err.message : String(err));
         }
       }
       if (!identityProviderId && typeof authApi.listUserAccounts === "function") {
@@ -3604,7 +3604,7 @@ function createGetAuth(config) {
         }
       };
     } catch (error) {
-      console.error("Failed to get auth session:", error);
+      console.error("Failed to get auth session:", error instanceof Error ? error.message : String(error));
       return null;
     }
   };

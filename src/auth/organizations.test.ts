@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 import {
   createOrganizationHydrator,
@@ -221,5 +221,29 @@ describe("createOrganizationHydrator with userinfoUrl", () => {
     });
 
     expect(await hydrator.resolve(idToken(slimOrgs), "at")).toEqual([]);
+  });
+});
+
+describe("createOrganizationHydrator logging", () => {
+  it("logs only the error message, never properties carrying claims", async () => {
+    const error = Object.assign(new Error("userinfo request failed"), {
+      payload: { sub: SUB, email: "person@example.com" },
+    });
+    const errorSpy = spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      const { hydrator } = makeHydrator(async () => {
+        throw error;
+      });
+
+      expect(await hydrator.hydrate(SUB, "at")).toBeUndefined();
+
+      const logged = errorSpy.mock.calls.flat();
+      expect(logged.some((arg) => arg === error)).toBe(false);
+      expect(JSON.stringify(logged)).toContain("userinfo request failed");
+      expect(JSON.stringify(logged)).not.toContain("person@example.com");
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });
