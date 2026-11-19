@@ -5,6 +5,7 @@ import { log } from "../util/log";
 import type {
   AccountCredit,
   BillingProvider,
+  ChargeReversalResult,
   CheckoutParams,
   CheckoutWithWorkspaceParams,
   CheckoutWithWorkspaceResponse,
@@ -536,6 +537,52 @@ class AetherBillingProvider implements BillingProvider {
     );
     if (!response.ok) return null;
     return (await response.json()) as CreditAddResult;
+  }
+
+  async reverseCharge(
+    entityType: string,
+    entityId: string,
+    chargeId: string,
+    options: { reason?: string } = {},
+  ): Promise<ChargeReversalResult> {
+    // A write, but idempotent on the charge id, so a caller retry is safe
+    try {
+      const response = await fetch(
+        `${this.config.baseUrl}/credits/${this.config.appId}/${entityType}/${entityId}/reverse`,
+        {
+          method: "POST",
+          headers: {
+            ...this.serviceHeaders(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ chargeId, ...options }),
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        },
+      );
+
+      if (response.status === 404) return { status: "not_found" };
+      if (!response.ok) {
+        return { status: "unavailable", error: `HTTP ${response.status}` };
+      }
+
+      const data = (await response.json()) as {
+        amount: number;
+        balance: number;
+        duplicate: boolean;
+      };
+
+      return {
+        status: "reversed",
+        amount: data.amount,
+        balance: data.balance,
+        duplicate: data.duplicate,
+      };
+    } catch (error) {
+      return {
+        status: "unavailable",
+        error: error instanceof Error ? error.message : "reversal failed",
+      };
+    }
   }
 
   /**

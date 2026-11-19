@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  SYNAPSE_CHARGE_HEADER,
   SynapseRequestError,
   createSynapseClient,
   estimateSynapseCostCents,
@@ -129,6 +130,98 @@ describe("createSynapseClient.messages", () => {
     expect(result.text).toBe("hello world");
     expect(result.usage.inputTokens).toBe(100);
     expect(result.usage.outputTokens).toBe(50);
+  });
+
+  test("passes output_config through for structured output", async () => {
+    const { fetchImpl, calls } = makeFetch({ body: OK_BODY });
+    const client = createSynapseClient({
+      baseUrl: "https://g",
+      apiKey: "k",
+      model: "m",
+      fetchImpl,
+    });
+    const format = {
+      type: "json_schema",
+      schema: {
+        type: "object",
+        properties: { reply: { type: "string" } },
+        required: ["reply"],
+        additionalProperties: false,
+      },
+    };
+
+    await client.messages({
+      system: "",
+      messages: [],
+      maxTokens: 10,
+      outputConfig: { format },
+    });
+
+    const payload = JSON.parse(calls[0]!.init!.body as string);
+    expect(payload.output_config).toEqual({ format });
+  });
+
+  test("sends no output_config when none is given", async () => {
+    const { fetchImpl, calls } = makeFetch({ body: OK_BODY });
+    const client = createSynapseClient({
+      baseUrl: "https://g",
+      apiKey: "k",
+      model: "m",
+      fetchImpl,
+    });
+
+    await client.messages({ system: "", messages: [], maxTokens: 10 });
+
+    expect(JSON.parse(calls[0]!.init!.body as string)).not.toHaveProperty(
+      "output_config",
+    );
+  });
+
+  test("reports the served model, stop reason, and charge id", async () => {
+    const { fetchImpl } = makeFetch({
+      body: {
+        ...OK_BODY,
+        model: "claude-haiku-5-5",
+        stop_reason: "max_tokens",
+      },
+      headers: { [SYNAPSE_CHARGE_HEADER]: "charge-123" },
+    });
+    const client = createSynapseClient({
+      baseUrl: "https://g",
+      apiKey: "k",
+      model: "anthropic/claude-sonnet-5-5",
+      fetchImpl,
+    });
+
+    const result = await client.messages({
+      system: "",
+      messages: [],
+      maxTokens: 10,
+    });
+
+    expect(result.model).toBe("claude-haiku-5-5");
+    expect(result.stopReason).toBe("max_tokens");
+    expect(result.chargeId).toBe("charge-123");
+  });
+
+  test("reports nulls when the gateway omits the model, stop reason, or charge", async () => {
+    const { fetchImpl } = makeFetch({ body: OK_BODY });
+    const client = createSynapseClient({
+      baseUrl: "https://g",
+      apiKey: "k",
+      model: "m",
+      fetchImpl,
+    });
+
+    const result = await client.messages({
+      system: "",
+      messages: [],
+      maxTokens: 10,
+    });
+
+    expect(result.model).toBeNull();
+    expect(result.stopReason).toBeNull();
+    expect(result.chargeId).toBeNull();
   });
 
   test("a per-request key (BYOK) overrides the configured key", async () => {

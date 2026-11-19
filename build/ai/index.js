@@ -106,6 +106,7 @@ var SYNAPSE_COST_HEADERS = {
   credits: "x-synapse-credits",
   providerCostUsd: "x-synapse-provider-cost-usd"
 };
+var SYNAPSE_CHARGE_HEADER = "x-synapse-charge-id";
 var costHeader = (headers, name) => {
   const raw = headers.get(name);
   if (raw === null || raw.trim() === "")
@@ -140,7 +141,8 @@ var createSynapseClient = (config) => {
             model: config.model,
             max_tokens: input.maxTokens,
             system: input.system,
-            messages: input.messages
+            messages: input.messages,
+            ...input.outputConfig && { output_config: input.outputConfig }
           }),
           signal: controller.signal
         });
@@ -162,14 +164,19 @@ var createSynapseClient = (config) => {
       const costCents = providerCostUsd !== null ? providerCostUsd * 100 : config.rate ? estimateSynapseCostCents(inputTokens, outputTokens, config.rate) : null;
       const chargedUsd = costHeader(res.headers, SYNAPSE_COST_HEADERS.chargedUsd);
       const credits = costHeader(res.headers, SYNAPSE_COST_HEADERS.credits);
+      const chargeId = res.headers.get(SYNAPSE_CHARGE_HEADER)?.trim() || null;
       return {
         text,
-        usage: { inputTokens, outputTokens, costCents, chargedUsd, credits }
+        usage: { inputTokens, outputTokens, costCents, chargedUsd, credits },
+        model: typeof data.model === "string" && data.model.trim() ? data.model.trim() : null,
+        stopReason: typeof data.stop_reason === "string" ? data.stop_reason : null,
+        chargeId
       };
     }
   };
 };
 export {
+  SYNAPSE_CHARGE_HEADER,
   SYNAPSE_COST_HEADERS,
   SynapseProvisionError,
   SynapseRequestError,

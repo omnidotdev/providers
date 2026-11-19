@@ -1,6 +1,7 @@
 import type {
   AccountCredit,
   BillingProvider,
+  ChargeReversalResult,
   CheckoutParams,
   CheckoutWithWorkspaceParams,
   CheckoutWithWorkspaceResponse,
@@ -152,6 +153,14 @@ class NoopBillingProvider implements BillingProvider {
     _options?: CreditWriteOptions,
   ): Promise<CreditAddResult | null> {
     return null;
+  }
+
+  async reverseCharge(
+    _entityType: string,
+    _entityId: string,
+    _chargeId: string,
+  ): Promise<ChargeReversalResult> {
+    return { status: "unavailable", error: "Billing is not configured" };
   }
 
   invalidateCache(_entityType: string, _entityId: string): void {}

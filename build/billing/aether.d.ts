@@ -1,4 +1,4 @@
-import type { AccountCredit, BillingProvider, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Subscription } from "./interface";
+import type { AccountCredit, BillingProvider, ChargeReversalResult, CheckoutParams, CheckoutWithWorkspaceParams, CheckoutWithWorkspaceResponse, CreditAddResult, CreditAddType, CreditBalance, CreditCheck, CreditDeductResult, CreditWriteOptions, EntitlementsResponse, EntitlementsResult, PortalFlow, Price, Subscription } from "./interface";
 type AetherBillingProviderConfig = {
     /** Aether billing service base URL */
     baseUrl?: string;
@@ -64,6 +64,9 @@ declare class AetherBillingProvider implements BillingProvider {
     checkCredits(entityType: string, entityId: string, amount: number): Promise<CreditCheck>;
     deductCredits(entityType: string, entityId: string, amount: number, options?: CreditWriteOptions): Promise<CreditDeductResult>;
     addCredits(entityType: string, entityId: string, amount: number, type: CreditAddType, options?: CreditWriteOptions): Promise<CreditAddResult | null>;
+    reverseCharge(entityType: string, entityId: string, chargeId: string, options?: {
+        reason?: string;
+    }): Promise<ChargeReversalResult>;
     /**
      * Headers for a call made for a signed-in user (checkout, subscription
      * lookup, billing portal). Sends the service key WITH the user's token: the

@@ -95,10 +95,30 @@ export declare const SYNAPSE_COST_HEADERS: {
     /** Upstream provider cost before the margin (real spend) */
     readonly providerCostUsd: "x-synapse-provider-cost-usd";
 };
+/**
+ * Response header naming the gateway's charge for a non-streaming managed call:
+ * the idempotency key of the debit it settled against the caller's billing
+ * account. A product refunds a call it could not use by this id. Absent when
+ * nothing was charged (BYOK, a zero cost, or a settlement that failed)
+ */
+export declare const SYNAPSE_CHARGE_HEADER = "x-synapse-charge-id";
 /** The result of a messages call: concatenated text plus usage. */
 export interface SynapseResult {
     text: string;
     usage: SynapseUsage;
+    /**
+     * The model that actually served the call, as the gateway reports it (it
+     * may differ from the requested model, e.g. a free account held to its
+     * product's free model, or a failover), or null when not reported
+     */
+    model: string | null;
+    /**
+     * Why generation stopped (`end_turn`, `max_tokens`, `refusal`, ...), or
+     * null when not reported. `max_tokens` means the output was cut off
+     */
+    stopReason: string | null;
+    /** The gateway's charge for this call ({@link SYNAPSE_CHARGE_HEADER}), or null */
+    chargeId: string | null;
 }
 export interface SynapseClientConfig {
     /** Synapse gateway base URL (e.g. https://gateway.synapse.omni.dev), no trailing slash required. */
@@ -126,6 +146,11 @@ export interface SynapseMessagesInput {
     maxTokens: number;
     /** Per-request key (BYOK), used instead of the configured key when present. */
     apiKey?: string;
+    /**
+     * Anthropic `output_config`, passed through unchanged: `format` (a JSON
+     * schema the response must follow, i.e. structured output) and `effort`
+     */
+    outputConfig?: Record<string, unknown>;
 }
 export interface SynapseClient {
     /** Call `/v1/messages`; returns the concatenated text and usage. */

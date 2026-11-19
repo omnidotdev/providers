@@ -102,3 +102,63 @@ describe("AetherBillingProvider.getAccountCredit", () => {
     ).toBeNull();
   });
 });
+
+describe("AetherBillingProvider.reverseCharge", () => {
+  it("asks Aether to reverse the named charge with the service key", async () => {
+    const calls = captureFetch({
+      amount: 0.0132,
+      balance: 4.2,
+      duplicate: false,
+    });
+
+    const result = await provider.reverseCharge?.(
+      "organization",
+      "org-1",
+      "charge-1",
+      { reason: "generation_failed" },
+    );
+
+    expect(result).toEqual({
+      status: "reversed",
+      amount: 0.0132,
+      balance: 4.2,
+      duplicate: false,
+    });
+    const [call] = calls;
+    expect(call?.url).toBe(
+      "https://aether.test/credits/runa/organization/org-1/reverse",
+    );
+    expect(call?.init.method).toBe("POST");
+    expect(call?.init.headers).toMatchObject({
+      "x-service-api-key": "runa-key",
+    });
+    expect(JSON.parse(String(call?.init.body))).toEqual({
+      chargeId: "charge-1",
+      reason: "generation_failed",
+    });
+  });
+
+  it("reports an unknown charge as not found", async () => {
+    captureFetch({ error: "Charge not found" }, 404);
+
+    expect(
+      await provider.reverseCharge?.("organization", "org-1", "missing"),
+    ).toEqual({ status: "not_found" });
+  });
+
+  it("reports a refusal or outage as unavailable, so the caller can retry", async () => {
+    captureFetch({ error: "Forbidden" }, 403);
+
+    expect(
+      await provider.reverseCharge?.("organization", "org-1", "charge-1"),
+    ).toEqual({ status: "unavailable", error: "HTTP 403" });
+
+    globalThis.fetch = mock(async () => {
+      throw new Error("network down");
+    }) as unknown as typeof fetch;
+
+    expect(
+      await provider.reverseCharge?.("organization", "org-1", "charge-1"),
+    ).toEqual({ status: "unavailable", error: "network down" });
+  });
+});
