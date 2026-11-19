@@ -161,6 +161,22 @@ const readJournalMigrations = (
 };
 
 /**
+ * Whether a journal migration has a tracker row. drizzle-orm records the
+ * sha256 of the migration file in the tracker's `hash` column, but legacy
+ * trackers (hand-written ledgers, older migrate scripts) record the migration
+ * tag (`0000_boring_rocket_racer`) there instead. drizzle's own migrator never
+ * reads `hash` (it only compares the newest row's `created_at`), so those
+ * trackers work with plain `migrate()`; a tag row must count as tracked here
+ * too, or every legacy-tracked migration looks untracked and is re-run
+ */
+export const isMigrationTracked = (
+  migration: { hash: string; tag?: string },
+  trackedKeys: ReadonlySet<string>,
+): boolean =>
+  trackedKeys.has(migration.hash) ||
+  (migration.tag !== undefined && trackedKeys.has(migration.tag));
+
+/**
  * Journal migrations drizzle's migrator would skip forever: the untracked tail
  * of the journal (every entry after the last tracked one) that is no later than
  * the tracker's high-water mark.
@@ -169,7 +185,9 @@ const readJournalMigrations = (
  * LIMIT 1`) and runs a migration only when `Number(created_at) < when`, so an
  * untracked entry with `when <= highWaterMark` is never applied and never
  * errors. `highWaterMark` is that newest row's `created_at` exactly as drizzle
- * sees it (`undefined` when the tracker is empty). `migrations` must be in
+ * sees it (`undefined` when the tracker is empty). `trackedKeys` is every
+ * tracker row's `hash` column, which holds a sha256 or, in legacy trackers, a
+ * migration tag (see {@link isMigrationTracked}). `migrations` must be in
  * journal order.
  *
  * Only the tail counts. An untracked entry that precedes a tracked one is
@@ -177,10 +195,10 @@ const readJournalMigrations = (
  * a pending one, so re-running it out of order is unsafe and it is left alone.
  */
 export const findShadowedMigrations = <
-  T extends { hash: string; when: number },
+  T extends { hash: string; tag?: string; when: number },
 >(
   migrations: readonly T[],
-  trackedHashes: ReadonlySet<string>,
+  trackedKeys: ReadonlySet<string>,
   highWaterMark: number | undefined,
 ): T[] => {
   if (highWaterMark === undefined || !Number.isFinite(highWaterMark)) {
@@ -189,7 +207,7 @@ export const findShadowedMigrations = <
 
   let lastTracked = -1;
   migrations.forEach((migration, index) => {
-    if (trackedHashes.has(migration.hash)) lastTracked = index;
+    if (isMigrationTracked(migration, trackedKeys)) lastTracked = index;
   });
 
   return migrations
@@ -266,7 +284,7 @@ const applyShadowedMigrations = async (
 
       // Another replica may have applied it while this one waited on the lock
       const current = await loadTracker(client);
-      if (current.hashes.has(migration.hash)) {
+      if (isMigrationTracked(migration, current.hashes)) {
         await client.query("ROLLBACK");
         continue;
       }
@@ -335,7 +353,7 @@ const reconcileTracker = async (
 
   for (const entry of migrations) {
     const { hash, statements } = entry;
-    if (trackedHashes.has(hash)) continue;
+    if (isMigrationTracked(entry, trackedHashes)) continue;
 
     const client = await pool.connect();
     let alreadyApplied = false;

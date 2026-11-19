@@ -4,6 +4,7 @@ import {
   DEFAULT_LOCK_TIMEOUT_MS,
   buildMigrationPoolConfig,
   findShadowedMigrations,
+  isMigrationTracked,
 } from "./index";
 
 /**
@@ -113,5 +114,67 @@ describe("findShadowedMigrations", () => {
     expect(
       findShadowedMigrations(journal, new Set(["h0"]), Number.NaN),
     ).toEqual([]);
+  });
+});
+
+/**
+ * Legacy trackers store the migration tag in the `hash` column instead of the
+ * file's sha256. drizzle's migrator ignores `hash`, so they boot fine on plain
+ * `migrate()`, but matching on sha256 alone made every tag-tracked migration
+ * look untracked and re-run on boot (vortex-api crash-looped on lock timeouts
+ * re-running `ENABLE ROW LEVEL SECURITY` over live tables)
+ */
+describe("legacy tag-based trackers", () => {
+  // vortex-api's production tracker: both rows hold tags, and the 0000 row was
+  // rebaselined with a `created_at` later than its journal `when`
+  const journal = [
+    { tag: "0000_boring_rocket_racer", when: 1776102508508, hash: "sha-0000" },
+    { tag: "0001_amazing_santa_claus", when: 1789694498664, hash: "sha-0001" },
+  ];
+  const tagTracker = new Set([
+    "0000_boring_rocket_racer",
+    "0001_amazing_santa_claus",
+  ]);
+
+  it("counts a row holding the migration tag as tracked", () => {
+    expect(isMigrationTracked(journal[0]!, tagTracker)).toBe(true);
+    expect(isMigrationTracked(journal[0]!, new Set(["sha-0000"]))).toBe(true);
+    expect(isMigrationTracked(journal[0]!, new Set(["sha-0001"]))).toBe(false);
+  });
+
+  it("does not re-run tag-tracked migrations as shadowed", () => {
+    expect(findShadowedMigrations(journal, tagTracker, 1789694498664)).toEqual(
+      [],
+    );
+  });
+
+  it("does not re-run them when sha256 and tag rows are mixed", () => {
+    // A failed v0.2.0 boot recorded 0000 under its sha256 next to the tag rows
+    expect(
+      findShadowedMigrations(
+        journal,
+        new Set([...tagTracker, "sha-0000"]),
+        1789694498664,
+      ),
+    ).toEqual([]);
+  });
+
+  it("still applies a shadowed migration after the last tag-tracked one", () => {
+    const withPending = [
+      ...journal,
+      { tag: "0002_add_column", when: 1789694498000, hash: "sha-0002" },
+    ];
+
+    expect(
+      findShadowedMigrations(withPending, tagTracker, 1789694498664).map(
+        (m) => m.tag,
+      ),
+    ).toEqual(["0002_add_column"]);
+  });
+
+  it("matches tags exactly, not by prefix", () => {
+    expect(
+      isMigrationTracked(journal[1]!, new Set(["0001_amazing_santa"])),
+    ).toBe(false);
   });
 });
