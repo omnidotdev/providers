@@ -1,4 +1,6 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock, spyOn } from "bun:test";
+
+import { errors } from "jose";
 
 import { createGetAuth } from "./getAuth";
 import { OMNI_CLAIMS_NAMESPACE } from "./types";
@@ -583,5 +585,59 @@ describe("createGetAuth identityProviderId recovery", () => {
 
     expect(result).not.toBeNull();
     expect(result?.user.identityProviderId ?? null).toBeNull();
+  });
+});
+
+describe("createGetAuth error logging", () => {
+  const EMAIL = "person@example.com";
+
+  it("never logs the decoded ID token claims when verification fails", async () => {
+    const cfg = makeConfig({ session: makeSession({}) });
+    // jose attaches the full decoded payload to a claim-validation error, so
+    // logging the error object would serialize the user's email
+    const jwtError = new errors.JWTClaimValidationFailed(
+      'unexpected "iss" claim value',
+      { sub: "idp-sub-123", email: EMAIL, name: "Person" },
+      "iss",
+      "check_failed",
+    );
+    (cfg.oidc as { verifyIdToken: unknown }).verifyIdToken = mock(async () => {
+      throw jwtError;
+    });
+    const errorSpy = spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      const result = await createGetAuth(cfg)(request);
+
+      expect(result).not.toBeNull();
+      const logged = errorSpy.mock.calls.flat();
+      expect(logged.some((arg) => arg === jwtError)).toBe(false);
+      expect(JSON.stringify(logged)).toContain('unexpected \\"iss\\" claim');
+      expect(JSON.stringify(logged)).not.toContain(EMAIL);
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  it("never logs error properties when the session lookup throws", async () => {
+    const cfg = makeConfig({ session: makeSession({}) });
+    const sessionError = Object.assign(new Error("session lookup failed"), {
+      body: { user: { email: EMAIL } },
+    });
+    (cfg.authApi as { getSession: unknown }).getSession = mock(async () => {
+      throw sessionError;
+    });
+    const errorSpy = spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      expect(await createGetAuth(cfg)(request)).toBeNull();
+
+      const logged = errorSpy.mock.calls.flat();
+      expect(logged.some((arg) => arg === sessionError)).toBe(false);
+      expect(JSON.stringify(logged)).toContain("session lookup failed");
+      expect(JSON.stringify(logged)).not.toContain(EMAIL);
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });

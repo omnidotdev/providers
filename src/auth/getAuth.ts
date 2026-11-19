@@ -474,7 +474,13 @@ function createGetAuth(config: GetAuthConfig) {
               if (hydrated !== undefined) organizations = hydrated;
             }
           } catch (jwtError) {
-            console.error(`${logPrefix} JWT verification failed:`, jwtError);
+            // Log the message only: a jose claim-validation error carries the
+            // full decoded token payload (email, name) as an own property, which
+            // logging the error object would serialize
+            console.error(
+              `${logPrefix} JWT verification failed:`,
+              jwtError instanceof Error ? jwtError.message : String(jwtError),
+            );
           }
         }
 
@@ -546,7 +552,10 @@ function createGetAuth(config: GetAuthConfig) {
             `${logPrefix} Token refresh failed (likely a rotation race); serving session without a fresh access token`,
           );
         } else {
-          console.error(`${logPrefix} Token fetch error:`, err);
+          console.error(
+            `${logPrefix} Token fetch error:`,
+            err instanceof Error ? err.message : String(err),
+          );
         }
       }
 
@@ -613,7 +622,10 @@ function createGetAuth(config: GetAuthConfig) {
         },
       } as GetAuthSession;
     } catch (error) {
-      console.error("Failed to get auth session:", error);
+      console.error(
+        "Failed to get auth session:",
+        error instanceof Error ? error.message : String(error),
+      );
       return null;
     }
   };

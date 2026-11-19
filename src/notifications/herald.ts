@@ -165,9 +165,11 @@ class HeraldNotificationProvider implements NotificationProvider {
         );
       }
 
+      // Never log recipient addresses (PII): the count and Herald's message id
+      // are enough to correlate a send with Herald's own delivery records
       log("info", "notifications", "email sent", {
         messageId: lastMessageId,
-        to: recipients,
+        recipientCount: recipients.length,
       });
 
       return { success: true, messageId: lastMessageId };

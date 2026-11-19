@@ -177,7 +177,10 @@ const createOrganizationHydrator = (
 
       return organizations;
     } catch (err) {
-      console.error(`${logPrefix} userinfo org hydration failed:`, err);
+      console.error(
+        `${logPrefix} userinfo org hydration failed:`,
+        err instanceof Error ? err.message : String(err),
+      );
       return undefined;
     }
   };

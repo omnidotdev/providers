@@ -494,3 +494,86 @@ describe("createNotificationProvider herald branch", () => {
     ).toThrow(/defaultFrom/);
   });
 });
+
+describe("HeraldNotificationProvider logging", () => {
+  const ADDRESSES = [
+    "first@example.com",
+    "second@example.com",
+    "copy@example.com",
+    "hidden@example.com",
+    "reply@example.com",
+  ];
+
+  /** Capture every console sink the provider logger writes to. */
+  const captureLogs = () => {
+    const spies = [
+      spyOn(console, "info").mockImplementation(() => {}),
+      spyOn(console, "warn").mockImplementation(() => {}),
+      spyOn(console, "error").mockImplementation(() => {}),
+    ];
+
+    return {
+      entries: () =>
+        spies.flatMap((spy) =>
+          spy.mock.calls.map((args) => JSON.parse(String(args[0]))),
+        ) as Array<Record<string, unknown>>,
+      raw: () => JSON.stringify(spies.map((spy) => spy.mock.calls)),
+      restore: () => {
+        for (const spy of spies) spy.mockRestore();
+      },
+    };
+  };
+
+  it("logs the message id and recipient count, never an address", async () => {
+    stubFetch(200, { id: "m_log", status: "queued" });
+    const logs = captureLogs();
+
+    try {
+      const result = await makeProvider().sendEmail({
+        to: ["First <first@example.com>", "second@example.com"],
+        cc: ["copy@example.com"],
+        bcc: ["hidden@example.com"],
+        replyTo: "reply@example.com",
+        subject: "Hello",
+        body: "<p>Hi</p>",
+        html: true,
+      });
+
+      expect(result.success).toBe(true);
+
+      const sent = logs.entries().find((e) => e.message === "email sent");
+      expect(sent).toBeDefined();
+      expect(sent?.messageId).toBe("m_log");
+      expect(sent?.recipientCount).toBe(2);
+      expect(sent).not.toHaveProperty("to");
+
+      const raw = logs.raw();
+      for (const address of ADDRESSES) expect(raw).not.toContain(address);
+      expect(raw).not.toContain("@example.com");
+    } finally {
+      logs.restore();
+    }
+  });
+
+  it("never logs an address when the send fails", async () => {
+    stubFetch(422, { error: "Recipient is suppressed" });
+    const logs = captureLogs();
+
+    try {
+      const result = await makeProvider().sendEmail({
+        to: "first@example.com",
+        subject: "Hello",
+        body: "<p>Hi</p>",
+        html: true,
+      });
+
+      expect(result.success).toBe(false);
+      expect(
+        logs.entries().some((e) => e.message === "email send failed"),
+      ).toBe(true);
+      expect(logs.raw()).not.toContain("@example.com");
+    } finally {
+      logs.restore();
+    }
+  });
+});

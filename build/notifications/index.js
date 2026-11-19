@@ -131,7 +131,7 @@ class HeraldNotificationProvider {
       }
       log("info", "notifications", "email sent", {
         messageId: lastMessageId,
-        to: recipients
+        recipientCount: recipients.length
       });
       return { success: true, messageId: lastMessageId };
     } catch (error) {
