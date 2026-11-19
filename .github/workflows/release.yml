@@ -1,21 +1,15 @@
 name: Release 🏗️
 
-# Manual-only, and not yet run: this package has never been published. Omni's
-# services consume it as a git dependency pinning a commit (which is why build/
-# is committed), so a release is not needed to ship them a change; publishing
-# would only serve installers outside Omni.
-#
-# Before the first release, settle the `_todo` in package.json questioning the
-# package name. Publishing claims a name on the registry permanently, so it is
-# worth renaming beforehand rather than deprecating afterwards.
-#
-# NPM_TOKEN is a repository secret, mirroring the Bitwarden item "NPM Omni
-# Changesets publish token". It EXPIRES 2026-10-11, and npm is phasing out
-# tokens that bypass 2FA (which this one does), so an auth failure here most
-# likely means the token lapsed rather than anything wrong with the package.
-# Configuring npm trusted publishing (OIDC) retires the token entirely and is
-# the durable fix; the id-token permission below is what OIDC needs.
+# This package is consumed as a git dependency (github:omnidotdev/providers#<tag>
+# or #<commit>, which is why build/ is committed), not published to npm. It is
+# marked private, so `bun release` runs `changeset publish`, which (with
+# privatePackages.tag enabled in .changeset/config.json) only creates the git tag
+# for the release; the action then pushes it and opens the GitHub release. On a
+# push that still has pending changesets, the action instead opens or updates
+# the "version packages" PR.
 on:
+  push:
+    branches: [master]
   workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
@@ -23,26 +17,20 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 permissions:
   contents: write
   pull-requests: write
-  id-token: write
 
 jobs:
   release:
     name: Handle release 🦋
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
-      # registry-url is what writes the .npmrc that reads NODE_AUTH_TOKEN below;
-      # without it the publish reaches npm unauthenticated and fails ENEEDAUTH
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          registry-url: "https://registry.npmjs.org"
+          # pin Bun so the toolchain does not drift with floating latest
+          bun-version: 1.4.4
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Create release PR or publish package
+      - name: Create release PR or tag release
         uses: changesets/action@v2
         with:
           publish-script: bun release
@@ -50,5 +38,3 @@ jobs:
           commit-message: "ci(changesets): version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
