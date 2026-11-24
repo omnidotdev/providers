@@ -1,5 +1,15 @@
 # @omnidotdev/providers
 
+## 0.6.0
+
+### Minor Changes
+
+- [#101](https://github.com/omnidotdev/providers/pull/101) [`bb7d032`](https://github.com/omnidotdev/providers/commit/bb7d032bd9e1cad19df2724aa632417f1fd10c34) Thanks [@coopbri](https://github.com/coopbri)! - Add `generateLqip` (from `@omnidotdev/providers/media-server`): makes a tiny webp data URI from uploaded image bytes, for blur-up loading with thornberry `Image`'s `lqip`. It is best-effort (null when `sharp`, an optional peer, is missing or the bytes are not an image), so an upload never fails over its placeholder
+
+### Patch Changes
+
+- [#99](https://github.com/omnidotdev/providers/pull/99) [`af47712`](https://github.com/omnidotdev/providers/commit/af47712c253d3912ecb93189e5356f4644c1dd6c) Thanks [@coopbri](https://github.com/coopbri)! - `createGetAuth` no longer returns the session token, IP address, or user agent in `session`. Apps pass this result to the browser, and the token is the value of the httpOnly session cookie
+
 ## 0.5.0
 
 ### Minor Changes
