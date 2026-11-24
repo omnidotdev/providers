@@ -195,8 +195,12 @@ type GetAuthSession = {
     // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
     [key: string]: any;
   };
+  /**
+   * The session row without its token, IP, or user agent: apps hand this
+   * result to the browser, and the token is the httpOnly cookie's value
+   */
   session: {
-    token: string;
+    id: string;
     expiresAt: Date | string;
     // biome-ignore lint/suspicious/noExplicitAny: dynamic BA plugin fields
     [key: string]: any;
@@ -611,8 +615,18 @@ function createGetAuth(config: GetAuthConfig) {
         }
       }
 
+      // Never pass the session token on: apps serialize this result into the
+      // page, and the token is the value of the httpOnly session cookie
+      const {
+        token: _token,
+        ipAddress: _ipAddress,
+        userAgent: _userAgent,
+        ...sessionRow
+      } = session.session as Record<string, unknown>;
+
       return {
         ...session,
+        session: sessionRow,
         accessToken,
         organizations,
         user: {

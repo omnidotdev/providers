@@ -190,8 +190,12 @@ type GetAuthSession = {
         rowId?: string;
         [key: string]: any;
     };
+    /**
+     * The session row without its token, IP, or user agent: apps hand this
+     * result to the browser, and the token is the httpOnly cookie's value
+     */
     session: {
-        token: string;
+        id: string;
         expiresAt: Date | string;
         [key: string]: any;
     };

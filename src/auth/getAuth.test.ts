@@ -196,6 +196,20 @@ describe("createGetAuth rowId resolution", () => {
   });
 });
 
+describe("createGetAuth session redaction", () => {
+  it("never returns the session token, IP, or user agent", async () => {
+    const cfg = makeConfig({ session: makeSession({}) });
+
+    const result = await createGetAuth(cfg)(request);
+
+    expect(result?.session).toBeDefined();
+    expect(result?.session).not.toHaveProperty("token");
+    expect(result?.session).not.toHaveProperty("ipAddress");
+    expect(result?.session).not.toHaveProperty("userAgent");
+    expect(result?.session.expiresAt).toBeDefined();
+  });
+});
+
 describe("createGetAuth organization handling", () => {
   const ORGS: OrganizationClaim[] = [
     {
