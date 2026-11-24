@@ -1,5 +1,11 @@
 # @omnidotdev/providers
 
+## 0.5.0
+
+### Minor Changes
+
+- [#97](https://github.com/omnidotdev/providers/pull/97) [`4f8197f`](https://github.com/omnidotdev/providers/commit/4f8197f1b2bf90d0d5bea774ced266dfecba7918) Thanks [@coopbri](https://github.com/coopbri)! - Add `useIdentitySync` (from `@omnidotdev/providers/react`), which keeps an app signed in as the same account as the identity provider: when the browser has switched accounts or signed out in another app, it calls the app's `onSwitched` or `onSignedOut` once. Network errors and outages never sign anyone out
+
 ## 0.4.1
 
 ### Patch Changes
