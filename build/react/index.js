@@ -211,11 +211,83 @@ var useCreateWorkspace = ({
     reset
   };
 };
-// src/react/useSessionRefresh.ts
+// src/react/useIdentitySync.ts
 import { useEffect, useRef } from "react";
-function useSessionRefresh(refreshFn, intervalMs = 4 * 60 * 1000) {
-  const lastRefresh = useRef(Date.now());
+var checkIdentity = async (authBaseUrl, subject, fetchImpl = fetch) => {
+  try {
+    const res = await fetchImpl(`${authBaseUrl.replace(/\/+$/, "")}/api/session/current`, { credentials: "include", cache: "no-store" });
+    if (res.status === 401)
+      return "signed-out";
+    if (!res.ok)
+      return "unknown";
+    const body = await res.json();
+    const sub = body.data?.sub;
+    if (typeof sub !== "string" || !sub)
+      return "unknown";
+    return sub === subject ? "same" : "switched";
+  } catch {
+    return "unknown";
+  }
+};
+var ACTED_KEY = "omni.identitySync.acted";
+var ACT_COOLDOWN_MS = 60 * 1000;
+var recentlyActed = (subject) => {
+  try {
+    const [actedFor, at] = (sessionStorage.getItem(ACTED_KEY) ?? "").split("|");
+    return actedFor === subject && Date.now() - Number(at) < ACT_COOLDOWN_MS;
+  } catch {
+    return false;
+  }
+};
+var markActed = (subject) => {
+  try {
+    sessionStorage.setItem(ACTED_KEY, `${subject}|${Date.now()}`);
+  } catch {}
+};
+function useIdentitySync({
+  authBaseUrl,
+  subject,
+  onSignedOut,
+  onSwitched,
+  intervalMs = 5 * 60 * 1000
+}) {
+  const callbacks = useRef({ onSignedOut, onSwitched });
+  callbacks.current = { onSignedOut, onSwitched };
   useEffect(() => {
+    if (!authBaseUrl || !subject)
+      return;
+    let isActing = false;
+    let lastCheck = 0;
+    const check = async () => {
+      if (isActing || document.visibilityState !== "visible")
+        return;
+      if (Date.now() - lastCheck < 30 * 1000)
+        return;
+      lastCheck = Date.now();
+      const result = await checkIdentity(authBaseUrl, subject);
+      if (result !== "switched" && result !== "signed-out")
+        return;
+      if (recentlyActed(subject))
+        return;
+      isActing = true;
+      markActed(subject);
+      await (result === "switched" ? callbacks.current.onSwitched() : callbacks.current.onSignedOut());
+    };
+    check();
+    const id = setInterval(check, intervalMs);
+    const onVisibilityChange = () => void check();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [authBaseUrl, subject, intervalMs]);
+}
+// src/react/useSessionRefresh.ts
+import { useEffect as useEffect2, useRef as useRef2 } from "react";
+function useSessionRefresh(refreshFn, intervalMs = 4 * 60 * 1000) {
+  const lastRefresh = useRef2(Date.now());
+  useEffect2(() => {
     const refresh = () => {
       lastRefresh.current = Date.now();
       refreshFn();
@@ -284,6 +356,7 @@ export {
   WorkspaceProvider as OrganizationProvider,
   WorkspaceProvider,
   accountUrl,
+  checkIdentity,
   createWorkspaceFlow,
   gatekeeperOrgManageUrl,
   hubCreditsUrl,
@@ -292,6 +365,7 @@ export {
   hubPlanUrl,
   useCreateWorkspace,
   useEvents,
+  useIdentitySync,
   useWorkspace as useOrganization,
   useSessionRefresh,
   useWorkspace,
