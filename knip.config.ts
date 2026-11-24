@@ -24,5 +24,7 @@ export default {
     "ajv",
     "drizzle-orm",
     "pg",
+    // optional peer, loaded lazily by media-server's generateLqip
+    "sharp",
   ],
 };

@@ -141,6 +141,13 @@ const entries = [
     external: [] as string[],
   },
   {
+    entrypoint: "./src/media-server/index.ts",
+    outdir: "./build/media-server",
+    // Server-only image helpers; sharp is an optional peer, loaded lazily
+    target: "node" as const,
+    external: ["sharp"],
+  },
+  {
     entrypoint: "./src/notifications/index.ts",
     outdir: "./build/notifications",
     target: "node" as const,
