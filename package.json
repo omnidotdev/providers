@@ -156,6 +156,7 @@
     "graphile-export": ">=1.0.0-rc.0",
     "graphql": ">=16.0.0",
     "postgraphile": ">=5.0.0-rc.0",
+    "better-auth": ">=1.5.0",
     "react": ">=19.0.0",
     "sharp": ">=0.33.0",
     "unleash-client": ">=6.0.0",
@@ -167,6 +168,9 @@
     "ajv": ">=8.0.0"
   },
   "peerDependenciesMeta": {
+    "better-auth": {
+      "optional": true
+    },
     "sharp": {
       "optional": true
     },

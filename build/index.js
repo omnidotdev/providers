@@ -21814,7 +21814,7 @@ var require_response = __commonJS(function(exports, module) {
   var { clone, extractContentType } = Body;
   var INTERNALS = Symbol("Response internals");
 
-  class Response extends Body {
+  class Response2 extends Body {
     constructor(body = null, opts = {}) {
       super(body, opts);
       const status = opts.status || 200;
@@ -21856,7 +21856,7 @@ var require_response = __commonJS(function(exports, module) {
       return this[INTERNALS].headers;
     }
     clone() {
-      return new Response(clone(this), {
+      return new Response2(clone(this), {
         url: this.url,
         status: this.status,
         statusText: this.statusText,
@@ -21870,8 +21870,8 @@ var require_response = __commonJS(function(exports, module) {
       return "Response";
     }
   }
-  module.exports = Response;
-  Object.defineProperties(Response.prototype, {
+  module.exports = Response2;
+  Object.defineProperties(Response2.prototype, {
     url: { enumerable: true },
     status: { enumerable: true },
     ok: { enumerable: true },
@@ -22187,7 +22187,7 @@ var require_lib2 = __commonJS(function(exports, module) {
   var { Minipass } = require_commonjs();
   var Body = require_body();
   var { writeToStream, getTotalBytes } = Body;
-  var Response = require_response();
+  var Response2 = require_response();
   var Headers2 = require_headers();
   var { createHeadersLenient } = Headers2;
   var Request2 = require_request();
@@ -22221,7 +22221,7 @@ var require_lib2 = __commonJS(function(exports, module) {
         if (type) {
           headers["Content-Type"] = type;
         }
-        return resolve(new Response(data, { headers }));
+        return resolve(new Response2(data, { headers }));
       }));
     }
     return new Promise((resolve, reject) => {
@@ -22363,7 +22363,7 @@ var require_lib2 = __commonJS(function(exports, module) {
         };
         const codings = headers.get("Content-Encoding");
         if (!request.compress || request.method === "HEAD" || codings === null || res.statusCode === 204 || res.statusCode === 304) {
-          response = new Response(body, responseOptions);
+          response = new Response2(body, responseOptions);
           resolve(response);
           return;
         }
@@ -22373,7 +22373,7 @@ var require_lib2 = __commonJS(function(exports, module) {
         };
         if (codings === "gzip" || codings === "x-gzip") {
           const unzip = new zlib.Gunzip(zlibOptions);
-          response = new Response(body.on("error", (er) => unzip.emit("error", er)).pipe(unzip), responseOptions);
+          response = new Response2(body.on("error", (er) => unzip.emit("error", er)).pipe(unzip), responseOptions);
           resolve(response);
           return;
         }
@@ -22381,7 +22381,7 @@ var require_lib2 = __commonJS(function(exports, module) {
           res.once("data", (chunk) => {
             const decoder = (chunk[0] & 15) === 8 ? new zlib.Inflate : new zlib.InflateRaw;
             body.on("error", (er) => decoder.emit("error", er)).pipe(decoder);
-            response = new Response(decoder, responseOptions);
+            response = new Response2(decoder, responseOptions);
             resolve(response);
           });
           return;
@@ -22395,11 +22395,11 @@ var require_lib2 = __commonJS(function(exports, module) {
             return;
           }
           body.on("error", (er) => decoder.emit("error", er)).pipe(decoder);
-          response = new Response(decoder, responseOptions);
+          response = new Response2(decoder, responseOptions);
           resolve(response);
           return;
         }
-        response = new Response(body, responseOptions);
+        response = new Response2(body, responseOptions);
         resolve(response);
       });
       writeToStream(req, request);
@@ -22409,7 +22409,7 @@ var require_lib2 = __commonJS(function(exports, module) {
   fetch2.isRedirect = (code) => code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
   fetch2.Headers = Headers2;
   fetch2.Request = Request2;
-  fetch2.Response = Response;
+  fetch2.Response = Response2;
   fetch2.FetchError = FetchError;
   fetch2.AbortError = AbortError;
 });
@@ -37705,7 +37705,7 @@ var require_remote = __commonJS(function(exports, module) {
 
 // node_modules/make-fetch-happen/lib/cache/entry.js
 var require_entry = __commonJS(function(exports, module) {
-  var { Request: Request2, Response } = require_lib2();
+  var { Request: Request2, Response: Response2 } = require_lib2();
   var { Minipass } = require_commonjs();
   var MinipassFlush = require_minipass_flush();
   var cacache = require_lib8();
@@ -37854,7 +37854,7 @@ var require_entry = __commonJS(function(exports, module) {
     }
     get response() {
       if (!this[_response]) {
-        this[_response] = new Response(null, {
+        this[_response] = new Response2(null, {
           url: this.entry.metadata.url,
           counter: this.options.counter,
           status: this.entry.metadata.status || 200,
@@ -37925,7 +37925,7 @@ var require_entry = __commonJS(function(exports, module) {
       this.response.headers.set("x-local-cache-mode", "stream");
       this.response.headers.set("x-local-cache-status", status);
       this.response.headers.set("x-local-cache-time", new Date().toISOString());
-      const newResponse = new Response(body, {
+      const newResponse = new Response2(body, {
         url: this.response.url,
         status: this.response.status,
         headers: this.response.headers,
@@ -37959,7 +37959,7 @@ var require_entry = __commonJS(function(exports, module) {
         };
         body.once("resume", onResume);
         body.once("end", () => body.removeListener("resume", onResume));
-        response = new Response(body, {
+        response = new Response2(body, {
           url: this.entry.metadata.url,
           counter: options.counter,
           status: 200,
@@ -38124,7 +38124,7 @@ var require_fetch = __commonJS(function(exports, module) {
 
 // node_modules/make-fetch-happen/lib/index.js
 var require_lib12 = __commonJS(function(exports, module) {
-  var { FetchError, Headers: Headers2, Request: Request2, Response } = require_lib2();
+  var { FetchError, Headers: Headers2, Request: Request2, Response: Response2 } = require_lib2();
   var configureOptions = require_options();
   var fetch2 = require_fetch();
   var makeFetchHappen = (url, opts) => {
@@ -38156,7 +38156,7 @@ var require_lib12 = __commonJS(function(exports, module) {
   module.exports.FetchError = FetchError;
   module.exports.Headers = Headers2;
   module.exports.Request = Request2;
-  module.exports.Response = Response;
+  module.exports.Response = Response2;
 });
 
 // node_modules/proxy-from-env/index.js
