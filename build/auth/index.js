@@ -3739,6 +3739,26 @@ function createOidcClient(config) {
   }
   return { verifyIdToken, fetchUserInfo, getDiscovery, getJwks, clearCache };
 }
+// src/auth/redactSessionToken.ts
+import { createAuthMiddleware } from "better-auth/api";
+var redactSessionToken = () => ({
+  id: "omni-redact-session-token",
+  hooks: {
+    after: [
+      {
+        matcher: (ctx) => ctx.path === "/get-session",
+        handler: createAuthMiddleware(async (ctx) => {
+          const returned = ctx.context.returned;
+          if (!returned || typeof returned !== "object" || returned instanceof Response || !returned.session || !("token" in returned.session)) {
+            return;
+          }
+          const { token: _token, ...session } = returned.session;
+          return ctx.json({ ...returned, session });
+        })
+      }
+    ]
+  }
+});
 export {
   GatekeeperOrgClient,
   GatekeeperOrgError,
@@ -3760,6 +3780,7 @@ export {
   isSlimOrganizationClaim,
   normalizeWorkspaceLinks,
   publicWorkspaceLinks,
+  redactSessionToken,
   resolveAccessToken,
   validateInvitation,
   verifyAccessToken

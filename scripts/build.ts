@@ -51,7 +51,8 @@ const entries = [
     entrypoint: "./src/auth/index.ts",
     outdir: "./build/auth",
     target: "node" as const,
-    external: [] as string[],
+    // The app's own Better Auth (redactSessionToken's middleware)
+    external: ["better-auth"],
   },
   {
     entrypoint: "./src/authz/index.ts",
