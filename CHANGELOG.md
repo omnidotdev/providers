@@ -1,5 +1,11 @@
 # @omnidotdev/providers
 
+## 0.7.0
+
+### Minor Changes
+
+- [#103](https://github.com/omnidotdev/providers/pull/103) [`5fa4730`](https://github.com/omnidotdev/providers/commit/5fa4730ad8217b1916c5f8b1862d13a3dd06a57a) Thanks [@coopbri](https://github.com/coopbri)! - Add `redactSessionToken()` (from `@omnidotdev/providers/auth`), a Better Auth plugin that drops the session token from `/get-session` responses so page scripts can never read it. `better-auth` is now an optional peer of the auth entry
+
 ## 0.6.0
 
 ### Minor Changes
