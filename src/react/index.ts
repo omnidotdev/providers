@@ -30,6 +30,12 @@ export {
   createWorkspaceFlow,
   useCreateWorkspace,
 } from "./useCreateWorkspace";
+export {
+  type IdentityCheck,
+  type UseIdentitySyncOptions,
+  checkIdentity,
+  useIdentitySync,
+} from "./useIdentitySync";
 export { useSessionRefresh } from "./useSessionRefresh";
 export {
   type WorkspaceClaim,
