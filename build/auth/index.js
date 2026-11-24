@@ -3593,8 +3593,15 @@ function createGetAuth(config) {
           console.error(`${logPrefix} Failed to recover identityProviderId from account:`, accountErr instanceof Error ? accountErr.message : String(accountErr));
         }
       }
+      const {
+        token: _token,
+        ipAddress: _ipAddress,
+        userAgent: _userAgent,
+        ...sessionRow
+      } = session.session;
       return {
         ...session,
+        session: sessionRow,
         accessToken,
         organizations,
         user: {
