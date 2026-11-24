@@ -96,6 +96,10 @@
       "import": "./build/media/index.js",
       "types": "./build/media/index.d.ts"
     },
+    "./media-server": {
+      "import": "./build/media-server/index.js",
+      "types": "./build/media-server/index.d.ts"
+    },
     "./notifications": {
       "import": "./build/notifications/index.js",
       "types": "./build/notifications/index.d.ts"
@@ -153,6 +157,7 @@
     "graphql": ">=16.0.0",
     "postgraphile": ">=5.0.0-rc.0",
     "react": ">=19.0.0",
+    "sharp": ">=0.33.0",
     "unleash-client": ">=6.0.0",
     "@aws-sdk/client-s3": ">=3.0.0",
     "@aws-sdk/s3-request-presigner": ">=3.0.0",
@@ -162,6 +167,9 @@
     "ajv": ">=8.0.0"
   },
   "peerDependenciesMeta": {
+    "sharp": {
+      "optional": true
+    },
     "@openfeature/server-sdk": {
       "optional": true
     },
@@ -241,6 +249,7 @@
     "postgraphile": "^5.0.0-rc.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "sharp": "0.34.5",
     "typescript": "^5.8.3",
     "unleash-client": "^6.9.6"
   }
