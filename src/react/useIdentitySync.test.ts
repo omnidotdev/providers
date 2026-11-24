@@ -2,10 +2,8 @@ import { describe, expect, it } from "bun:test";
 
 import { checkIdentity } from "./useIdentitySync";
 
-const respond =
-  (status: number, body?: unknown) =>
-  async () =>
-    new Response(body === undefined ? null : JSON.stringify(body), { status });
+const respond = (status: number, body?: unknown) => async () =>
+  new Response(body === undefined ? null : JSON.stringify(body), { status });
 
 describe("checkIdentity", () => {
   it("is same when the browser is signed in as the app's account", async () => {
