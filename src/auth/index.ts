@@ -19,6 +19,7 @@ export {
 } from "./organizations";
 export { redactSessionToken } from "./redactSessionToken";
 export { fetchUserInfo, resolveAccessToken } from "./resolve";
+export { switchAccountParams } from "./switchAccount";
 export {
   ensureFreshAccessToken,
   isIdTokenExpired,

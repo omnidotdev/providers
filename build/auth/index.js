@@ -3621,7 +3621,8 @@ var buildIdpLogoutUrl = ({
   authBaseUrl,
   clientId,
   redirectUri,
-  idTokenHint
+  idTokenHint,
+  accounts
 }) => {
   if (!authBaseUrl || !clientId || !redirectUri || !idTokenHint)
     return null;
@@ -3629,6 +3630,8 @@ var buildIdpLogoutUrl = ({
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("post_logout_redirect_uri", redirectUri);
   url.searchParams.set("id_token_hint", idTokenHint);
+  if (accounts)
+    url.searchParams.set("accounts", accounts);
   return url.toString();
 };
 
@@ -3759,6 +3762,8 @@ var redactSessionToken = () => ({
     ]
   }
 });
+// src/auth/switchAccount.ts
+var switchAccountParams = (loginHint) => loginHint ? { prompt: "select_account", login_hint: loginHint } : { prompt: "select_account" };
 export {
   GatekeeperOrgClient,
   GatekeeperOrgError,
@@ -3782,6 +3787,7 @@ export {
   publicWorkspaceLinks,
   redactSessionToken,
   resolveAccessToken,
+  switchAccountParams,
   validateInvitation,
   verifyAccessToken
 };

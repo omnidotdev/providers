@@ -1,4 +1,15 @@
 /**
+ * Who the hub should be signed in as when it opens: the subject of the account
+ * the linking app is signed in as. The hub passes it to the identity provider
+ * as `login_hint`, so it opens as that same account (without asking, when the
+ * account is signed in on this browser) instead of whichever account it last
+ * used
+ */
+export interface HubLinkOptions {
+    /** The linking app's account subject (`identityProviderId`) */
+    loginHint?: string | null;
+}
+/**
  * Canonical Omni account-hub URL.
  *
  * The one place products link to for "manage account" (profile, security,
@@ -8,7 +19,7 @@
  * single place. Returns an empty string when no base is configured, so a missing
  * optional env degrades to an inert link rather than a thrown render
  */
-export declare const accountUrl: (accountBaseUrl: string | undefined) => string;
+export declare const accountUrl: (accountBaseUrl: string | undefined, { loginHint }?: HubLinkOptions) => string;
 /**
  * Canonical workspaces console URL on the account hub
  * (`${accountBaseUrl}/workspaces`).
@@ -22,11 +33,11 @@ export declare const accountUrl: (accountBaseUrl: string | undefined) => string;
  * degrades to an inert link rather than a thrown render, mirroring
  * {@link accountUrl}.
  */
-export declare const workspacesUrl: (accountBaseUrl: string | undefined) => string;
+export declare const workspacesUrl: (accountBaseUrl: string | undefined, { loginHint }?: HubLinkOptions) => string;
 /** Billing interval a hub plan purchase is for */
 export type HubPlanInterval = "month" | "year";
 /** A product plan to buy on the account hub */
-export interface HubPlanParams {
+export interface HubPlanParams extends HubLinkOptions {
     /** Product id as it appears in the omni-api catalog (e.g. "keystone") */
     product: string;
     /** Plan tier as the catalog names it (e.g. "pro", "team") */
@@ -46,7 +57,7 @@ export interface HubPlanParams {
     returnUrl?: string;
 }
 /** A workspace's plan to manage on the account hub */
-export interface HubManageParams {
+export interface HubManageParams extends HubLinkOptions {
     /** Product id as it appears in the omni-api catalog (e.g. "keystone") */
     product: string;
     /** Workspace handle whose subscription to manage */
@@ -75,7 +86,7 @@ export interface HubManageParams {
  * base is configured, so a missing optional env degrades to an inert link,
  * mirroring {@link accountUrl}
  */
-export declare const hubPlanUrl: (accountBaseUrl: string | undefined, { product, plan, interval, workspace, returnUrl }: HubPlanParams) => string;
+export declare const hubPlanUrl: (accountBaseUrl: string | undefined, { product, plan, interval, workspace, returnUrl, loginHint }: HubPlanParams) => string;
 /**
  * Account hub URL to manage a workspace's plan for a product
  * (`${accountBaseUrl}/billing?product=&workspace=&manage=1&return=`).
@@ -86,9 +97,9 @@ export declare const hubPlanUrl: (accountBaseUrl: string | undefined, { product,
  * opening the portal from the product. Ids are lowercased. Returns an empty
  * string when no base is configured, mirroring {@link accountUrl}
  */
-export declare const hubManageUrl: (accountBaseUrl: string | undefined, { product, workspace, returnUrl }: HubManageParams) => string;
+export declare const hubManageUrl: (accountBaseUrl: string | undefined, { product, workspace, returnUrl, loginHint }: HubManageParams) => string;
 /** Omni credits to buy on the account hub */
-export interface HubCreditsParams {
+export interface HubCreditsParams extends HubLinkOptions {
     /**
      * Product the user is buying from (catalog id, e.g. "facet"); names the
      * receipt. Credits themselves are shared across every Omni product
@@ -117,9 +128,9 @@ export interface HubCreditsParams {
  * are lowercased. Returns an empty string when no base is configured,
  * mirroring {@link accountUrl}
  */
-export declare const hubCreditsUrl: (accountBaseUrl: string | undefined, { product, workspace, pack }?: HubCreditsParams) => string;
+export declare const hubCreditsUrl: (accountBaseUrl: string | undefined, { product, workspace, pack, loginHint }?: HubCreditsParams) => string;
 /** A workspace's invoices on the account hub */
-export interface HubInvoicesParams {
+export interface HubInvoicesParams extends HubLinkOptions {
     /** Workspace handle whose invoices to show. Omit for the personal workspace */
     workspace?: string;
 }
@@ -133,4 +144,4 @@ export interface HubInvoicesParams {
  * admins of the workspace. Ids are lowercased. Returns an empty string when no
  * base is configured, mirroring {@link accountUrl}
  */
-export declare const hubInvoicesUrl: (accountBaseUrl: string | undefined, { workspace }?: HubInvoicesParams) => string;
+export declare const hubInvoicesUrl: (accountBaseUrl: string | undefined, { workspace, loginHint }?: HubInvoicesParams) => string;

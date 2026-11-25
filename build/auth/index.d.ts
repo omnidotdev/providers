@@ -9,6 +9,7 @@ export { createOidcClient } from "./oidc";
 export { createOrganizationHydrator, isSlimOrganizationClaim, } from "./organizations";
 export { redactSessionToken } from "./redactSessionToken";
 export { fetchUserInfo, resolveAccessToken } from "./resolve";
+export { switchAccountParams } from "./switchAccount";
 export { ensureFreshAccessToken, isIdTokenExpired, isInvalidGrant, } from "./token";
 export { OMNI_CLAIMS_NAMESPACE } from "./types";
 export { normalizeWorkspaceLinks, publicWorkspaceLinks, } from "./workspaceLinks";

@@ -5,6 +5,7 @@ export {
 export {
   type HubCreditsParams,
   type HubInvoicesParams,
+  type HubLinkOptions,
   type HubManageParams,
   type HubPlanInterval,
   type HubPlanParams,
@@ -36,6 +37,13 @@ export {
   checkIdentity,
   useIdentitySync,
 } from "./useIdentitySync";
+export {
+  type RememberedAccount,
+  type UseRememberedAccountsOptions,
+  fetchRememberedAccounts,
+  otherRememberedAccounts,
+  useRememberedAccounts,
+} from "./useRememberedAccounts";
 export { useSessionRefresh } from "./useSessionRefresh";
 export {
   type WorkspaceClaim,
