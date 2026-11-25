@@ -1,4 +1,22 @@
 /**
+ * Who the hub should be signed in as when it opens: the subject of the account
+ * the linking app is signed in as. The hub passes it to the identity provider
+ * as `login_hint`, so it opens as that same account (without asking, when the
+ * account is signed in on this browser) instead of whichever account it last
+ * used
+ */
+export interface HubLinkOptions {
+  /** The linking app's account subject (`identityProviderId`) */
+  loginHint?: string | null;
+}
+
+const withLoginHint = (url: string, loginHint?: string | null): string => {
+  if (!url || !loginHint) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}${new URLSearchParams({ login_hint: loginHint })}`;
+};
+
+/**
  * Canonical Omni account-hub URL.
  *
  * The one place products link to for "manage account" (profile, security,
@@ -8,8 +26,14 @@
  * single place. Returns an empty string when no base is configured, so a missing
  * optional env degrades to an inert link rather than a thrown render
  */
-export const accountUrl = (accountBaseUrl: string | undefined): string =>
-  accountBaseUrl ? accountBaseUrl.replace(/\/+$/, "") : "";
+export const accountUrl = (
+  accountBaseUrl: string | undefined,
+  { loginHint }: HubLinkOptions = {},
+): string =>
+  withLoginHint(
+    accountBaseUrl ? accountBaseUrl.replace(/\/+$/, "") : "",
+    loginHint,
+  );
 
 /**
  * Canonical workspaces console URL on the account hub
@@ -24,14 +48,20 @@ export const accountUrl = (accountBaseUrl: string | undefined): string =>
  * degrades to an inert link rather than a thrown render, mirroring
  * {@link accountUrl}.
  */
-export const workspacesUrl = (accountBaseUrl: string | undefined): string =>
-  accountBaseUrl ? `${accountBaseUrl.replace(/\/+$/, "")}/workspaces` : "";
+export const workspacesUrl = (
+  accountBaseUrl: string | undefined,
+  { loginHint }: HubLinkOptions = {},
+): string =>
+  withLoginHint(
+    accountBaseUrl ? `${accountBaseUrl.replace(/\/+$/, "")}/workspaces` : "",
+    loginHint,
+  );
 
 /** Billing interval a hub plan purchase is for */
 export type HubPlanInterval = "month" | "year";
 
 /** A product plan to buy on the account hub */
-export interface HubPlanParams {
+export interface HubPlanParams extends HubLinkOptions {
   /** Product id as it appears in the omni-api catalog (e.g. "keystone") */
   product: string;
   /** Plan tier as the catalog names it (e.g. "pro", "team") */
@@ -52,7 +82,7 @@ export interface HubPlanParams {
 }
 
 /** A workspace's plan to manage on the account hub */
-export interface HubManageParams {
+export interface HubManageParams extends HubLinkOptions {
   /** Product id as it appears in the omni-api catalog (e.g. "keystone") */
   product: string;
   /** Workspace handle whose subscription to manage */
@@ -99,7 +129,7 @@ const hubBillingUrl = (
  */
 export const hubPlanUrl = (
   accountBaseUrl: string | undefined,
-  { product, plan, interval, workspace, returnUrl }: HubPlanParams,
+  { product, plan, interval, workspace, returnUrl, loginHint }: HubPlanParams,
 ): string =>
   hubBillingUrl(accountBaseUrl, {
     product: product.toLowerCase(),
@@ -107,6 +137,7 @@ export const hubPlanUrl = (
     interval,
     workspace: workspace?.toLowerCase(),
     return: returnUrl,
+    login_hint: loginHint ?? undefined,
   });
 
 /**
@@ -121,17 +152,18 @@ export const hubPlanUrl = (
  */
 export const hubManageUrl = (
   accountBaseUrl: string | undefined,
-  { product, workspace, returnUrl }: HubManageParams,
+  { product, workspace, returnUrl, loginHint }: HubManageParams,
 ): string =>
   hubBillingUrl(accountBaseUrl, {
     product: product.toLowerCase(),
     workspace: workspace.toLowerCase(),
     manage: "1",
     return: returnUrl,
+    login_hint: loginHint ?? undefined,
   });
 
 /** Omni credits to buy on the account hub */
-export interface HubCreditsParams {
+export interface HubCreditsParams extends HubLinkOptions {
   /**
    * Product the user is buying from (catalog id, e.g. "facet"); names the
    * receipt. Credits themselves are shared across every Omni product
@@ -163,17 +195,18 @@ export interface HubCreditsParams {
  */
 export const hubCreditsUrl = (
   accountBaseUrl: string | undefined,
-  { product, workspace, pack }: HubCreditsParams = {},
+  { product, workspace, pack, loginHint }: HubCreditsParams = {},
 ): string =>
   hubBillingUrl(accountBaseUrl, {
     product: product?.toLowerCase(),
     workspace: workspace?.toLowerCase(),
     pack: pack?.toLowerCase(),
     ...(pack ? {} : { tab: "ai" }),
+    login_hint: loginHint ?? undefined,
   });
 
 /** A workspace's invoices on the account hub */
-export interface HubInvoicesParams {
+export interface HubInvoicesParams extends HubLinkOptions {
   /** Workspace handle whose invoices to show. Omit for the personal workspace */
   workspace?: string;
 }
@@ -190,9 +223,10 @@ export interface HubInvoicesParams {
  */
 export const hubInvoicesUrl = (
   accountBaseUrl: string | undefined,
-  { workspace }: HubInvoicesParams = {},
+  { workspace, loginHint }: HubInvoicesParams = {},
 ): string =>
   hubBillingUrl(accountBaseUrl, {
     workspace: workspace?.toLowerCase(),
     tab: "invoices",
+    login_hint: loginHint ?? undefined,
   });

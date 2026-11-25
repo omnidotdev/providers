@@ -44,4 +44,20 @@ describe("buildIdpLogoutUrl", () => {
       "post_logout_redirect_uri=https%3A%2F%2Fapp.example.com%2Fback%3Fx%3D1",
     );
   });
+
+  it("asks for this account or every account when told which", () => {
+    const current = new URL(
+      buildIdpLogoutUrl({ ...full, accounts: "current" }) as string,
+    );
+    const all = new URL(
+      buildIdpLogoutUrl({ ...full, accounts: "all" }) as string,
+    );
+    expect(current.searchParams.get("accounts")).toBe("current");
+    expect(all.searchParams.get("accounts")).toBe("all");
+  });
+
+  it("leaves the choice to the identity provider by default", () => {
+    const url = new URL(buildIdpLogoutUrl(full) as string);
+    expect(url.searchParams.has("accounts")).toBe(false);
+  });
 });

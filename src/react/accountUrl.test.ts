@@ -159,3 +159,41 @@ describe("hubInvoicesUrl", () => {
     expect(hubInvoicesUrl(undefined, { workspace: "acme" })).toBe("");
   });
 });
+
+describe("login_hint on hub links", () => {
+  const base = "https://account.omni.dev";
+
+  it("carries the linking app's account on every hub link", () => {
+    const loginHint = "user-123";
+
+    expect(accountUrl(base, { loginHint })).toBe(
+      "https://account.omni.dev?login_hint=user-123",
+    );
+    expect(workspacesUrl(base, { loginHint })).toBe(
+      "https://account.omni.dev/workspaces?login_hint=user-123",
+    );
+    for (const url of [
+      hubPlanUrl(base, {
+        product: "beacon",
+        plan: "pro",
+        interval: "month",
+        loginHint,
+      }),
+      hubManageUrl(base, { product: "beacon", workspace: "acme", loginHint }),
+      hubCreditsUrl(base, { product: "beacon", loginHint }),
+      hubInvoicesUrl(base, { loginHint }),
+    ]) {
+      expect(new URL(url).searchParams.get("login_hint")).toBe(loginHint);
+    }
+  });
+
+  it("adds nothing without a hint or a base", () => {
+    expect(accountUrl(base, { loginHint: null })).toBe(base);
+    expect(accountUrl(undefined, { loginHint: "user-123" })).toBe("");
+    expect(
+      new URL(hubCreditsUrl(base, { product: "beacon" })).searchParams.has(
+        "login_hint",
+      ),
+    ).toBe(false);
+  });
+});

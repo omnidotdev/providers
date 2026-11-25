@@ -15,5 +15,12 @@ export interface IdpLogoutConfig {
     redirectUri?: string;
     /** The user's id token; required by the end-session endpoint */
     idTokenHint?: string;
+    /**
+     * Which accounts on the browser to sign out of when more than one is signed
+     * in: only the app's account (`"current"`; the others stay signed in and the
+     * next becomes active) or every one (`"all"`). Unset, the identity provider
+     * asks when it needs to
+     */
+    accounts?: "current" | "all";
 }
-export declare const buildIdpLogoutUrl: ({ authBaseUrl, clientId, redirectUri, idTokenHint, }: IdpLogoutConfig) => string | null;
+export declare const buildIdpLogoutUrl: ({ authBaseUrl, clientId, redirectUri, idTokenHint, accounts, }: IdpLogoutConfig) => string | null;
