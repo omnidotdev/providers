@@ -79749,7 +79749,7 @@ function createOmniOAuthConfig(config) {
     clientSecret: config.clientSecret,
     authorizationUrl: `${config.authBaseUrl}/oauth2/authorize`,
     tokenUrl: `${config.authInternalUrl}/oauth2/token`,
-    userInfoUrl: `${config.authInternalUrl}/userinfo`,
+    userInfoUrl: `${config.authInternalUrl}/oauth2/userinfo`,
     scopes: config.scopes ?? [
       "openid",
       "profile",
