@@ -1,5 +1,11 @@
 # @omnidotdev/providers
 
+## 0.8.1
+
+### Patch Changes
+
+- [#107](https://github.com/omnidotdev/providers/pull/107) [`e73b558`](https://github.com/omnidotdev/providers/commit/e73b558fe1f8b13506c363b8cbd56b18349e3afb) Thanks [@coopbri](https://github.com/coopbri)! - `createOmniOAuthConfig` now points `userInfoUrl` at Gatekeeper's `/oauth2/userinfo` (the endpoint its discovery document advertises). The old `/userinfo` path returned 404, which only went unnoticed because sign-in reads the user from the ID token first
+
 ## 0.8.0
 
 ### Minor Changes
