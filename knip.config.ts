@@ -26,5 +26,7 @@ export default {
     "pg",
     // optional peer, loaded lazily by media-server's generateLqip
     "sharp",
+    // optional peer, loaded lazily by attachments' readPdfText
+    "unpdf",
   ],
 };

@@ -36,6 +36,10 @@
       "import": "./build/apiKey/index.js",
       "types": "./build/apiKey/index.d.ts"
     },
+    "./attachments": {
+      "import": "./build/attachments/index.js",
+      "types": "./build/attachments/index.d.ts"
+    },
     "./auth": {
       "import": "./build/auth/index.js",
       "types": "./build/auth/index.d.ts"
@@ -159,6 +163,7 @@
     "better-auth": ">=1.5.0",
     "react": ">=19.0.0",
     "sharp": ">=0.33.0",
+    "unpdf": ">=2.0.0",
     "unleash-client": ">=6.0.0",
     "@aws-sdk/client-s3": ">=3.0.0",
     "@aws-sdk/s3-request-presigner": ">=3.0.0",
@@ -172,6 +177,9 @@
       "optional": true
     },
     "sharp": {
+      "optional": true
+    },
+    "unpdf": {
       "optional": true
     },
     "@openfeature/server-sdk": {
@@ -255,6 +263,7 @@
     "react-dom": "^19.1.0",
     "sharp": "0.34.5",
     "typescript": "^5.8.3",
-    "unleash-client": "^6.9.6"
+    "unleash-client": "^6.9.6",
+    "unpdf": "2.1.0"
   }
 }
