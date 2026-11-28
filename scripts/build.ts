@@ -48,6 +48,14 @@ const entries = [
     external: [] as string[],
   },
   {
+    entrypoint: "./src/attachments/index.ts",
+    outdir: "./build/attachments",
+    // Server-only chat attachment checks; unpdf is an optional peer, loaded
+    // lazily for PDF text
+    target: "node" as const,
+    external: ["unpdf"],
+  },
+  {
     entrypoint: "./src/auth/index.ts",
     outdir: "./build/auth",
     target: "node" as const,
